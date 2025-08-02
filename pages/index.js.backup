@@ -992,7 +992,6 @@ Format the response as a structured plan that can be converted to a GitHub issue
                 Clear All Tasks
               </button>
             )}
-            </div>
           </div>
           <div style={{ marginBottom: '20px' }}>
             <h3 style={{ marginBottom: '10px' }}>New Task Planning Request</h3>

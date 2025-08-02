@@ -19,6 +19,76 @@ export default async function handler(req, res) {
 
     const results = [];
 
+    // Send via WhatsApp (highest priority for user input)
+    if (channels.includes('whatsapp') || channels.includes('all')) {
+      try {
+        // Option 1: WhatsApp Business API (if configured)
+        if (process.env.WHATSAPP_API_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
+          await axios.post(
+            `https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
+            {
+              messaging_product: 'whatsapp',
+              to: process.env.WHATSAPP_USER_NUMBER || '19292762732',
+              type: 'template',
+              template: {
+                name: 'task_needs_input',
+                language: { code: 'en' },
+                components: [{
+                  type: 'body',
+                  parameters: [
+                    { type: 'text', text: taskTitle || 'Task' },
+                    { type: 'text', text: message }
+                  ]
+                }]
+              }
+            },
+            {
+              headers: {
+                'Authorization': `Bearer ${process.env.WHATSAPP_API_TOKEN}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          results.push({ channel: 'whatsapp', status: 'sent', method: 'business-api' });
+        }
+        // Option 2: WhatsApp webhook service (simpler setup)
+        else if (process.env.WHATSAPP_WEBHOOK_URL) {
+          await axios.post(process.env.WHATSAPP_WEBHOOK_URL, {
+            to: process.env.WHATSAPP_USER_NUMBER || '+19292762732',
+            message: `🤖 *Meta-Agent Alert*\n\n*Task:* ${taskTitle}\n*Needs Input:* ${message}\n\n*Resume at:* ${process.env.VERCEL_URL}/task/${taskId}/resume`,
+            taskId: taskId,
+            urgency: urgency
+          });
+          results.push({ channel: 'whatsapp', status: 'sent', method: 'webhook' });
+        }
+        // Option 3: Use Twilio WhatsApp if configured
+        else if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_WHATSAPP_NUMBER) {
+          const twilioAuth = Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64');
+          
+          await axios.post(
+            `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`,
+            new URLSearchParams({
+              To: `whatsapp:${process.env.WHATSAPP_USER_NUMBER || '+19292762732'}`,
+              From: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+              Body: `🤖 *Meta-Agent Alert*\n\n*Task:* ${taskTitle}\n*Needs Input:* ${message}\n\nResume at: ${process.env.VERCEL_URL}/task/${taskId}/resume`
+            }),
+            {
+              headers: {
+                'Authorization': `Basic ${twilioAuth}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+              }
+            }
+          );
+          results.push({ channel: 'whatsapp', status: 'sent', method: 'twilio' });
+        }
+        else {
+          results.push({ channel: 'whatsapp', status: 'skipped', reason: 'No WhatsApp configuration found' });
+        }
+      } catch (error) {
+        results.push({ channel: 'whatsapp', status: 'failed', error: error.message });
+      }
+    }
+
     // Send via webhook (default)
     if (channels.includes('webhook') && process.env.NOTIFICATION_WEBHOOK) {
       try {
