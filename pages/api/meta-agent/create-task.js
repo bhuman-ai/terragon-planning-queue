@@ -78,8 +78,24 @@ export default async function handler(req, res) {
     let terragonResult = null;
     if (sessionToken) {
       try {
+        // Read CLAUDE.md to include sacred context
+        let claudeMdContent = '';
+        try {
+          const claudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
+          claudeMdContent = await fs.readFile(claudeMdPath, 'utf-8');
+        } catch (error) {
+          console.log('CLAUDE.md not found for task creation');
+        }
+        
         // Build enhanced message for Terragon with complete decomposition
-        let terragonMessage = formatDecompositionForTerragon(decomposition || taskSpec.decomposition, title, description);
+        let terragonMessage = '';
+        
+        // Include CLAUDE.md if available
+        if (claudeMdContent) {
+          terragonMessage += `# SACRED PROJECT CONTEXT (CLAUDE.md)\n\n${claudeMdContent}\n\n---\n\n`;
+        }
+        
+        terragonMessage += formatDecompositionForTerragon(decomposition || taskSpec.decomposition, title, description);
         terragonMessage += `\n\nMeta-Agent Task ID: ${result.taskId}\nTask Path: ${result.taskPath}`;
 
         const terragonResponse = await fetch(`${req.headers.origin || process.env.NEXT_PUBLIC_API_URL || ''}/api/actions/terragon`, {

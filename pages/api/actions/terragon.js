@@ -1,3 +1,6 @@
+import fs from 'fs/promises';
+import path from 'path';
+
 // Alternative endpoint for Next.js server actions
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -19,8 +22,18 @@ export default async function handler(req, res) {
     // Enrich message with context if enrichContext is enabled
     let processedMessage = message;
     if (req.body.enrichContext !== false) {
-      // Context enrichment temporarily disabled - will be handled by MetaAgent
-      console.log('Legacy context enrichment disabled - use MetaAgent for enhanced context');
+      // SACRED: Always include CLAUDE.md content in Terragon communications
+      try {
+        const claudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
+        const claudeMdContent = await fs.readFile(claudeMdPath, 'utf-8');
+        
+        // Prepend CLAUDE.md content to the message
+        processedMessage = `# SACRED PROJECT CONTEXT (CLAUDE.md)\n\n${claudeMdContent}\n\n---\n\n# USER REQUEST\n\n${message}`;
+        
+        console.log('Enriched message with CLAUDE.md content');
+      } catch (error) {
+        console.log('CLAUDE.md not found, proceeding without sacred context');
+      }
     }
 
     // Build the payload in Terragon's expected format
