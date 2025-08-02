@@ -1,6 +1,8 @@
 # Discord Bot Setup for Interactive Meta-Agent
 
-The Discord bot allows Meta-Agent to ask you questions during autonomous execution and use your responses to guide the Terragon agent.
+The Discord bot is the PRIMARY communication method for Meta-Agent. It asks you questions during autonomous execution and uses your responses to guide the Terragon agent. 
+
+**NOTE: We are using Discord BOT, not webhooks!**
 
 ## 🤖 How It Works
 

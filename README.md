@@ -19,18 +19,18 @@ AI-powered autonomous task planning and execution with GitHub integration.
 - **Smart Task Decomposition**: Breaks complex tasks into <10 minute micro-tasks
 - **User Approval Workflow**: Review and approve plans before execution
 - **Autonomous Execution**: Continues working even when you're offline
-- **Discord Bot Integration**: Interactive Q&A during task execution
-- **Discord Notifications**: Get alerts when Meta-Agent needs your input
+- **Discord Bot Integration**: Interactive Q&A during task execution - bot asks questions and uses your replies to guide Terragon
 
 ## 📦 Quick Deploy to Vercel
 
 ### 1. Prerequisites
 - GitHub account
 - Vercel account (Team plan for cron jobs)
-- Discord server (for notifications)
+- Discord server with bot setup
 - API Keys:
   - Claude API key (from Anthropic)
   - Perplexity API key (for research)
+  - Discord bot token (from Discord Developer Portal)
 
 ### 2. Deploy Steps
 
@@ -48,11 +48,12 @@ AI-powered autonomous task planning and execution with GitHub integration.
    ```
    CLAUDE_API_KEY=your-claude-api-key
    PERPLEXITY_API_KEY=your-perplexity-api-key
-   DISCORD_WEBHOOK_URL=your-discord-webhook-url
+   DISCORD_BOT_TOKEN=your-discord-bot-token
+   DISCORD_CHANNEL_ID=your-discord-channel-id
    CRON_SECRET=your-random-secret-string
    ```
 
-4. **Configure Discord** (See [DISCORD_SETUP.md](./DISCORD_SETUP.md))
+4. **Configure Discord Bot** (See [DISCORD_BOT_SETUP.md](./DISCORD_BOT_SETUP.md))
 
 ## 🎯 How to Use
 
