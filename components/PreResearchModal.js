@@ -103,8 +103,8 @@ export default function PreResearchModal({
   if (!currentQuestion) return null;
   
   const isLastQuestion = currentQuestionIndex === preResearchQuestions.length - 1;
-  const canProceed = answers[currentQuestion.id] && 
-    (currentQuestion.type !== 'text' || answers[currentQuestion.id].trim());
+  // Allow proceeding with "I don't know" or any answer
+  const canProceed = answers[currentQuestion.id] !== undefined && answers[currentQuestion.id] !== '';
 
   const handleAnswer = (questionId, answer) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
@@ -236,8 +236,10 @@ export default function PreResearchModal({
           padding: '30px',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center',
-          minHeight: '300px'
+          justifyContent: 'flex-start',
+          minHeight: '300px',
+          overflowY: 'auto',
+          maxHeight: 'calc(80vh - 250px)'
         }}>
           <div style={{ marginBottom: '20px' }}>
             <h3 style={{
@@ -295,8 +297,47 @@ export default function PreResearchModal({
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  🤷 I don't know / Not applicable
+                  🤷 I don't know / Skip
                 </button>
+                
+                {/* Custom answer option */}
+                <div style={{ marginTop: '15px' }}>
+                  <button
+                    onClick={() => handleAnswer(currentQuestion.id, '__custom__')}
+                    style={{
+                      padding: '12px 16px',
+                      backgroundColor: answers[currentQuestion.id]?.startsWith('__custom__:') ? '#0088ff22' : '#0f0f0f',
+                      border: answers[currentQuestion.id]?.startsWith('__custom__:') ? '2px solid #0088ff' : '1px solid #333',
+                      borderRadius: '8px',
+                      color: '#0088ff',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontSize: '14px',
+                      transition: 'all 0.2s ease',
+                      width: '100%'
+                    }}
+                  >
+                    ✏️ Custom answer...
+                  </button>
+                  {answers[currentQuestion.id] === '__custom__' && (
+                    <input
+                      type="text"
+                      placeholder="Type your custom answer..."
+                      autoFocus
+                      onChange={(e) => handleAnswer(currentQuestion.id, `__custom__:${e.target.value}`)}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        backgroundColor: '#0f0f0f',
+                        border: '1px solid #0088ff',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '14px',
+                        marginTop: '10px'
+                      }}
+                    />
+                  )}
+                </div>
               </div>
             )}
 
