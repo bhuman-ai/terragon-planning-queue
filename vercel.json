@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "pages/api/terragon.js": {
+      "maxDuration": 60
+    },
+    "pages/api/validate-session.js": {
+      "maxDuration": 30
+    }
+  }
+}
