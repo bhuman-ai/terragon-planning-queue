@@ -25,7 +25,7 @@ export default function Home() {
   const [taskPriority, setTaskPriority] = useState('medium');
   const [status, setStatus] = useState('');
   const [enrichContext, setEnrichContext] = useState(true);
-  const [useMetaAgent, setUseMetaAgent] = useState(false);
+  const [useMetaAgent, setUseMetaAgent] = useState(true);
   const [showRequirements, setShowRequirements] = useState(false);
   const [pendingRequirements, setPendingRequirements] = useState(null);
   const [showPreResearch, setShowPreResearch] = useState(false);
@@ -87,7 +87,7 @@ export default function Home() {
       try {
         const appState = JSON.parse(savedState);
         setEnrichContext(appState.enrichContext ?? true);
-        setUseMetaAgent(appState.useMetaAgent ?? false);
+        setUseMetaAgent(appState.useMetaAgent ?? true);
       } catch (error) {
         console.error('Error loading saved app state:', error);
       }
@@ -171,6 +171,22 @@ export default function Home() {
     if (!taskTitle.trim() || !taskDescription.trim()) {
       showStatus('Please fill in all fields', 'error');
       return;
+    }
+    
+    // Warn if Meta-Agent is disabled
+    if (!useMetaAgent) {
+      const confirmed = window.confirm(
+        '⚠️ Meta-Agent is disabled!\n\n' +
+        'Without Meta-Agent, your task will be sent directly to Terragon without:\n' +
+        '• Intelligent requirements gathering\n' +
+        '• Research and best practices analysis\n' +
+        '• Detailed task decomposition\n' +
+        '• Proposal review\n\n' +
+        'Are you sure you want to continue without planning?'
+      );
+      if (!confirmed) {
+        return;
+      }
     }
     
     // Show project interview for first task or if no project data exists
@@ -979,12 +995,12 @@ Format the response as a structured implementation plan with clear subtasks and 
                   onChange={(e) => setUseMetaAgent(e.target.checked)}
                   style={{ width: 'auto', marginBottom: 0 }}
                 />
-                <span style={{ fontSize: '14px' }}>
-                  🧠 Enable Meta-Agent (BETA) - Intelligent requirements gathering & research
+                <span style={{ fontSize: '14px', fontWeight: useMetaAgent ? 'bold' : 'normal', color: useMetaAgent ? '#00ff88' : '#ccc' }}>
+                  🧠 Meta-Agent - Intelligent task planning (RECOMMENDED)
                 </span>
               </label>
-              <p style={{ fontSize: '12px', color: '#888', marginTop: '5px', marginLeft: '25px' }}>
-                Meta-Agent asks clarifying questions, researches best practices, and creates detailed specifications before sending to Terragon
+              <p style={{ fontSize: '12px', color: useMetaAgent ? '#00ff88' : '#888', marginTop: '5px', marginLeft: '25px' }}>
+                {useMetaAgent ? '✅ Active: ' : '⚠️ Disabled: '}Meta-Agent will analyze, research, and create a detailed plan before execution
               </p>
             </div>
           </div>
