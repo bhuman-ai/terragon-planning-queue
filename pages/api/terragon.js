@@ -16,7 +16,7 @@ export default async function handler(req, res) {
         'Accept': 'text/x-component',
         'Content-Type': 'text/plain;charset=UTF-8',
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-        'Cookie': `__session=${sessionToken}`,
+        'Cookie': `__Secure-better-auth.session_token=${sessionToken}`,
         'Origin': 'https://www.terragonlabs.com',
         'Referer': 'https://www.terragonlabs.com/dashboard',
         'Next-Action': req.headers['x-next-action'] || generateActionId()

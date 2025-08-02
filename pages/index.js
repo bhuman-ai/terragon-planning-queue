@@ -284,8 +284,8 @@ Format the response as a structured plan that can be converted to a GitHub issue
                   <li>Log in to <a href="https://www.terragonlabs.com" target="_blank" rel="noopener noreferrer" style={{ color: '#00ff88' }}>terragonlabs.com</a></li>
                   <li>Press F12 (Developer Tools)</li>
                   <li>Go to Application → Cookies</li>
-                  <li>Find "__session" cookie</li>
-                  <li>Copy the value (starts with eyJ...)</li>
+                  <li>Find "__Secure-better-auth.session_token" cookie</li>
+                  <li>Copy the value (e.g. JTgr3pSv...)</li>
                 </ol>
                 <p style={{ marginTop: '10px', fontSize: '11px' }}>
                   ⏰ Tokens last 24-48 hours typically
@@ -294,7 +294,7 @@ Format the response as a structured plan that can be converted to a GitHub issue
             </div>
             <input
               type="password"
-              placeholder="Paste your __session cookie value here"
+              placeholder="Paste your __Secure-better-auth.session_token value here"
               value={sessionInput}
               onChange={(e) => setSessionInput(e.target.value)}
               style={{ fontFamily: 'Monaco, Menlo, monospace', fontSize: '11px' }}

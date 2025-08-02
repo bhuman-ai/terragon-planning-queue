@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     const response = await fetch('https://www.terragonlabs.com/dashboard', {
       method: 'GET',
       headers: {
-        'Cookie': `__session=${session_token}`,
+        'Cookie': `__Secure-better-auth.session_token=${session_token}`,
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
       },
       redirect: 'manual'

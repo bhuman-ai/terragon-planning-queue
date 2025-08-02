@@ -10,9 +10,9 @@
    - In the left sidebar, expand "Cookies"
    - Click on "https://www.terragonlabs.com"
 4. **Find the Session Cookie**:
-   - Look for a cookie named `__session`
+   - Look for a cookie named `__Secure-better-auth.session_token`
    - Click on it to see the full value
-   - The value will be a long string starting with `eyJ...`
+   - The value will be a string like `JTgr3pSvWUN2bNmaO66GnTGo2wrk1zFf...`
 5. **Copy the Value**: 
    - Double-click the Value field
    - Copy the entire string (it's very long!)
@@ -30,7 +30,7 @@
 2. Open Developer Console (F12)
 3. In the Console tab, type:
    ```javascript
-   document.cookie.split(';').find(c => c.includes('__session')).split('=')[1]
+   document.cookie.split(';').find(c => c.includes('__Secure-better-auth.session_token')).split('=')[1]
    ```
 4. Press Enter and copy the output
 
