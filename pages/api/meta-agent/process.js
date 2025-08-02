@@ -120,7 +120,11 @@ export default async function handler(req, res) {
           { phase, existingAnswers }
         );
         
-        result = projectQuestions;
+        // Extract just the questions array for the frontend
+        result = {
+          questions: projectQuestions.questions || [],
+          phase: projectQuestions.phase
+        };
         break;
 
       default:

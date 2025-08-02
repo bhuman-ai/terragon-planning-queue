@@ -37,8 +37,9 @@ export default function ProjectInterviewModal({
 
       const data = await response.json();
       
-      if (data.questions && data.questions.length > 0) {
-        setInterviewQuestions(data.questions);
+      // API returns { success, action, result: { questions, phase } }
+      if (data.success && data.result?.questions && data.result.questions.length > 0) {
+        setInterviewQuestions(data.result.questions);
       } else {
         throw new Error('No questions generated');
       }
