@@ -47,38 +47,12 @@ export default async function handler(req, res) {
 
       const result = await response.text();
       
-      // For demo purposes, simulate messages based on poll count
-      // In production, you'd parse the actual Terragon response or use WebSocket
+      // REAL DATA ONLY - NO SIMULATIONS
+      // Currently returns empty until WebSocket integration is complete
       const messages = [];
       
-      // Initial user message
-      messages.push({
-        type: 'user',
-        content: 'Task created and processing...',
-        timestamp: new Date().toISOString()
-      });
-      
-      // Simulate AI responses based on poll count
-      if (pollCount > 2) {
-        messages.push({
-          type: 'assistant',
-          content: 'I\'m analyzing your request and preparing a detailed plan...',
-          timestamp: new Date().toISOString()
-        });
-      }
-      
-      if (pollCount > 5) {
-        messages.push({
-          type: 'assistant',
-          content: 'Here\'s what I\'m working on:\n1. Understanding the requirements\n2. Breaking down the task\n3. Creating implementation steps',
-          timestamp: new Date().toISOString()
-        });
-      }
-      
-      // Note: In a real implementation, you would:
-      // 1. Connect to Terragon's WebSocket endpoint
-      // 2. Parse their streaming protocol
-      // 3. Extract actual messages from the conversation
+      // TODO: Extract real messages from Terragon response
+      // Need WebSocket connection info to implement
 
       // Send update if we have new messages
       if (messages.length > lastMessageCount) {
