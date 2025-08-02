@@ -140,24 +140,52 @@ Format the response as a structured plan that can be converted to a GitHub issue
         { modelId: "claude-3-5-sonnet-20241022", attachments: [] }
       ];
       
-      const response = await fetch('/api/terragon', {
+      // Try the new server action endpoint first
+      let response = await fetch('/api/actions/terragon', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Session-Token': state.sessionToken,
-          'X-Next-Action': generateActionId()
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          sessionToken: state.sessionToken,
+          payload: payload,
+          actionId: generateActionId()
+        })
       });
       
+      // Fallback to original endpoint if needed
+      if (!response.ok && response.status === 404) {
+        response = await fetch('/api/terragon', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Session-Token': state.sessionToken,
+            'X-Next-Action': generateActionId()
+          },
+          body: JSON.stringify(payload)
+        });
+      }
+      
       if (response.ok) {
-        const result = await response.text();
+        let result;
+        const contentType = response.headers.get('content-type');
         
-        // Parse the response to extract the task ID
-        const idMatch = result.match(/"id":"([a-f0-9-]+)"/);
-        if (idMatch) {
-          task.terragonTaskId = idMatch[1];
-          task.terragonUrl = `https://www.terragonlabs.com/task/${task.terragonTaskId}`;
+        if (contentType && contentType.includes('application/json')) {
+          result = await response.json();
+          if (result.taskId) {
+            task.terragonTaskId = result.taskId;
+            task.terragonUrl = `https://www.terragonlabs.com/task/${result.taskId}`;
+          }
+        } else {
+          const text = await response.text();
+          const idMatch = text.match(/"id":"([a-f0-9-]+)"/);
+          if (idMatch) {
+            task.terragonTaskId = idMatch[1];
+            task.terragonUrl = `https://www.terragonlabs.com/task/${task.terragonTaskId}`;
+          }
+        }
+        
+        if (task.terragonUrl) {
           console.log('Terragon Task URL:', task.terragonUrl);
         }
         
@@ -166,7 +194,7 @@ Format the response as a structured plan that can be converted to a GitHub issue
         updateQueue(task);
         
         // Parse and display response
-        addMessage('assistant', 'Planning in progress... View on Terragon: ' + (task.terragonUrl || 'Processing...'));
+        addMessage('assistant', 'Planning in progress... ' + (task.terragonUrl ? `View on Terragon: ${task.terragonUrl}` : 'Processing...'));
         
         // Create GitHub issue
         setTimeout(() => {
@@ -176,11 +204,14 @@ Format the response as a structured plan that can be converted to a GitHub issue
           showStatus(`GitHub issue #${task.githubIssue} created!`, 'success');
         }, 2000);
       } else {
-        throw new Error(`API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error(`API error: ${response.status} - ${errorText}`);
       }
     } catch (error) {
+      console.error('Failed to send to Terragon:', error);
       addMessage('assistant', 'Error: ' + error.message);
-      showStatus('Failed to process task', 'error');
+      showStatus('Failed to process task: ' + error.message, 'error');
     }
   }
 
