@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import ClaudeMdVersionHistory from './ClaudeMdVersionHistory';
 
 export default function CalibrationWizard({ 
   show, 
@@ -337,6 +338,7 @@ export default function CalibrationWizard({
           {currentStep === 2 && (
             <ClaudeMdReview
               content={calibrationData}
+              repository={githubRepo}
               onConfirm={() => setCurrentStep(3)}
               onEdit={(updates) => setCalibrationData(updates)}
             />
@@ -591,13 +593,14 @@ function CalibrationInterview({ questions, answers, onAnswer, onComplete }) {
 }
 
 // Sub-component for CLAUDE.md iterative review
-function ClaudeMdReview({ content, onConfirm, onEdit }) {
+function ClaudeMdReview({ content, repository, onConfirm, onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedMarkdown, setEditedMarkdown] = useState('');
   const [generatedMarkdown, setGeneratedMarkdown] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [reviewNotes, setReviewNotes] = useState('');
   const [validationErrors, setValidationErrors] = useState([]);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
 
   // Generate CLAUDE.md from interview data
   useEffect(() => {
@@ -726,7 +729,9 @@ ${data.techStack?.map(tech => `- ${tech}`).join('\n') || '- Technology stack to 
         body: JSON.stringify({
           markdown: editedMarkdown,
           reviewNotes,
-          interviewData: content
+          interviewData: content,
+          repository: repository,
+          author: 'Calibration User'
         })
       });
 
@@ -913,6 +918,23 @@ ${data.techStack?.map(tech => `- ${tech}`).join('\n') || '- Technology stack to 
           >
             Reset to Original
           </button>
+
+          {repository && (
+            <button
+              onClick={() => setShowVersionHistory(true)}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#0088ff',
+                border: 'none',
+                borderRadius: '6px',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              📚 Version History
+            </button>
+          )}
         </div>
         
         <button
@@ -944,6 +966,20 @@ ${data.techStack?.map(tech => `- ${tech}`).join('\n') || '- Technology stack to 
         💡 This CLAUDE.md will be saved to your repository and used as the sacred source of truth for all AI interactions.
         Once sanctified, any future AI work will reference this document first.
       </div>
+
+      {/* Version History Modal */}
+      {repository && (
+        <ClaudeMdVersionHistory
+          repository={repository}
+          show={showVersionHistory}
+          onClose={() => setShowVersionHistory(false)}
+          onRestoreVersion={(version) => {
+            setEditedMarkdown(version.content);
+            setGeneratedMarkdown(version.content);
+            setShowVersionHistory(false);
+          }}
+        />
+      )}
     </div>
   );
 }

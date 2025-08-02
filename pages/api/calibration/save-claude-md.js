@@ -11,9 +11,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { content } = req.body;
+    const { 
+      markdown, 
+      content, 
+      reviewNotes, 
+      interviewData, 
+      repository,
+      author 
+    } = req.body;
     
-    if (!content) {
+    // Support both markdown and content parameters
+    const claudeContent = markdown || content;
+    
+    if (!claudeContent) {
       return res.status(400).json({ error: 'Content is required' });
     }
 
@@ -40,7 +50,40 @@ export default async function handler(req, res) {
     }
     
     // Write the new CLAUDE.md
-    await fs.writeFile(claudeMdPath, content);
+    await fs.writeFile(claudeMdPath, claudeContent);
+    
+    // Save version to version control system if repository is provided
+    let versionInfo = null;
+    if (repository) {
+      try {
+        const versionResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3001'}/api/calibration/claude-md-versions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            repo: repository,
+            content: claudeContent,
+            changelog: existingContent ? 'CLAUDE.md updated via calibration' : 'Initial CLAUDE.md creation',
+            author: author || 'Calibration Wizard',
+            reviewNotes: reviewNotes || '',
+            confidence: {
+              architecture: 'HIGH',
+              security: 'HIGH',
+              performance: 'MEDIUM',
+              scaling: 'MEDIUM'
+            },
+            interviewData,
+            previousVersionId: existingContent ? 'previous' : null
+          })
+        });
+        
+        if (versionResponse.ok) {
+          versionInfo = await versionResponse.json();
+        }
+      } catch (versionError) {
+        console.error('Failed to save version:', versionError);
+        // Continue with regular save even if versioning fails
+      }
+    }
     
     // Create or update .claude/meta.json
     const metaPath = path.join(projectRoot, '.claude', 'meta.json');
@@ -50,7 +93,8 @@ export default async function handler(req, res) {
       lastVerified: new Date().toISOString(),
       version: existingContent ? 'updated' : 'initial',
       status: 'ACTIVE',
-      checksum: Buffer.from(content).toString('base64').substring(0, 16)
+      checksum: Buffer.from(claudeContent).toString('base64').substring(0, 16),
+      versionInfo
     };
     
     // Preserve creation date if updating
@@ -94,9 +138,13 @@ Co-Authored-By: Calibration Wizard <calibration@sacred.bot>"`);
       success: true,
       path: claudeMdPath,
       meta,
+      versionInfo,
       message: existingContent 
         ? 'CLAUDE.md updated successfully. Previous version backed up.'
-        : 'CLAUDE.md created successfully. This is now your sacred source of truth.'
+        : 'CLAUDE.md created successfully. This is now your sacred source of truth.',
+      versionControlMessage: versionInfo 
+        ? `Version ${versionInfo.versionId} saved to version control`
+        : 'Version control not available'
     });
 
   } catch (error) {
