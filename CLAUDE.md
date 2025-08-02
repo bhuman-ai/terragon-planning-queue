@@ -19,7 +19,10 @@
   - Perplexity AI (research capabilities)
 - **Communication**: Discord.js for bot integration
 - **Storage**: Vercel KV for task persistence
-- **Deployment**: Vercel (Team account required for cron jobs)
+- **Deployment**: Vercel 
+  - **🚨 CRITICAL DEPLOYMENT TARGET**: https://vercel.com/bhuman/terragon-vercel/
+  - **Team Account**: bhuman (NOT bhumanai hobby account)
+  - **NEVER DEPLOY TO WRONG ACCOUNT** - Always verify deployment target
 
 ### Core Architecture
 ```
@@ -242,8 +245,24 @@ This document is **HOLY** and **SACRED**. Any AI agent working on this project M
 
 **REMEMBER**: This is a living document. It guides all development. It is the single source of truth. Violating its principles is forbidden.
 
+## 🚨 CRITICAL DEPLOYMENT INFORMATION
+
+### Sacred Deployment Target
+- **ONLY DEPLOY TO**: https://vercel.com/bhuman/terragon-vercel/
+- **Team Account**: bhuman (NEVER use bhumanai hobby account)
+- **Repository**: bhuman-ai/terragon-planning-queue
+- **Environment**: Production deployment with proper API keys
+
+### Deployment Verification Checklist
+1. ✅ Verify URL shows "bhuman/terragon-vercel" 
+2. ✅ Check team account is "bhuman" not "bhumanai"
+3. ✅ Confirm environment variables are set (CLAUDE_API_KEY, PERPLEXITY_API_KEY)
+4. ✅ Test deployment after push
+
+**⚠️ FAILURE TO FOLLOW THIS RESULTS IN BROKEN DEPLOYMENTS AND WASTED TIME**
+
 ---
 
 *Generated: 2025-08-02*
-*Version: 1.0.0*
+*Version: 1.0.1*
 *Status: SACRED - DO NOT MODIFY WITHOUT APPROVAL*

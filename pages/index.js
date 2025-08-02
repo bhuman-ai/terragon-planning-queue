@@ -7,6 +7,7 @@ import TaskCreationProgress from '../components/TaskCreationProgress';
 import TaskMonitorDashboard from '../components/TaskMonitorDashboard';
 import CalibrationWizard from '../components/CalibrationWizard';
 import UserSettingsModal from '../components/UserSettingsModal';
+import ClaudeAutoUpdaterPanel from '../components/ClaudeAutoUpdaterPanel';
 
 export default function Home() {
   const [state, setState] = useState({
@@ -977,18 +978,40 @@ Format the response as a structured implementation plan with clear subtasks and 
                       : 'Create CLAUDE.md to enable sacred governance'}
                   </p>
                 </div>
-                <button
-                  onClick={() => setShowCalibration(true)}
-                  style={{
-                    background: hasClaudeMd ? '#333' : '#ff6b6b',
-                    color: '#fff',
-                    padding: '8px 16px',
-                    fontSize: '13px',
-                    fontWeight: hasClaudeMd ? 'normal' : 'bold'
-                  }}
-                >
-                  {hasClaudeMd ? 'Update Calibration' : '🔥 Start Calibration'}
-                </button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  {hasClaudeMd && (
+                    <button
+                      onClick={() => window.open('/claude-md', '_blank')}
+                      style={{
+                        background: '#0066cc',
+                        color: '#fff',
+                        padding: '8px 16px',
+                        fontSize: '13px',
+                        fontWeight: 'normal',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📖 View Document
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowCalibration(true)}
+                    style={{
+                      background: hasClaudeMd ? '#333' : '#ff6b6b',
+                      color: '#fff',
+                      padding: '8px 16px',
+                      fontSize: '13px',
+                      fontWeight: hasClaudeMd ? 'normal' : 'bold',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {hasClaudeMd ? 'Update Calibration' : '🔥 Start Calibration'}
+                  </button>
+                </div>
               </div>
           </div>
         )}
@@ -1040,6 +1063,9 @@ Format the response as a structured implementation plan with clear subtasks and 
             </button>
           </div>
         </div>
+        
+        {/* Claude Auto-Updater Panel */}
+        {hasClaudeMd && <ClaudeAutoUpdaterPanel />}
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
           <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '10px', border: '1px solid #333' }}>

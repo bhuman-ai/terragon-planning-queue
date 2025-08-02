@@ -6,6 +6,10 @@
     {
       "path": "/api/task-monitor/check",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/claude-auto-update",
+      "schedule": "*/30 * * * *"
     }
   ],
   "functions": {
@@ -35,6 +39,18 @@
     },
     "pages/api/cron/task-monitor.js": {
       "maxDuration": 60
+    },
+    "pages/api/cron/claude-auto-update.js": {
+      "maxDuration": 45
+    },
+    "pages/api/meta-agent/claude-md-chat.js": {
+      "maxDuration": 30
+    },
+    "pages/api/calibration/get-claude-md.js": {
+      "maxDuration": 20
+    },
+    "pages/api/claude-md/auto-update.js": {
+      "maxDuration": 30
     }
   },
   "headers": [
