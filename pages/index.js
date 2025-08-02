@@ -6,6 +6,7 @@ import ProposalReviewModal from '../components/ProposalReviewModal';
 import ProjectInterviewModal from '../components/ProjectInterviewModal';
 import TaskCreationProgress from '../components/TaskCreationProgress';
 import TaskMonitorDashboard from '../components/TaskMonitorDashboard';
+import CalibrationWizard from '../components/CalibrationWizard';
 
 export default function Home() {
   const [state, setState] = useState({
@@ -40,6 +41,8 @@ export default function Home() {
   const [showTaskMonitor, setShowTaskMonitor] = useState(false);
   const [showProjectInterview, setShowProjectInterview] = useState(false);
   const [projectData, setProjectData] = useState(null);
+  const [showCalibration, setShowCalibration] = useState(false);
+  const [hasClaudeMd, setHasClaudeMd] = useState(null);
   const [conversation, setConversation] = useState([
     { role: 'system', content: 'Ready to help you plan tasks. Connect to Terragon to begin.' }
   ]);
@@ -93,6 +96,28 @@ export default function Home() {
       }
     }
   }, []);
+
+  // Check for CLAUDE.md on mount and when GitHub config changes
+  useEffect(() => {
+    checkForClaudeMd();
+  }, [state.githubConfig]);
+
+  const checkForClaudeMd = async () => {
+    try {
+      const response = await fetch('/api/calibration/check-claude-md');
+      const data = await response.json();
+      
+      setHasClaudeMd(data.exists);
+      
+      // If no CLAUDE.md exists and user saves GitHub config, show calibration
+      if (!data.exists && state.githubConfig.owner && state.githubConfig.repo) {
+        setShowCalibration(true);
+      }
+    } catch (error) {
+      console.error('Failed to check for CLAUDE.md:', error);
+      setHasClaudeMd(false);
+    }
+  };
 
   // Save app state when toggles change
   useEffect(() => {
@@ -736,6 +761,36 @@ Format the response as a structured implementation plan with clear subtasks and 
     // Continue with task creation
     await submitToPlanningQueue();
   }
+  
+  // Handle calibration completion
+  async function handleCalibrationComplete(calibrationResult) {
+    const { claudeMd, cleanup, calibrationData } = calibrationResult;
+    
+    // Mark calibration as complete
+    setHasClaudeMd(true);
+    setShowCalibration(false);
+    
+    // Show success message
+    showStatus('🔥 Sacred calibration complete! CLAUDE.md is now your source of truth.', 'success');
+    
+    // If cleanup was approved, execute it
+    if (cleanup && cleanup.length > 0) {
+      showStatus(`Cleaning up ${cleanup.length} obsolete files...`, 'info');
+      
+      try {
+        await fetch('/api/calibration/cleanup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ files: cleanup })
+        });
+        
+        showStatus('✨ Cleanup complete! Your repository is now aligned with CLAUDE.md', 'success');
+      } catch (error) {
+        console.error('Cleanup failed:', error);
+        showStatus('Cleanup failed, but calibration is complete', 'warning');
+      }
+    }
+  }
 
   // Execute the approved task
   async function executeApprovedTask(proposal) {
@@ -890,6 +945,53 @@ Format the response as a structured implementation plan with clear subtasks and 
         <p style={{ textAlign: 'center', color: '#888', marginBottom: '30px', fontSize: '1.1em' }}>
           AI-powered task planning with GitHub integration
         </p>
+        
+        {/* Calibration Status */}
+        {hasClaudeMd !== null && (
+          <div style={{ 
+            background: hasClaudeMd ? '#001a00' : '#1a0000', 
+            padding: '15px', 
+            borderRadius: '10px', 
+            border: `1px solid ${hasClaudeMd ? '#00ff88' : '#ff6b6b'}`,
+            marginBottom: '20px' 
+          }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ 
+                    color: hasClaudeMd ? '#00ff88' : '#ff6b6b', 
+                    margin: 0,
+                    fontSize: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    {hasClaudeMd ? '🔥 Sacred Document Active' : '📋 Repository Not Calibrated'}
+                  </h3>
+                  <p style={{ 
+                    color: '#888', 
+                    fontSize: '12px', 
+                    margin: '5px 0 0 0' 
+                  }}>
+                    {hasClaudeMd 
+                      ? 'CLAUDE.md is your source of truth' 
+                      : 'Create CLAUDE.md to enable sacred governance'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowCalibration(true)}
+                  style={{
+                    background: hasClaudeMd ? '#333' : '#ff6b6b',
+                    color: '#fff',
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: hasClaudeMd ? 'normal' : 'bold'
+                  }}
+                >
+                  {hasClaudeMd ? 'Update Calibration' : '🔥 Start Calibration'}
+                </button>
+              </div>
+          </div>
+        )}
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
           <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '10px', border: '1px solid #333' }}>
@@ -1209,6 +1311,14 @@ Format the response as a structured implementation plan with clear subtasks and 
         show={showProjectInterview}
         onClose={() => setShowProjectInterview(false)}
         onComplete={handleProjectInterviewComplete}
+      />
+      
+      {/* Calibration Wizard */}
+      <CalibrationWizard
+        show={showCalibration}
+        onClose={() => setShowCalibration(false)}
+        onComplete={handleCalibrationComplete}
+        githubRepo={`${state.githubConfig.owner}/${state.githubConfig.repo}`}
       />
       
       {/* Task Creation Progress */}
