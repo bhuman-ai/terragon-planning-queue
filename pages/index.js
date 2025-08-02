@@ -185,14 +185,7 @@ Format the response as a structured plan that can be converted to a GitHub issue
           
           if (result.taskId) {
             task.terragonTaskId = result.taskId;
-            task.terragonUrl = `https://www.terragonlabs.com/task/${result.taskId}`;
-          } else if (result.data) {
-            // Try to extract ID from the data field
-            const idMatch = result.data.match(/"id":"([a-f0-9-]+)"|task\/([a-f0-9-]+)/);
-            if (idMatch) {
-              task.terragonTaskId = idMatch[1] || idMatch[2];
-              task.terragonUrl = `https://www.terragonlabs.com/task/${task.terragonTaskId}`;
-            }
+            task.terragonUrl = result.terragonUrl || `https://www.terragonlabs.com/task/${result.taskId}`;
           }
         } else {
           const text = await response.text();

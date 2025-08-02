@@ -36,46 +36,62 @@ export default async function handler(req, res) {
     }];
 
     // Forward to Terragon with proper headers
+    // CRITICAL: next-router-state-tree header is REQUIRED or we get 404
     const response = await fetch('https://www.terragonlabs.com/dashboard', {
       method: 'POST',
       headers: {
-        'Accept': 'text/x-component',
-        'Content-Type': 'text/plain;charset=UTF-8',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-        'Cookie': `__Secure-better-auth.session_token=${sessionToken}`,
-        'Origin': 'https://www.terragonlabs.com',
-        'Referer': 'https://www.terragonlabs.com/dashboard',
-        'Next-Action': generateActionId(),
-        'Next-Router-State-Tree': '%5B%22%22%2C%7B%22children%22%3A%5B%22(sidebar)%22%2C%7B%22children%22%3A%5B%22(site-header)%22%2C%7B%22children%22%3A%5B%22dashboard%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D'
+        'accept': 'text/x-component',
+        'content-type': 'text/plain;charset=UTF-8',
+        'cookie': `__Secure-better-auth.session_token=${sessionToken}`,
+        'next-action': '7f7cba8a674421dfd9e9da7470ee4d79875a158bc9',
+        'next-router-state-tree': '%5B%22%22%2C%7B%22children%22%3A%5B%22(sidebar)%22%2C%7B%22children%22%3A%5B%22(site-header)%22%2C%7B%22children%22%3A%5B%22dashboard%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D',
+        'origin': 'https://www.terragonlabs.com',
+        'referer': 'https://www.terragonlabs.com/dashboard',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
       },
       body: JSON.stringify(terragonPayload)
     });
 
     const result = await response.text();
     console.log('Terragon response status:', response.status);
+    console.log('Raw response:', result);
     
-    // Try to extract task/thread ID from response
+    // Parse the streaming response format
+    // Terragon returns lines like:
+    // 0:{"a":"$@1","f":"","b":"N2-pmBwjnwTcDILjBgwJq"}
+    // 1:{"id":"23c0422e-65f6-41fa-99a2-fe64fdfcfc87"}
+    
     let taskId = null;
-    const idPatterns = [
-      /"id":"([a-f0-9-]+)"/,
-      /"threadId":"([a-f0-9-]+)"/,
-      /task\/([a-f0-9-]+)/
-    ];
+    const lines = result.split('\n');
     
-    for (const pattern of idPatterns) {
-      const match = result.match(pattern);
-      if (match) {
-        taskId = match[1];
-        break;
+    for (const line of lines) {
+      if (line.includes('"id":')) {
+        try {
+          // Extract JSON from line (format is "number:{json}")
+          const jsonPart = line.substring(line.indexOf('{'));
+          const parsed = JSON.parse(jsonPart);
+          if (parsed.id) {
+            taskId = parsed.id;
+            break;
+          }
+        } catch (e) {
+          // Try regex as fallback
+          const match = line.match(/"id":"([a-f0-9-]+)"/);
+          if (match) {
+            taskId = match[1];
+            break;
+          }
+        }
       }
     }
     
     res.status(200).json({
       success: response.ok,
       status: response.status,
-      data: result.substring(0, 500), // Limit response size for debugging
       taskId: taskId,
-      fullResponse: result.length > 500 ? 'truncated' : 'complete'
+      terragonUrl: taskId ? `https://www.terragonlabs.com/task/${taskId}` : null,
+      responseFormat: 'streaming',
+      linesCount: lines.length
     });
   } catch (error) {
     console.error('Server action error:', error);
