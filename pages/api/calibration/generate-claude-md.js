@@ -7,16 +7,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { calibrationData, scanResults, timestamp } = req.body;
+    const { interviewData, includeDevPrinciples, calibrationData, scanResults, timestamp } = req.body;
+    
+    // Support both the new format (interviewData) and legacy format (calibrationData)
+    const data = interviewData || calibrationData;
+    const currentTimestamp = timestamp || new Date().toISOString();
     
     // Generate the sacred CLAUDE.md content
-    const claudeMdContent = await generateClaudeMd(calibrationData, scanResults, timestamp);
+    const claudeMdContent = await generateClaudeMd(data, scanResults, currentTimestamp, includeDevPrinciples);
     
     // Analyze for cleanup suggestions
-    const cleanupSuggestions = await analyzeForCleanup(calibrationData, scanResults);
+    const cleanupSuggestions = await analyzeForCleanup(data, scanResults);
     
     res.status(200).json({
-      content: claudeMdContent,
+      claudeMarkdown: claudeMdContent, // New expected format
+      content: claudeMdContent, // Legacy support
       suggestedCleanup: cleanupSuggestions
     });
 
@@ -29,22 +34,34 @@ export default async function handler(req, res) {
   }
 }
 
-async function generateClaudeMd(data, scanResults, timestamp) {
+async function generateClaudeMd(data, scanResults, timestamp, includeDevPrinciples = false) {
   const techStack = data.techStack || scanResults?.detectedTechStack || [];
   
-  // Read the D3 CLAUDE.md to extract core principles
+  // Read the D3 CLAUDE.md and dev.md to extract core principles if requested
   let d3Principles = '';
-  try {
-    const d3ClaudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
-    const d3ClaudeMdContent = await fs.readFile(d3ClaudeMdPath, 'utf-8');
-    
-    // Extract the Sacred Principles section
-    const principlesMatch = d3ClaudeMdContent.match(/## 3\. Sacred Principles & AI Instructions[\s\S]*?(?=##|$)/);
-    if (principlesMatch) {
-      d3Principles = principlesMatch[0];
+  let devPrinciples = '';
+  
+  if (includeDevPrinciples) {
+    try {
+      const d3ClaudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
+      const d3ClaudeMdContent = await fs.readFile(d3ClaudeMdPath, 'utf-8');
+      
+      // Extract the Sacred Principles section
+      const principlesMatch = d3ClaudeMdContent.match(/## 3\. Coding Standards & AI Instructions[\s\S]*?(?=## 4\.|$)/);
+      if (principlesMatch) {
+        d3Principles = principlesMatch[0];
+      }
+    } catch (error) {
+      console.log('Could not read D3 CLAUDE.md for principles');
     }
-  } catch (error) {
-    console.log('Could not read D3 CLAUDE.md for principles');
+
+    try {
+      const devMdPath = path.join(process.cwd(), 'public', 'dev.md');
+      const devMdContent = await fs.readFile(devMdPath, 'utf-8');
+      devPrinciples = devMdContent;
+    } catch (error) {
+      console.log('Could not read dev.md for universal principles');
+    }
   }
   
   return `# ${data.projectName || 'PROJECT'} - Sacred Source of Truth 🔥
@@ -133,12 +150,15 @@ ${data.performance_targets || `- API Response time: <200ms p95
 
 ## 6. Development Standards (Enforced by CI)
 
-### Coding Principles
+### Universal Development Principles
+${devPrinciples ? `${devPrinciples}\n\n### Project-Specific Standards` : '### Coding Principles'}
 ${data.coding_principles || `- No any types in TypeScript
 - No magic numbers or strings
 - All functions must have single responsibility
 - Comments explain WHY, not WHAT
 - Test coverage minimum: 80%`}
+
+${d3Principles ? `\n### Meta-Agent Context Standards\n${d3Principles.replace(/^## 3\. Coding Standards & AI Instructions\n?/m, '')}` : ''}
 
 ### Code Review Requirements
 - All code must be reviewed before merge

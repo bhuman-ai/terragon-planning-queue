@@ -590,98 +590,359 @@ function CalibrationInterview({ questions, answers, onAnswer, onComplete }) {
   );
 }
 
-// Sub-component for CLAUDE.md review
+// Sub-component for CLAUDE.md iterative review
 function ClaudeMdReview({ content, onConfirm, onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedContent, setEditedContent] = useState(content);
+  const [editedMarkdown, setEditedMarkdown] = useState('');
+  const [generatedMarkdown, setGeneratedMarkdown] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [reviewNotes, setReviewNotes] = useState('');
+  const [validationErrors, setValidationErrors] = useState([]);
+
+  // Generate CLAUDE.md from interview data
+  useEffect(() => {
+    generateClaudeMd();
+  }, [content]);
+
+  const generateClaudeMd = async () => {
+    setIsGenerating(true);
+    
+    try {
+      const response = await fetch('/api/calibration/generate-claude-md', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          interviewData: content,
+          includeDevPrinciples: true
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to generate CLAUDE.md');
+      
+      const data = await response.json();
+      const markdown = data.claudeMarkdown;
+      
+      setGeneratedMarkdown(markdown);
+      setEditedMarkdown(markdown);
+      
+    } catch (error) {
+      console.error('Failed to generate CLAUDE.md:', error);
+      // Fallback to basic template
+      const fallbackMarkdown = generateBasicClaudeMd(content);
+      setGeneratedMarkdown(fallbackMarkdown);
+      setEditedMarkdown(fallbackMarkdown);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateBasicClaudeMd = (data) => {
+    return `# ${data.projectName || 'Project'} - AI Context Template
+
+## 1. Project Overview
+- **Vision:** ${data.vision || 'Project vision not specified'}
+- **Current Phase:** ${data.currentPhase || 'development'}
+- **Key Architecture:** ${data.architecture_pattern || 'Standard web application'}
+- **Development Strategy:** ${data.development_strategy || 'Iterative development'}
+
+## 2. Project Structure
+${data.projectName || 'Project'} follows a ${data.architecture_pattern || 'modular'} architecture pattern.
+
+## 3. Coding Standards & AI Instructions
+
+### General Instructions
+- Your most important job is to manage your own context. Always read any relevant files BEFORE planning changes.
+- Write code following KISS, YAGNI, and DRY principles.
+- When in doubt follow proven best practices for implementation.
+- Do not commit to git without user approval.
+- Always consider industry standard libraries/frameworks first over custom implementations.
+- Never mock anything. Never use placeholders. Never omit code.
+
+### Technology Stack
+${data.techStack?.map(tech => `- ${tech}`).join('\n') || '- Technology stack to be defined'}
+
+### Security Standards
+- Never trust external inputs - validate everything at the boundaries
+- Keep secrets in environment variables, never in code
+- Use secure authentication patterns for your platform
+
+### Performance Requirements
+- Target performance: ${data.performance_target || 'Standard web performance metrics'}
+- Optimization focus: ${data.optimization_focus || 'User experience and code maintainability'}
+
+## 4. Active Tasks
+- [ ] Complete project calibration
+- [ ] Implement core functionality
+
+---
+*Generated on ${new Date().toISOString().split('T')[0]} via calibration interview*`;
+  };
+
+  const validateMarkdown = (markdown) => {
+    const errors = [];
+    
+    if (!markdown.includes('# ') && !markdown.includes('## 1. Project Overview')) {
+      errors.push('Missing main project title or Project Overview section');
+    }
+    
+    if (!markdown.includes('Project Overview') || !markdown.includes('Coding Standards')) {
+      errors.push('Missing required sections (Project Overview, Coding Standards)');
+    }
+    
+    if (markdown.includes('TODO') || markdown.includes('PLACEHOLDER')) {
+      errors.push('Contains TODO items or placeholders that need to be filled');
+    }
+    
+    if (markdown.length < 500) {
+      errors.push('Document appears too short - may be missing important details');
+    }
+    
+    return errors;
+  };
+
+  const handleSaveChanges = () => {
+    const errors = validateMarkdown(editedMarkdown);
+    setValidationErrors(errors);
+    
+    if (errors.length === 0) {
+      onEdit({ ...content, claudeMarkdown: editedMarkdown });
+      setIsEditing(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    const errors = validateMarkdown(editedMarkdown);
+    
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    // Save the final CLAUDE.md to the repository
+    try {
+      const response = await fetch('/api/calibration/save-claude-md', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          markdown: editedMarkdown,
+          reviewNotes,
+          interviewData: content
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to save CLAUDE.md');
+      
+      onConfirm();
+    } catch (error) {
+      console.error('Failed to save CLAUDE.md:', error);
+      alert('Failed to save CLAUDE.md. Please try again.');
+    }
+  };
+
+  if (isGenerating) {
+    return (
+      <div style={{ textAlign: 'center', padding: '40px' }}>
+        <h2 style={{ color: '#fff', marginBottom: '20px' }}>
+          🔮 Generating Your Sacred Document...
+        </h2>
+        <p style={{ color: '#888' }}>
+          Analyzing your interview responses to create the perfect CLAUDE.md
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <h2 style={{ color: '#fff', marginBottom: '20px' }}>
-        Review Your Sacred Document
-      </h2>
-      
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ color: '#fff', marginBottom: '10px' }}>
+          📜 Review Your Sacred CLAUDE.md
+        </h2>
+        <p style={{ color: '#888', fontSize: '14px' }}>
+          This document will serve as the holy source of truth for all AI interactions with your project.
+          Review carefully and make any necessary edits before sanctifying.
+        </p>
+      </div>
+
+      {/* Validation Errors */}
+      {validationErrors.length > 0 && (
+        <div style={{
+          backgroundColor: '#ff3300',
+          color: '#fff',
+          padding: '15px',
+          borderRadius: '6px',
+          marginBottom: '20px'
+        }}>
+          <h4 style={{ margin: '0 0 10px 0' }}>⚠️ Validation Issues:</h4>
+          <ul style={{ margin: 0 }}>
+            {validationErrors.map((error, i) => (
+              <li key={i}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Document Preview/Editor */}
       <div style={{
         backgroundColor: '#0f0f0f',
         border: '1px solid #333',
         borderRadius: '8px',
-        padding: '20px',
-        maxHeight: '400px',
-        overflowY: 'auto'
+        marginBottom: '20px'
       }}>
-        {isEditing ? (
-          <textarea
-            value={JSON.stringify(editedContent, null, 2)}
-            onChange={(e) => {
-              try {
-                setEditedContent(JSON.parse(e.target.value));
-              } catch (err) {
-                // Invalid JSON, ignore
-              }
-            }}
+        <div style={{
+          padding: '15px 20px',
+          borderBottom: '1px solid #333',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <span style={{ color: '#888', fontSize: '14px' }}>
+            {isEditing ? '✏️ Editing Mode' : '👁️ Preview Mode'}
+          </span>
+          <button
+            onClick={() => setIsEditing(!isEditing)}
             style={{
-              width: '100%',
-              minHeight: '350px',
-              backgroundColor: 'transparent',
+              padding: '6px 12px',
+              backgroundColor: isEditing ? '#ff6b6b' : '#333',
               border: 'none',
+              borderRadius: '4px',
               color: '#fff',
-              fontSize: '13px',
-              fontFamily: 'monospace',
-              resize: 'vertical'
+              cursor: 'pointer',
+              fontSize: '12px'
             }}
-          />
-        ) : (
-          <pre style={{
-            color: '#aaa',
-            fontSize: '13px',
-            fontFamily: 'monospace',
-            margin: 0
-          }}>
-            {JSON.stringify(content, null, 2)}
-          </pre>
-        )}
+          >
+            {isEditing ? 'Preview' : 'Edit'}
+          </button>
+        </div>
+        
+        <div style={{ padding: '20px', maxHeight: '500px', overflowY: 'auto' }}>
+          {isEditing ? (
+            <textarea
+              value={editedMarkdown}
+              onChange={(e) => setEditedMarkdown(e.target.value)}
+              placeholder="Edit your CLAUDE.md content here..."
+              style={{
+                width: '100%',
+                minHeight: '400px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: '#fff',
+                fontSize: '13px',
+                fontFamily: 'Monaco, Consolas, monospace',
+                resize: 'vertical',
+                lineHeight: '1.5'
+              }}
+            />
+          ) : (
+            <pre style={{
+              color: '#e0e0e0',
+              fontSize: '13px',
+              fontFamily: 'Monaco, Consolas, monospace',
+              margin: 0,
+              lineHeight: '1.6',
+              whiteSpace: 'pre-wrap'
+            }}>
+              {editedMarkdown}
+            </pre>
+          )}
+        </div>
       </div>
 
-      <div style={{
-        marginTop: '30px',
-        display: 'flex',
-        justifyContent: 'space-between'
-      }}>
-        <button
-          onClick={() => {
-            if (isEditing) {
-              onEdit(editedContent);
-            }
-            setIsEditing(!isEditing);
-          }}
+      {/* Review Notes */}
+      <div style={{ marginBottom: '30px' }}>
+        <label style={{ color: '#fff', display: 'block', marginBottom: '8px', fontSize: '14px' }}>
+          Review Notes (Optional)
+        </label>
+        <textarea
+          value={reviewNotes}
+          onChange={(e) => setReviewNotes(e.target.value)}
+          placeholder="Add any notes about this CLAUDE.md version..."
           style={{
-            padding: '12px 24px',
-            backgroundColor: '#333',
-            border: 'none',
+            width: '100%',
+            minHeight: '80px',
+            backgroundColor: '#0f0f0f',
+            border: '1px solid #333',
             borderRadius: '6px',
+            padding: '12px',
             color: '#fff',
-            cursor: 'pointer',
-            fontSize: '14px'
+            fontSize: '13px'
           }}
-        >
-          {isEditing ? 'Save Changes' : 'Edit'}
-        </button>
+        />
+      </div>
+
+      {/* Action Buttons */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {isEditing && (
+            <button
+              onClick={handleSaveChanges}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#00ff88',
+                border: 'none',
+                borderRadius: '6px',
+                color: '#000',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold'
+              }}
+            >
+              Save Changes
+            </button>
+          )}
+          
+          <button
+            onClick={() => {
+              setEditedMarkdown(generatedMarkdown);
+              setValidationErrors([]);
+              setIsEditing(false);
+            }}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#333',
+              border: 'none',
+              borderRadius: '6px',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Reset to Original
+          </button>
+        </div>
         
         <button
-          onClick={onConfirm}
+          onClick={handleConfirm}
+          disabled={validationErrors.length > 0}
           style={{
             padding: '12px 32px',
-            backgroundColor: '#ff6b6b',
+            backgroundColor: validationErrors.length > 0 ? '#666' : '#ff6b6b',
             border: 'none',
             borderRadius: '6px',
             color: '#fff',
-            cursor: 'pointer',
+            cursor: validationErrors.length > 0 ? 'not-allowed' : 'pointer',
             fontSize: '14px',
             fontWeight: 'bold'
           }}
         >
-          Confirm & Sanctify 🔥
+          🔥 Sanctify & Save to Repository
         </button>
+      </div>
+
+      <div style={{
+        marginTop: '15px',
+        padding: '10px',
+        backgroundColor: '#0a0a0a',
+        borderRadius: '4px',
+        fontSize: '12px',
+        color: '#666'
+      }}>
+        💡 This CLAUDE.md will be saved to your repository and used as the sacred source of truth for all AI interactions.
+        Once sanctified, any future AI work will reference this document first.
       </div>
     </div>
   );
