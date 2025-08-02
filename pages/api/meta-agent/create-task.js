@@ -78,13 +78,37 @@ export default async function handler(req, res) {
     let terragonResult = null;
     if (sessionToken) {
       try {
-        // Read CLAUDE.md to include sacred context
+        // Fetch CLAUDE.md from the selected project repository
         let claudeMdContent = '';
-        try {
-          const claudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
-          claudeMdContent = await fs.readFile(claudeMdPath, 'utf-8');
-        } catch (error) {
-          console.log('CLAUDE.md not found for task creation');
+        if (githubRepoFullName) {
+          try {
+            const [owner, repo] = githubRepoFullName.split('/');
+            const branch = 'main'; // Could be passed in request if needed
+            
+            const githubUrl = `https://api.github.com/repos/${owner}/${repo}/contents/CLAUDE.md?ref=${branch}`;
+            console.log(`Fetching CLAUDE.md from: ${githubUrl}`);
+            
+            const headers = {
+              'Accept': 'application/vnd.github.v3.raw',
+              'User-Agent': 'Terragon-Planning-Queue'
+            };
+            
+            // Add GitHub token if available for private repos
+            if (process.env.GITHUB_TOKEN) {
+              headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+            }
+            
+            const response = await fetch(githubUrl, { headers });
+            
+            if (response.ok) {
+              claudeMdContent = await response.text();
+              console.log(`Retrieved CLAUDE.md from ${githubRepoFullName}`);
+            } else {
+              console.log(`CLAUDE.md not found in ${githubRepoFullName}`);
+            }
+          } catch (error) {
+            console.log(`Error fetching CLAUDE.md from ${githubRepoFullName}:`, error.message);
+          }
         }
         
         // Build enhanced message for Terragon with complete decomposition
@@ -92,7 +116,7 @@ export default async function handler(req, res) {
         
         // Include CLAUDE.md if available
         if (claudeMdContent) {
-          terragonMessage += `# SACRED PROJECT CONTEXT (CLAUDE.md)\n\n${claudeMdContent}\n\n---\n\n`;
+          terragonMessage += `# SACRED PROJECT CONTEXT (CLAUDE.md from ${githubRepoFullName})\n\n${claudeMdContent}\n\n---\n\n`;
         }
         
         terragonMessage += formatDecompositionForTerragon(decomposition || taskSpec.decomposition, title, description);

@@ -21,18 +21,41 @@ export default async function handler(req, res) {
 
     // Enrich message with context if enrichContext is enabled
     let processedMessage = message;
-    if (req.body.enrichContext !== false) {
-      // SACRED: Always include CLAUDE.md content in Terragon communications
+    if (req.body.enrichContext !== false && githubRepoFullName) {
+      // SACRED: Always include CLAUDE.md content from the selected project repository
       try {
-        const claudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
-        const claudeMdContent = await fs.readFile(claudeMdPath, 'utf-8');
+        // Extract owner and repo from githubRepoFullName (format: "owner/repo")
+        const [owner, repo] = githubRepoFullName.split('/');
+        const branch = repoBaseBranchName || 'main';
         
-        // Prepend CLAUDE.md content to the message
-        processedMessage = `# SACRED PROJECT CONTEXT (CLAUDE.md)\n\n${claudeMdContent}\n\n---\n\n# USER REQUEST\n\n${message}`;
+        // Fetch CLAUDE.md from the GitHub repository
+        const githubUrl = `https://api.github.com/repos/${owner}/${repo}/contents/CLAUDE.md?ref=${branch}`;
+        console.log(`Fetching CLAUDE.md from: ${githubUrl}`);
         
-        console.log('Enriched message with CLAUDE.md content');
+        const headers = {
+          'Accept': 'application/vnd.github.v3.raw',
+          'User-Agent': 'Terragon-Planning-Queue'
+        };
+        
+        // Add GitHub token if available for private repos
+        if (process.env.GITHUB_TOKEN) {
+          headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+        }
+        
+        const response = await fetch(githubUrl, { headers });
+        
+        if (response.ok) {
+          const claudeMdContent = await response.text();
+          
+          // Prepend CLAUDE.md content to the message
+          processedMessage = `# SACRED PROJECT CONTEXT (CLAUDE.md from ${githubRepoFullName})\n\n${claudeMdContent}\n\n---\n\n# USER REQUEST\n\n${message}`;
+          
+          console.log(`Enriched message with CLAUDE.md content from ${githubRepoFullName}`);
+        } else {
+          console.log(`CLAUDE.md not found in ${githubRepoFullName}, proceeding without sacred context`);
+        }
       } catch (error) {
-        console.log('CLAUDE.md not found, proceeding without sacred context');
+        console.log(`Error fetching CLAUDE.md from ${githubRepoFullName}:`, error.message);
       }
     }
 
