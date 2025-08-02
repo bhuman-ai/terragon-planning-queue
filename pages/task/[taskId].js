@@ -20,12 +20,21 @@ export default function TaskDetail() {
       return;
     }
 
-    // Connect to SSE stream
-    const eventSource = new EventSource(`/api/stream/${taskId}`, {
-      headers: {
-        'X-Session-Token': sessionToken
+    // Load saved messages for this task
+    const savedMessages = localStorage.getItem(`task_messages_${taskId}`);
+    if (savedMessages) {
+      try {
+        const parsedMessages = JSON.parse(savedMessages);
+        setMessages(parsedMessages);
+      } catch (e) {
+        console.error('Error loading saved messages:', e);
       }
-    });
+    }
+
+    // Connect to SSE stream
+    // Note: EventSource doesn't support custom headers directly
+    // We'll use a query parameter instead
+    const eventSource = new EventSource(`/api/stream/${taskId}?token=${encodeURIComponent(sessionToken)}`);
 
     eventSourceRef.current = eventSource;
 
@@ -39,7 +48,30 @@ export default function TaskDetail() {
         const data = JSON.parse(event.data);
         
         if (data.type === 'messages' && data.messages) {
-          setMessages(data.messages);
+          // Merge new messages with existing ones, avoiding duplicates
+          setMessages(prevMessages => {
+            const newMessages = [...prevMessages];
+            const existingIds = new Set(prevMessages.map(m => m.id || m.timestamp));
+            
+            data.messages.forEach(newMsg => {
+              const msgId = newMsg.id || newMsg.timestamp || Date.now() + Math.random();
+              if (!existingIds.has(msgId)) {
+                newMessages.push({ ...newMsg, id: msgId });
+              }
+            });
+            
+            // Save merged messages to localStorage
+            localStorage.setItem(`task_messages_${taskId}`, JSON.stringify(newMessages));
+            return newMessages;
+          });
+        } else if (data.type === 'new_message') {
+          // Handle single new message
+          const newMsg = { ...data.message, id: data.message.id || Date.now() + Math.random() };
+          setMessages(prevMessages => {
+            const updatedMessages = [...prevMessages, newMsg];
+            localStorage.setItem(`task_messages_${taskId}`, JSON.stringify(updatedMessages));
+            return updatedMessages;
+          });
         } else if (data.type === 'heartbeat') {
           // Keep alive
         } else if (data.type === 'error') {
@@ -53,6 +85,20 @@ export default function TaskDetail() {
     eventSource.onerror = (error) => {
       console.error('EventSource error:', error);
       setIsConnected(false);
+      
+      // Try to reconnect after a delay
+      setTimeout(() => {
+        if (!eventSourceRef.current || eventSourceRef.current.readyState === EventSource.CLOSED) {
+          // Reconnect if not already connected
+          const newEventSource = new EventSource(`/api/stream/${taskId}?token=${encodeURIComponent(sessionToken)}`);
+          eventSourceRef.current = newEventSource;
+          
+          // Re-attach event handlers (recursive call to this useEffect would be cleaner but this works)
+          newEventSource.onopen = () => setIsConnected(true);
+          newEventSource.onmessage = eventSource.onmessage;
+          newEventSource.onerror = eventSource.onerror;
+        }
+      }, 3000);
     };
 
     return () => {
@@ -70,7 +116,24 @@ export default function TaskDetail() {
   async function sendMessage() {
     if (!inputMessage.trim() || isLoading) return;
 
+    const messageText = inputMessage.trim();
     setIsLoading(true);
+    setInputMessage('');
+    
+    // Immediately add user message to UI
+    const userMessage = {
+      id: Date.now() + Math.random(),
+      type: 'user',
+      content: messageText,
+      timestamp: new Date().toISOString()
+    };
+    
+    setMessages(prevMessages => {
+      const updatedMessages = [...prevMessages, userMessage];
+      localStorage.setItem(`task_messages_${taskId}`, JSON.stringify(updatedMessages));
+      return updatedMessages;
+    });
+
     const sessionToken = localStorage.getItem('terragonSession');
 
     try {
@@ -81,21 +144,33 @@ export default function TaskDetail() {
         },
         body: JSON.stringify({
           sessionToken,
-          message: inputMessage
+          message: messageText
         })
       });
 
-      if (response.ok) {
-        setInputMessage('');
-        // The SSE stream will automatically update with new messages
-      } else {
+      if (!response.ok) {
         const error = await response.json();
         console.error('Failed to send message:', error);
         alert('Failed to send message: ' + error.error);
+        
+        // Remove the user message if sending failed
+        setMessages(prevMessages => {
+          const filteredMessages = prevMessages.filter(m => m.id !== userMessage.id);
+          localStorage.setItem(`task_messages_${taskId}`, JSON.stringify(filteredMessages));
+          return filteredMessages;
+        });
       }
+      // The SSE stream will handle assistant responses
     } catch (error) {
       console.error('Error sending message:', error);
       alert('Error sending message');
+      
+      // Remove the user message if sending failed
+      setMessages(prevMessages => {
+        const filteredMessages = prevMessages.filter(m => m.id !== userMessage.id);
+        localStorage.setItem(`task_messages_${taskId}`, JSON.stringify(filteredMessages));
+        return filteredMessages;
+      });
     } finally {
       setIsLoading(false);
     }
@@ -134,18 +209,43 @@ export default function TaskDetail() {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '15px',
             marginLeft: 'auto'
           }}>
-            <span style={{
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              background: isConnected ? '#00ff88' : '#ff3300'
-            }}></span>
-            <span style={{ fontSize: '14px' }}>
-              {isConnected ? 'Connected' : 'Disconnected'}
-            </span>
+            {messages.length > 0 && (
+              <button
+                onClick={() => {
+                  setMessages([]);
+                  localStorage.removeItem(`task_messages_${taskId}`);
+                }}
+                style={{
+                  padding: '5px 10px',
+                  background: '#ff3300',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '3px',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                Clear Messages
+              </button>
+            )}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                background: isConnected ? '#00ff88' : '#ff3300'
+              }}></span>
+              <span style={{ fontSize: '14px' }}>
+                {isConnected ? 'Connected' : 'Disconnected'}
+              </span>
+            </div>
           </div>
         </div>
 

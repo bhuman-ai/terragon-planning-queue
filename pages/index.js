@@ -1,4 +1,10 @@
 import { useState, useEffect } from 'react';
+import RequirementsModal from '../components/RequirementsModal';
+import PreResearchModal from '../components/PreResearchModal';
+import PostResearchModal from '../components/PostResearchModal';
+import ProposalReviewModal from '../components/ProposalReviewModal';
+import TaskCreationProgress from '../components/TaskCreationProgress';
+import TaskMonitorDashboard from '../components/TaskMonitorDashboard';
 
 export default function Home() {
   const [state, setState] = useState({
@@ -17,6 +23,20 @@ export default function Home() {
   const [taskDescription, setTaskDescription] = useState('');
   const [taskPriority, setTaskPriority] = useState('medium');
   const [status, setStatus] = useState('');
+  const [enrichContext, setEnrichContext] = useState(true);
+  const [useMetaAgent, setUseMetaAgent] = useState(false);
+  const [showRequirements, setShowRequirements] = useState(false);
+  const [pendingRequirements, setPendingRequirements] = useState(null);
+  const [showPreResearch, setShowPreResearch] = useState(false);
+  const [showPostResearch, setShowPostResearch] = useState(false);
+  const [currentTask, setCurrentTask] = useState(null);
+  const [preResearchAnswers, setPreResearchAnswers] = useState(null);
+  const [postResearchRequirements, setPostResearchRequirements] = useState(null);
+  const [showProposal, setShowProposal] = useState(false);
+  const [currentProposal, setCurrentProposal] = useState(null);
+  const [showTaskProgress, setShowTaskProgress] = useState(false);
+  const [currentTaskId, setCurrentTaskId] = useState(null);
+  const [showTaskMonitor, setShowTaskMonitor] = useState(false);
   const [conversation, setConversation] = useState([
     { role: 'system', content: 'Ready to help you plan tasks. Connect to Terragon to begin.' }
   ]);
@@ -26,13 +46,47 @@ export default function Home() {
     const savedToken = localStorage.getItem('terragonSession');
     if (savedToken) {
       setSessionInput(savedToken);
+      // Auto-connect if we have a saved token
+      setTimeout(() => connectToTerragon(savedToken), 100);
     }
     
     const savedGithub = localStorage.getItem('githubConfig');
     if (savedGithub) {
       setState(prev => ({ ...prev, githubConfig: JSON.parse(savedGithub) }));
     }
+    
+    // Load saved tasks
+    const savedTasks = localStorage.getItem('planningQueue');
+    if (savedTasks) {
+      try {
+        const tasks = JSON.parse(savedTasks);
+        setState(prev => ({ ...prev, planningQueue: tasks }));
+      } catch (error) {
+        console.error('Error loading saved tasks:', error);
+      }
+    }
+    
+    // Load other saved state
+    const savedState = localStorage.getItem('appState');
+    if (savedState) {
+      try {
+        const appState = JSON.parse(savedState);
+        setEnrichContext(appState.enrichContext ?? true);
+        setUseMetaAgent(appState.useMetaAgent ?? false);
+      } catch (error) {
+        console.error('Error loading saved app state:', error);
+      }
+    }
   }, []);
+
+  // Save app state when toggles change
+  useEffect(() => {
+    const appState = {
+      enrichContext,
+      useMetaAgent
+    };
+    localStorage.setItem('appState', JSON.stringify(appState));
+  }, [enrichContext, useMetaAgent]);
 
   function generateThreadId() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -51,8 +105,11 @@ export default function Home() {
     return result;
   }
 
-  async function connectToTerragon() {
-    if (!sessionInput.trim()) {
+  async function connectToTerragon(tokenToUse) {
+    // Use provided token or the one from input
+    const token = tokenToUse || sessionInput;
+    
+    if (!token.trim()) {
       showStatus('Please enter a session token', 'error');
       return;
     }
@@ -65,17 +122,24 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ session_token: sessionInput })
+        body: JSON.stringify({ session_token: token })
       });
       
       const result = await response.json();
       
       if (result.valid) {
-        setState(prev => ({ ...prev, connected: true, sessionToken: sessionInput }));
+        // Save token first
+        localStorage.setItem('terragonSession', token);
+        setState(prev => ({ ...prev, connected: true, sessionToken: token }));
         showStatus('Connected to Terragon!', 'success');
-        localStorage.setItem('terragonSession', sessionInput);
+        // Update the input field if we used a saved token
+        if (tokenToUse) {
+          setSessionInput(token);
+        }
       } else {
         showStatus('Invalid session: ' + result.message, 'error');
+        // Clear saved token if it's invalid
+        localStorage.removeItem('terragonSession');
       }
     } catch (error) {
       showStatus('Failed to connect: ' + error.message, 'error');
@@ -104,7 +168,12 @@ export default function Home() {
       threadId: generateThreadId()
     };
     
-    setState(prev => ({ ...prev, planningQueue: [...prev.planningQueue, task] }));
+    setState(prev => {
+      const newQueue = [...prev.planningQueue, task];
+      // Save to localStorage
+      localStorage.setItem('planningQueue', JSON.stringify(newQueue));
+      return { ...prev, planningQueue: newQueue };
+    });
     
     // Clear form
     setTaskTitle('');
@@ -115,7 +184,7 @@ export default function Home() {
   }
 
   async function sendToTerragon(task) {
-    const prompt = `I need help planning a task for implementation. Please analyze this request and create a detailed plan.
+    let prompt = `I need help planning a task for implementation. Please analyze this request and create a detailed plan.
 
 Task: ${task.title}
 Description: ${task.description}
@@ -129,6 +198,18 @@ Please provide:
 5. A GitHub issue description with @terragon-labs mention
 
 Format the response as a structured plan that can be converted to a GitHub issue.`;
+    
+    // If MetaAgent is enabled, start with pre-research questions
+    if (useMetaAgent) {
+      showStatus('Meta-Agent starting two-phase analysis...', 'info');
+      
+      // Store the task and show pre-research modal
+      setCurrentTask(task);
+      setShowPreResearch(true);
+      
+      // Don't send to Terragon yet - wait for two-phase question flow
+      return;
+    }
     
     addMessage('user', prompt);
     
@@ -150,7 +231,8 @@ Format the response as a structured plan that can be converted to a GitHub issue
           sessionToken: state.sessionToken,
           message: prompt,
           githubRepoFullName: `${state.githubConfig.owner}/${state.githubConfig.repo}`,
-          repoBaseBranchName: "main"
+          repoBaseBranchName: "main",
+          enrichContext: enrichContext
         })
       });
       
@@ -239,12 +321,19 @@ Format the response as a structured plan that can be converted to a GitHub issue
   }
 
   function updateQueue(updatedTask) {
-    setState(prev => ({
-      ...prev,
-      planningQueue: prev.planningQueue.map(task => 
+    setState(prev => {
+      const newQueue = prev.planningQueue.map(task => 
         task.id === updatedTask.id ? updatedTask : task
-      )
-    }));
+      );
+      
+      // Save to localStorage
+      localStorage.setItem('planningQueue', JSON.stringify(newQueue));
+      
+      return {
+        ...prev,
+        planningQueue: newQueue
+      };
+    });
   }
 
   function addMessage(role, content) {
@@ -254,6 +343,433 @@ Format the response as a structured plan that can be converted to a GitHub issue
   function showStatus(message, type) {
     setStatus({ message, type });
     setTimeout(() => setStatus(''), 5000);
+  }
+
+  // Handle pre-research answers and start research + post-research questions
+  async function handlePreResearchSubmit(answers) {
+    if (!currentTask) return;
+    
+    showStatus('Phase 1 complete. Starting research and codebase analysis...', 'info');
+    setPreResearchAnswers(answers);
+    setShowPreResearch(false);
+    
+    try {
+      // Generate post-research questions with full context
+      const postResearchResponse = await fetch('/api/meta-agent/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'post-research-requirements',
+          message: `${currentTask.title}: ${currentTask.description}`,
+          preResearchAnswers: answers,
+          context: { 
+            priority: currentTask.priority,
+            githubRepo: `${state.githubConfig.owner}/${state.githubConfig.repo}`
+          }
+        })
+      });
+      
+      if (postResearchResponse.ok) {
+        const postResult = await postResearchResponse.json();
+        
+        if (postResult.result && postResult.result.questions && postResult.result.questions.length > 0) {
+          // Store post-research requirements
+          setPostResearchRequirements(postResult.result);
+          setShowPostResearch(true);
+          
+          showStatus('Research complete! Phase 2 questions ready.', 'success');
+          addMessage('assistant', `Research completed with ${postResult.result.questions.length} informed questions based on findings.`);
+        } else {
+          throw new Error('No post-research questions generated');
+        }
+      } else {
+        throw new Error(`Post-research API error: ${postResearchResponse.status}`);
+      }
+      
+    } catch (error) {
+      console.error('Error in post-research phase:', error);
+      showStatus(`Research phase error: ${error.message}`, 'error');
+      
+      // Fall back to direct proposal creation
+      await createProposalFromPreResearch(answers);
+    }
+  }
+  
+  // Handle post-research answers and create proposal
+  async function handlePostResearchSubmit(answers) {
+    if (!currentTask || !preResearchAnswers || !postResearchRequirements) return;
+    
+    showStatus('Phase 2 complete. Creating comprehensive proposal...', 'info');
+    setShowPostResearch(false);
+    
+    try {
+      // Create comprehensive proposal with both sets of answers
+      const proposalResponse = await fetch('/api/meta-agent/proposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          message: `${currentTask.title}: ${currentTask.description}`,
+          context: {
+            priority: currentTask.priority,
+            githubRepo: `${state.githubConfig.owner}/${state.githubConfig.repo}`,
+            preResearchAnswers: preResearchAnswers,
+            postResearchAnswers: answers
+          },
+          requirements: {
+            questions: postResearchRequirements.questions.map((q, idx) => ({
+              ...q,
+              answer: answers[q.id] || 'No answer provided'
+            })),
+            preResearchAnswers: preResearchAnswers,
+            research: postResearchRequirements.research
+          }
+        })
+      });
+      
+      if (!proposalResponse.ok) {
+        throw new Error(`Failed to create proposal: ${proposalResponse.status}`);
+      }
+      
+      const proposalResult = await proposalResponse.json();
+      
+      if (proposalResult.success && proposalResult.proposal) {
+        // Store the proposal with task context
+        const proposalWithTask = {
+          ...proposalResult.proposal,
+          originalTask: currentTask
+        };
+        
+        setCurrentProposal(proposalWithTask);
+        setShowProposal(true);
+        
+        // Clear temporary state
+        setCurrentTask(null);
+        setPreResearchAnswers(null);
+        setPostResearchRequirements(null);
+        
+        showStatus('✅ Comprehensive proposal ready for review!', 'success');
+        addMessage('assistant', `Two-phase analysis complete! Meta-Agent created detailed proposal with ${proposalResult.proposal.decomposition?.microTasks?.length || 0} micro-tasks based on research and codebase analysis.`);
+        
+      } else {
+        throw new Error(proposalResult.error || 'Failed to create proposal');
+      }
+      
+    } catch (error) {
+      console.error('Error creating comprehensive proposal:', error);
+      showStatus(`Proposal error: ${error.message}`, 'error');
+      
+      // Fall back to basic proposal
+      await createProposalFromPreResearch(preResearchAnswers);
+    }
+  }
+  
+  // Fallback: Create proposal from just pre-research answers
+  async function createProposalFromPreResearch(preAnswers) {
+    try {
+      showStatus('Creating basic proposal from initial answers...', 'info');
+      
+      const proposalResponse = await fetch('/api/meta-agent/proposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          message: `${currentTask.title}: ${currentTask.description}`,
+          context: {
+            priority: currentTask.priority,
+            githubRepo: `${state.githubConfig.owner}/${state.githubConfig.repo}`,
+            preResearchAnswers: preAnswers
+          }
+        })
+      });
+      
+      if (proposalResponse.ok) {
+        const result = await proposalResponse.json();
+        if (result.success) {
+          setCurrentProposal({
+            ...result.proposal,
+            originalTask: currentTask
+          });
+          setShowProposal(true);
+          setCurrentTask(null);
+          setPreResearchAnswers(null);
+        }
+      }
+    } catch (error) {
+      console.error('Fallback proposal creation failed:', error);
+      showStatus('Unable to create proposal. Please try again.', 'error');
+    }
+  }
+
+  // DEPRECATED: Handle requirements submission from MetaAgent - OLD SINGLE-PHASE WORKFLOW
+  async function handleRequirementsSubmit(answers) {
+    if (!pendingRequirements) return;
+    
+    const { original, task, questions, research } = pendingRequirements;
+    
+    showStatus('Meta-Agent is creating comprehensive proposal...', 'info');
+    
+    try {
+      // Create comprehensive proposal with all analysis
+      const proposalResponse = await fetch('/api/meta-agent/proposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          message: `${task.title}: ${task.description}`,
+          context: {
+            priority: task.priority,
+            githubRepo: `${state.githubConfig.owner}/${state.githubConfig.repo}`,
+            answers: answers
+          },
+          requirements: {
+            questions: questions.map((q, idx) => ({
+              ...q,
+              answer: answers[q.id] || answers[idx] || 'No answer provided'
+            }))
+          }
+        })
+      });
+      
+      if (!proposalResponse.ok) {
+        throw new Error(`Failed to create proposal: ${proposalResponse.status}`);
+      }
+      
+      const proposalResult = await proposalResponse.json();
+      
+      if (proposalResult.success && proposalResult.proposal) {
+        // Store the current task context for later execution
+        const proposalWithTask = {
+          ...proposalResult.proposal,
+          originalTask: task
+        };
+        
+        // Close requirements modal and show proposal review modal
+        setShowRequirements(false);
+        setPendingRequirements(null);
+        setCurrentProposal(proposalWithTask);
+        setShowProposal(true);
+        
+        showStatus('✅ Proposal ready for review!', 'success');
+        addMessage('assistant', `Meta-Agent created comprehensive proposal with ${proposalResult.proposal.decomposition?.microTasks?.length || 0} micro-tasks. Review and approve to proceed.`);
+        
+      } else {
+        throw new Error(proposalResult.error || 'Failed to create proposal');
+      }
+      
+    } catch (error) {
+      console.error('Error creating Meta-Agent proposal:', error);
+      showStatus(`Error: ${error.message}`, 'error');
+      addMessage('system', `Error: ${error.message}`);
+      
+      // Fall back to original Terragon-only flow
+      showStatus('Falling back to direct Terragon submission...', 'info');
+      await sendToTerragonDirect(task, answers);
+    }
+  }
+  
+  // Handle proposal approval
+  async function handleProposalApprove(proposal) {
+    showStatus('Executing approved proposal...', 'info');
+    
+    try {
+      const approveResponse = await fetch('/api/meta-agent/proposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'approve',
+          proposalId: proposal.id
+        })
+      });
+      
+      if (!approveResponse.ok) {
+        throw new Error(`Failed to approve proposal: ${approveResponse.status}`);
+      }
+      
+      const result = await approveResponse.json();
+      
+      if (result.success) {
+        // Close proposal modal
+        setShowProposal(false);
+        setCurrentProposal(null);
+        
+        // Update task in queue
+        const task = proposal.originalTask;
+        task.phase = 'executing';
+        task.metaAgentProposalId = proposal.id;
+        updateQueue(task);
+        
+        showStatus('✅ Proposal approved! Task execution started.', 'success');
+        addMessage('assistant', 'Proposal approved! Meta-Agent is now executing the task...');
+        
+        // Execute the actual Terragon task
+        await executeApprovedTask(proposal);
+        
+      } else {
+        throw new Error(result.error || 'Failed to approve proposal');
+      }
+      
+    } catch (error) {
+      console.error('Error approving proposal:', error);
+      showStatus(`Error: ${error.message}`, 'error');
+    }
+  }
+  
+  // Handle proposal rejection
+  async function handleProposalReject(proposal) {
+    showStatus('Rejecting proposal...', 'info');
+    
+    try {
+      const rejectResponse = await fetch('/api/meta-agent/proposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'reject',
+          proposalId: proposal.id
+        })
+      });
+      
+      const result = await rejectResponse.json();
+      
+      // Close proposal modal
+      setShowProposal(false);
+      setCurrentProposal(null);
+      
+      showStatus('❌ Proposal rejected.', 'info');
+      addMessage('assistant', 'Proposal rejected. You can create a new task with different requirements.');
+      
+    } catch (error) {
+      console.error('Error rejecting proposal:', error);
+      showStatus(`Error: ${error.message}`, 'error');
+    }
+  }
+  
+  // Handle proposal modification
+  async function handleProposalModify(proposal, modifications) {
+    showStatus('Modifying proposal...', 'info');
+    
+    try {
+      const modifyResponse = await fetch('/api/meta-agent/proposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'modify',
+          proposalId: proposal.id,
+          modifications: modifications
+        })
+      });
+      
+      if (!modifyResponse.ok) {
+        throw new Error(`Failed to modify proposal: ${modifyResponse.status}`);
+      }
+      
+      const result = await modifyResponse.json();
+      
+      if (result.success) {
+        // Update current proposal with modified version
+        setCurrentProposal({
+          ...result.proposal,
+          originalTask: proposal.originalTask
+        });
+        
+        showStatus('✏️ Proposal modified! Review the changes.', 'success');
+        addMessage('assistant', 'Proposal has been modified based on your feedback. Please review the updated plan.');
+        
+      } else {
+        throw new Error(result.error || 'Failed to modify proposal');
+      }
+      
+    } catch (error) {
+      console.error('Error modifying proposal:', error);
+      showStatus(`Error: ${error.message}`, 'error');
+    }
+  }
+  
+  // Execute the approved task
+  async function executeApprovedTask(proposal) {
+    try {
+      // Create task with Meta-Agent structure
+      const createResponse = await fetch('/api/meta-agent/create-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          proposalId: proposal.id,
+          title: proposal.taskTitle,
+          description: proposal.originalTask.description,
+          decomposition: proposal.decomposition,
+          sessionToken: state.sessionToken,
+          githubRepoFullName: `${state.githubConfig.owner}/${state.githubConfig.repo}`
+        })
+      });
+      
+      if (createResponse.ok) {
+        const createResult = await createResponse.json();
+        
+        if (createResult.success && createResult.task) {
+          // Show progress modal
+          setCurrentTaskId(createResult.task.taskId);
+          setShowTaskProgress(true);
+          
+          // Update task
+          const task = proposal.originalTask;
+          task.terragonTaskId = createResult.task.terragon?.taskId;
+          task.terragonUrl = createResult.task.terragon?.terragonUrl;
+          task.metaAgentTaskId = createResult.task.taskId;
+          task.taskPath = createResult.task.taskPath;
+          task.phase = 'ready';
+          updateQueue(task);
+          
+          showStatus('✅ Task executing successfully!', 'success');
+          addMessage('assistant', `Task structure created at: ${createResult.task.taskPath}`);
+          
+          if (createResult.task.terragon?.terragonUrl) {
+            addMessage('assistant', `Terragon task: ${createResult.task.terragon.terragonUrl}`);
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error executing approved task:', error);
+      showStatus(`Execution error: ${error.message}`, 'error');
+    }
+  }
+
+  // Fallback function for direct Terragon submission
+  async function sendToTerragonDirect(task, answers) {
+    let enhancedPrompt = `Task: ${task.title}\nDescription: ${task.description}\n\n[Requirements:`;
+    
+    Object.entries(answers).forEach(([questionId, answer]) => {
+      enhancedPrompt += `\n- ${questionId}: ${Array.isArray(answer) ? answer.join(', ') : answer}`;
+    });
+    
+    enhancedPrompt += ']\n\nPlease create a detailed implementation plan.';
+    
+    try {
+      const response = await fetch('/api/actions/terragon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionToken: state.sessionToken,
+          message: enhancedPrompt,
+          githubRepoFullName: `${state.githubConfig.owner}/${state.githubConfig.repo}`,
+          repoBaseBranchName: "main",
+          enrichContext: enrichContext
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.taskId) {
+          task.terragonTaskId = result.taskId;
+          task.terragonUrl = result.terragonUrl;
+          task.phase = 'growing';
+          updateQueue(task);
+          showStatus('Task sent to Terragon!', 'success');
+        }
+      }
+    } catch (error) {
+      console.error('Fallback Terragon submission failed:', error);
+    }
   }
 
   function saveGitHubConfig(owner, repo) {
@@ -353,7 +869,22 @@ Format the response as a structured plan that can be converted to a GitHub issue
               onChange={(e) => setSessionInput(e.target.value)}
               style={{ fontFamily: 'Monaco, Menlo, monospace', fontSize: '11px' }}
             />
-            <button onClick={connectToTerragon}>Connect to Terragon</button>
+            <button onClick={() => connectToTerragon()}>
+              {state.connected ? 'Reconnect' : 'Connect to Terragon'}
+            </button>
+            {state.connected && (
+              <button 
+                onClick={() => {
+                  setState(prev => ({ ...prev, connected: false, sessionToken: '' }));
+                  localStorage.removeItem('terragonSession');
+                  setSessionInput('');
+                  showStatus('Disconnected from Terragon', 'info');
+                }}
+                style={{ marginLeft: '10px', background: '#ff3300' }}
+              >
+                Disconnect
+              </button>
+            )}
             {status && (
               <div style={{
                 marginTop: '10px',
@@ -368,27 +899,100 @@ Format the response as a structured plan that can be converted to a GitHub issue
           </div>
           
           <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '10px', border: '1px solid #333' }}>
-            <h2 style={{ color: '#00ff88', marginBottom: '15px' }}>GitHub Configuration</h2>
-            <input
-              type="text"
-              placeholder="Repository owner"
-              value={state.githubConfig.owner}
-              onChange={(e) => setState(prev => ({ ...prev, githubConfig: { ...prev.githubConfig, owner: e.target.value } }))}
-            />
-            <input
-              type="text"
-              placeholder="Repository name"
-              value={state.githubConfig.repo}
-              onChange={(e) => setState(prev => ({ ...prev, githubConfig: { ...prev.githubConfig, repo: e.target.value } }))}
-            />
-            <button onClick={() => saveGitHubConfig(state.githubConfig.owner, state.githubConfig.repo)}>
-              Save GitHub Settings
-            </button>
+            <h2 style={{ color: '#00ff88', marginBottom: '15px' }}>Configuration</h2>
+            <div style={{ marginBottom: '15px' }}>
+              <h3 style={{ fontSize: '16px', marginBottom: '10px' }}>GitHub Repository</h3>
+              <input
+                type="text"
+                placeholder="Repository owner"
+                value={state.githubConfig.owner}
+                onChange={(e) => setState(prev => ({ ...prev, githubConfig: { ...prev.githubConfig, owner: e.target.value } }))}
+              />
+              <input
+                type="text"
+                placeholder="Repository name"
+                value={state.githubConfig.repo}
+                onChange={(e) => setState(prev => ({ ...prev, githubConfig: { ...prev.githubConfig, repo: e.target.value } }))}
+              />
+              <button onClick={() => saveGitHubConfig(state.githubConfig.owner, state.githubConfig.repo)}>
+                Save GitHub Settings
+              </button>
+            </div>
+            <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid #333' }}>
+              <h3 style={{ fontSize: '16px', marginBottom: '10px' }}>AI Enhancement Options</h3>
+              
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: '15px' }}>
+                <input
+                  type="checkbox"
+                  checked={enrichContext}
+                  onChange={(e) => setEnrichContext(e.target.checked)}
+                  style={{ width: 'auto', marginBottom: 0 }}
+                />
+                <span style={{ fontSize: '14px' }}>
+                  Enable smart context injection (detects intent & adds task structure info)
+                </span>
+              </label>
+              
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={useMetaAgent}
+                  onChange={(e) => setUseMetaAgent(e.target.checked)}
+                  style={{ width: 'auto', marginBottom: 0 }}
+                />
+                <span style={{ fontSize: '14px' }}>
+                  🧠 Enable Meta-Agent (BETA) - Intelligent requirements gathering & research
+                </span>
+              </label>
+              <p style={{ fontSize: '12px', color: '#888', marginTop: '5px', marginLeft: '25px' }}>
+                Meta-Agent asks clarifying questions, researches best practices, and creates detailed specifications before sending to Terragon
+              </p>
+            </div>
           </div>
         </div>
         
         <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '10px', border: '1px solid #333', marginBottom: '20px' }}>
-          <h2 style={{ color: '#00ff88', marginBottom: '15px' }}>📋 Planning Queue</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h2 style={{ color: '#00ff88', margin: 0 }}>📋 Planning Queue</h2>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <button
+                onClick={() => setShowTaskMonitor(true)}
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: '#333',
+                  color: '#00aaff',
+                  border: '1px solid #555',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                🤖 Task Monitor
+              </button>
+              {state.planningQueue.length > 0 && (
+                <button
+                  onClick={() => {
+                  setState(prev => ({ ...prev, planningQueue: [] }));
+                  localStorage.removeItem('planningQueue');
+                  showStatus('All tasks cleared', 'info');
+                }}
+                style={{
+                  padding: '5px 10px',
+                  background: '#ff3300',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '3px',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                Clear All Tasks
+              </button>
+            )}
+          </div>
           <div style={{ marginBottom: '20px' }}>
             <h3 style={{ marginBottom: '10px' }}>New Task Planning Request</h3>
             <input
@@ -443,6 +1047,13 @@ Format the response as a structured plan that can be converted to a GitHub issue
                       {task.phase === 'seedling' ? '🌱' : task.phase === 'growing' ? '🌿' : '🌳'} {task.phase}
                     </span>
                     <span>Priority: {task.priority}</span>
+                    {task.taskPath && (
+                      <span>
+                        <a href={`file://${task.taskPath}`} style={{ color: '#ffaa00' }}>
+                          📁 Task Folder
+                        </a>
+                      </span>
+                    )}
                     {task.terragonUrl && (
                       <>
                         <span>
@@ -458,6 +1069,7 @@ Format the response as a structured plan that can be converted to a GitHub issue
                       </>
                     )}
                     {task.githubIssue && <span>GitHub #{task.githubIssue}</span>}
+                    {task.metaAgentTaskId && <span>Task ID: {task.metaAgentTaskId}</span>}
                     <span>{new Date(task.createdAt).toLocaleTimeString()}</span>
                   </div>
                 </div>
@@ -495,6 +1107,62 @@ Format the response as a structured plan that can be converted to a GitHub issue
           </div>
         </div>
       </div>
+      
+      {/* DEPRECATED Requirements Modal (old single-phase) */}
+      <RequirementsModal
+        show={showRequirements}
+        onClose={() => setShowRequirements(false)}
+        requirements={pendingRequirements}
+        onSubmit={handleRequirementsSubmit}
+      />
+      
+      {/* NEW: Pre-Research Modal (Phase 1) */}
+      <PreResearchModal
+        show={showPreResearch}
+        onClose={() => {
+          setShowPreResearch(false);
+          setCurrentTask(null);
+        }}
+        task={currentTask}
+        onSubmit={handlePreResearchSubmit}
+      />
+      
+      {/* NEW: Post-Research Modal (Phase 2) */}
+      <PostResearchModal
+        show={showPostResearch}
+        onClose={() => {
+          setShowPostResearch(false);
+          setPostResearchRequirements(null);
+        }}
+        requirements={postResearchRequirements}
+        onSubmit={handlePostResearchSubmit}
+      />
+      
+      {/* Proposal Review Modal */}
+      <ProposalReviewModal
+        isOpen={showProposal}
+        onClose={() => setShowProposal(false)}
+        proposal={currentProposal}
+        onApprove={handleProposalApprove}
+        onReject={handleProposalReject}
+        onModify={handleProposalModify}
+      />
+      
+      {/* Task Creation Progress */}
+      <TaskCreationProgress
+        show={showTaskProgress}
+        taskId={currentTaskId}
+        onClose={() => {
+          setShowTaskProgress(false);
+          setCurrentTaskId(null);
+        }}
+      />
+      
+      {/* Autonomous Task Monitor Dashboard */}
+      <TaskMonitorDashboard
+        show={showTaskMonitor}
+        onClose={() => setShowTaskMonitor(false)}
+      />
     </div>
   );
 }

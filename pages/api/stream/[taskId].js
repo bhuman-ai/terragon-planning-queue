@@ -10,8 +10,8 @@ function generateActionId() {
 }
 
 export default async function handler(req, res) {
-  const { taskId } = req.query;
-  const sessionToken = req.headers['x-session-token'];
+  const { taskId, token } = req.query;
+  const sessionToken = token || req.headers['x-session-token'];
 
   if (!taskId || !sessionToken) {
     return res.status(400).json({ error: 'Missing taskId or session token' });
@@ -61,74 +61,103 @@ export default async function handler(req, res) {
 
       const result = await response.text();
       
-      // Parse React Server Component response for real messages
+      // Parse React Server Component response
       const messages = [];
+      const lines = result.split('\n').filter(line => line.trim());
       
-      // Look for the JSON data at the end which contains all messages
-      const jsonMatch = result.match(/1:\{"id":"[^"]+","userId"[^}]+,"messages":\[(.*?)\],"queuedMessages"/s);
+      let taskData = null;
+      let streamContent = '';
       
-      if (jsonMatch) {
-        try {
-          // Extract and parse the messages array
-          const messagesJson = '[' + jsonMatch[1] + ']';
-          const parsedMessages = JSON.parse(messagesJson);
-          
-          parsedMessages.forEach(msg => {
-            if (msg.type === 'user' && msg.parts && msg.parts[0] && msg.parts[0].nodes) {
-              // User message
-              const text = msg.parts[0].nodes[0].text;
-              if (text) {
-                messages.push({
-                  type: 'user',
-                  content: text,
-                  timestamp: msg.timestamp
-                });
-              }
-            } else if (msg.type === 'agent' && msg.parts && msg.parts[0]) {
-              // Assistant message
-              const text = msg.parts[0].text;
-              if (text && text !== '$2') { // Skip placeholder text
-                messages.push({
-                  type: 'assistant', 
-                  content: text,
-                  timestamp: msg.timestamp
-                });
-              }
-            }
-          });
-        } catch (e) {
-          console.error('Failed to parse messages JSON:', e);
+      // Process each line
+      for (const line of lines) {
+        // Type 0: Initial metadata
+        if (line.startsWith('0:')) {
+          continue;
+        }
+        
+        // Type 2: Streaming content chunks
+        if (line.startsWith('2:')) {
+          const content = line.substring(2);
+          // Remove the prefix like "Tb52," or similar
+          const cleanContent = content.replace(/^[A-Za-z0-9]+,/, '');
+          streamContent += cleanContent;
+        }
+        
+        // Type 1: Final JSON data
+        if (line.startsWith('1:')) {
+          try {
+            const jsonStr = line.substring(2);
+            taskData = JSON.parse(jsonStr);
+          } catch (e) {
+            console.error('Failed to parse task data:', e);
+          }
         }
       }
       
-      // If JSON parsing fails, try to extract the formatted response
-      if (messages.length === 0) {
-        // Extract the markdown content between line 2 and line 90
-        const lines = result.split('\n');
-        let markdownContent = '';
-        let inContent = false;
-        
-        for (const line of lines) {
-          if (line.startsWith('2:') && line.includes('Task Implementation Plan')) {
-            inContent = true;
-            markdownContent += line.replace(/^\d+:[^,]*,/, '') + '\n';
-          } else if (inContent && line.match(/^\d+:/)) {
-            const cleanLine = line.replace(/^\d+:[^,]*,/, '');
-            markdownContent += cleanLine + '\n';
-            
-            // Stop at the end of markdown
-            if (line.includes('```1:')) {
-              break;
+      // Parse messages from task data if available
+      if (taskData && taskData.messages && Array.isArray(taskData.messages)) {
+        taskData.messages.forEach(msg => {
+          if (msg.type === 'user' && msg.parts && msg.parts[0]) {
+            // User message
+            let text = '';
+            if (msg.parts[0].nodes && msg.parts[0].nodes[0]) {
+              text = msg.parts[0].nodes[0].text;
+            } else if (typeof msg.parts[0] === 'string') {
+              text = msg.parts[0];
             }
+            
+            if (text) {
+              messages.push({
+                type: 'user',
+                content: text,
+                timestamp: msg.timestamp
+              });
+            }
+          } else if (msg.type === 'agent' && msg.parts && msg.parts[0]) {
+            // Agent message
+            let text = '';
+            if (msg.parts[0].text) {
+              text = msg.parts[0].text;
+            } else if (typeof msg.parts[0] === 'string') {
+              text = msg.parts[0];
+            }
+            
+            if (text && text !== '$2') { // Skip placeholder
+              messages.push({
+                type: 'assistant',
+                content: text,
+                timestamp: msg.timestamp || new Date().toISOString()
+              });
+            }
+          } else if (msg.type === 'meta' && msg.result) {
+            // Meta result message (final assistant response)
+            messages.push({
+              type: 'assistant',
+              content: msg.result,
+              timestamp: new Date().toISOString()
+            });
           }
-        }
-        
-        if (markdownContent.trim()) {
-          messages.push({
-            type: 'assistant',
-            content: markdownContent.trim()
-          });
-        }
+        });
+      }
+      
+      // If we have streaming content but no messages parsed, add it as assistant message
+      if (messages.length === 0 && streamContent.trim()) {
+        messages.push({
+          type: 'assistant',
+          content: streamContent.trim(),
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      // Include task status if available
+      let taskStatus = null;
+      if (taskData) {
+        taskStatus = {
+          id: taskData.id,
+          status: taskData.status,
+          createdAt: taskData.createdAt,
+          updatedAt: taskData.updatedAt
+        };
       }
 
       // Send update if we have new messages
@@ -139,7 +168,8 @@ export default async function handler(req, res) {
           messages: messages,
           newMessages: messages.slice(lastMessageCount),
           totalMessages: messages.length,
-          pollCount: pollCount
+          pollCount: pollCount,
+          taskStatus: taskStatus
         })}\n\n`);
         lastMessageCount = messages.length;
       } else {
@@ -148,7 +178,8 @@ export default async function handler(req, res) {
           type: 'heartbeat',
           taskId: taskId,
           pollCount: pollCount,
-          status: 'waiting'
+          status: 'waiting',
+          taskStatus: taskStatus
         })}\n\n`);
       }
 

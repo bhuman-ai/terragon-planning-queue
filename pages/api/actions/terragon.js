@@ -16,6 +16,13 @@ export default async function handler(req, res) {
       repo: githubRepoFullName 
     });
 
+    // Enrich message with context if enrichContext is enabled
+    let processedMessage = message;
+    if (req.body.enrichContext !== false) {
+      // Context enrichment temporarily disabled - will be handled by MetaAgent
+      console.log('Legacy context enrichment disabled - use MetaAgent for enhanced context');
+    }
+
     // Build the payload in Terragon's expected format
     const terragonPayload = [{
       message: {
@@ -25,7 +32,7 @@ export default async function handler(req, res) {
           type: "rich-text",
           nodes: [{
             type: "text",
-            text: message
+            text: processedMessage
           }]
         }],
         timestamp: new Date().toISOString()
