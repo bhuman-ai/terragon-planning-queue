@@ -147,7 +147,8 @@ export default function Home() {
   }
 
   async function submitToPlanningQueue() {
-    if (!state.connected) {
+    // Allow Meta-Agent to work without Terragon connection
+    if (!state.connected && !useMetaAgent) {
       showStatus('Please connect to Terragon first', 'error');
       return;
     }
