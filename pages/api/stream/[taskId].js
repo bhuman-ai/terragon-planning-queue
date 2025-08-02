@@ -41,7 +41,7 @@ export default async function handler(req, res) {
           'accept': 'text/x-component',
           'content-type': 'text/plain;charset=UTF-8',
           'cookie': `__Secure-better-auth.session_token=${sessionToken}`,
-          'next-action': generateActionId(),
+          'next-action': '7f40cb55e87cce4b3543b51a374228296bc2436c6d',
           'next-router-state-tree': routerStateTree,
           'origin': 'https://www.terragonlabs.com',
           'referer': `https://www.terragonlabs.com/task/${taskId}`,
@@ -63,61 +63,72 @@ export default async function handler(req, res) {
       
       // Parse React Server Component response for real messages
       const messages = [];
-      const lines = result.split('\n');
       
-      // Track message content across lines
-      let currentMessage = null;
-      let inMessageBlock = false;
+      // Look for the JSON data at the end which contains all messages
+      const jsonMatch = result.match(/1:\{"id":"[^"]+","userId"[^}]+,"messages":\[(.*?)\],"queuedMessages"/s);
       
-      for (const line of lines) {
-        // Look for lines that contain message content
-        // Format is like: 2:Tb52,# Task Implementation Plan: Hello
-        if (line.match(/^\d+:.*#\s*\d+\.\s*/)) {
-          // Extract the text after the metadata
-          const match = line.match(/^\d+:[^,]*,(.*)$/);
-          if (match) {
-            const content = match[1];
-            if (!currentMessage) {
-              currentMessage = { type: 'assistant', content: '' };
+      if (jsonMatch) {
+        try {
+          // Extract and parse the messages array
+          const messagesJson = '[' + jsonMatch[1] + ']';
+          const parsedMessages = JSON.parse(messagesJson);
+          
+          parsedMessages.forEach(msg => {
+            if (msg.type === 'user' && msg.parts && msg.parts[0] && msg.parts[0].nodes) {
+              // User message
+              const text = msg.parts[0].nodes[0].text;
+              if (text) {
+                messages.push({
+                  type: 'user',
+                  content: text,
+                  timestamp: msg.timestamp
+                });
+              }
+            } else if (msg.type === 'agent' && msg.parts && msg.parts[0]) {
+              // Assistant message
+              const text = msg.parts[0].text;
+              if (text && text !== '$2') { // Skip placeholder text
+                messages.push({
+                  type: 'assistant', 
+                  content: text,
+                  timestamp: msg.timestamp
+                });
+              }
             }
-            currentMessage.content += content + '\n';
-            inMessageBlock = true;
-          }
-        } else if (line.includes('##') || line.includes('**')) {
-          // Markdown content
-          if (currentMessage) {
-            const cleanLine = line.replace(/^\d+:[^,]*,/, '');
-            currentMessage.content += cleanLine + '\n';
-          }
-        } else if (line.includes('"hello"') || line.includes('Task Implementation Plan')) {
-          // Look for specific content patterns
-          if (!currentMessage) {
-            currentMessage = { type: 'assistant', content: '' };
-          }
-          const cleanLine = line.replace(/^\d+:[^,]*,/, '');
-          currentMessage.content += cleanLine + '\n';
-        } else if (inMessageBlock && line.trim() === '') {
-          // End of message block
-          if (currentMessage && currentMessage.content.trim()) {
-            messages.push(currentMessage);
-            currentMessage = null;
-            inMessageBlock = false;
-          }
+          });
+        } catch (e) {
+          console.error('Failed to parse messages JSON:', e);
         }
       }
       
-      // Add any remaining message
-      if (currentMessage && currentMessage.content.trim()) {
-        messages.push(currentMessage);
-      }
-      
-      // Also look for the user's original message
-      const userMessageMatch = result.match(/how are you\?/);
-      if (userMessageMatch && messages.length > 0) {
-        messages.unshift({
-          type: 'user',
-          content: 'how are you?'
-        });
+      // If JSON parsing fails, try to extract the formatted response
+      if (messages.length === 0) {
+        // Extract the markdown content between line 2 and line 90
+        const lines = result.split('\n');
+        let markdownContent = '';
+        let inContent = false;
+        
+        for (const line of lines) {
+          if (line.startsWith('2:') && line.includes('Task Implementation Plan')) {
+            inContent = true;
+            markdownContent += line.replace(/^\d+:[^,]*,/, '') + '\n';
+          } else if (inContent && line.match(/^\d+:/)) {
+            const cleanLine = line.replace(/^\d+:[^,]*,/, '');
+            markdownContent += cleanLine + '\n';
+            
+            // Stop at the end of markdown
+            if (line.includes('```1:')) {
+              break;
+            }
+          }
+        }
+        
+        if (markdownContent.trim()) {
+          messages.push({
+            type: 'assistant',
+            content: markdownContent.trim()
+          });
+        }
       }
 
       // Send update if we have new messages
