@@ -277,11 +277,27 @@ Format the response as a structured plan that can be converted to a GitHub issue
               }}></span>
               Terragon Connection
             </h2>
+            <div style={{ marginBottom: '10px', fontSize: '12px', color: '#888' }}>
+              <details>
+                <summary style={{ cursor: 'pointer', marginBottom: '5px' }}>📖 How to get session token</summary>
+                <ol style={{ marginLeft: '20px', marginTop: '10px', lineHeight: '1.6' }}>
+                  <li>Log in to <a href="https://www.terragonlabs.com" target="_blank" rel="noopener noreferrer" style={{ color: '#00ff88' }}>terragonlabs.com</a></li>
+                  <li>Press F12 (Developer Tools)</li>
+                  <li>Go to Application → Cookies</li>
+                  <li>Find "__session" cookie</li>
+                  <li>Copy the value (starts with eyJ...)</li>
+                </ol>
+                <p style={{ marginTop: '10px', fontSize: '11px' }}>
+                  ⏰ Tokens last 24-48 hours typically
+                </p>
+              </details>
+            </div>
             <input
               type="password"
-              placeholder="Session token from Terragon cookies"
+              placeholder="Paste your __session cookie value here"
               value={sessionInput}
               onChange={(e) => setSessionInput(e.target.value)}
+              style={{ fontFamily: 'Monaco, Menlo, monospace', fontSize: '11px' }}
             />
             <button onClick={connectToTerragon}>Connect to Terragon</button>
             {status && (
