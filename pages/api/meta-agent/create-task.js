@@ -78,15 +78,24 @@ export default async function handler(req, res) {
     let terragonResult = null;
     if (sessionToken) {
       try {
-        // Fetch CLAUDE.md from the selected project repository
-        let claudeMdContent = '';
+        // Prepare context documents
+        let contextParts = [];
+        
+        // 1. Always include dev.md (static development principles)
+        try {
+          const devMdPath = path.join(process.cwd(), 'public', 'dev.md');
+          const devMdContent = await fs.readFile(devMdPath, 'utf-8');
+          contextParts.push(`# UNIVERSAL DEVELOPMENT PRINCIPLES (dev.md)\n\n${devMdContent}`);
+          console.log('Included universal dev.md principles');
+        } catch (error) {
+          console.log('Error reading dev.md:', error.message);
+        }
+        
+        // 2. Fetch project documents from repository
         if (githubRepoFullName) {
           try {
             const [owner, repo] = githubRepoFullName.split('/');
             const branch = 'main'; // Could be passed in request if needed
-            
-            const githubUrl = `https://api.github.com/repos/${owner}/${repo}/contents/CLAUDE.md?ref=${branch}`;
-            console.log(`Fetching CLAUDE.md from: ${githubUrl}`);
             
             const headers = {
               'Accept': 'application/vnd.github.v3.raw',
@@ -98,25 +107,44 @@ export default async function handler(req, res) {
               headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
             }
             
-            const response = await fetch(githubUrl, { headers });
+            // Fetch CLAUDE.md
+            const claudeUrl = `https://api.github.com/repos/${owner}/${repo}/contents/CLAUDE.md?ref=${branch}`;
+            console.log(`Fetching CLAUDE.md from: ${claudeUrl}`);
             
-            if (response.ok) {
-              claudeMdContent = await response.text();
+            const claudeResponse = await fetch(claudeUrl, { headers });
+            
+            if (claudeResponse.ok) {
+              const claudeMdContent = await claudeResponse.text();
+              contextParts.push(`# PROJECT-SPECIFIC CONTEXT (CLAUDE.md from ${githubRepoFullName})\n\n${claudeMdContent}`);
               console.log(`Retrieved CLAUDE.md from ${githubRepoFullName}`);
             } else {
               console.log(`CLAUDE.md not found in ${githubRepoFullName}`);
             }
+            
+            // Try to fetch task.md
+            const taskUrl = `https://api.github.com/repos/${owner}/${repo}/contents/task.md?ref=${branch}`;
+            console.log(`Checking for task.md from: ${taskUrl}`);
+            
+            const taskResponse = await fetch(taskUrl, { headers });
+            
+            if (taskResponse.ok) {
+              const taskMdContent = await taskResponse.text();
+              contextParts.push(`# CURRENT TASK CONTEXT (task.md from ${githubRepoFullName})\n\n${taskMdContent}`);
+              console.log(`Retrieved task.md from ${githubRepoFullName}`);
+            } else {
+              console.log(`task.md not found in ${githubRepoFullName}`);
+            }
           } catch (error) {
-            console.log(`Error fetching CLAUDE.md from ${githubRepoFullName}:`, error.message);
+            console.log(`Error fetching project documents from ${githubRepoFullName}:`, error.message);
           }
         }
         
         // Build enhanced message for Terragon with complete decomposition
         let terragonMessage = '';
         
-        // Include CLAUDE.md if available
-        if (claudeMdContent) {
-          terragonMessage += `# SACRED PROJECT CONTEXT (CLAUDE.md from ${githubRepoFullName})\n\n${claudeMdContent}\n\n---\n\n`;
+        // Include all context documents
+        if (contextParts.length > 0) {
+          terragonMessage += contextParts.join('\n\n---\n\n') + '\n\n---\n\n';
         }
         
         terragonMessage += formatDecompositionForTerragon(decomposition || taskSpec.decomposition, title, description);

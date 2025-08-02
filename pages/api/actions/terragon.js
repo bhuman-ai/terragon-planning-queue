@@ -21,41 +21,72 @@ export default async function handler(req, res) {
 
     // Enrich message with context if enrichContext is enabled
     let processedMessage = message;
-    if (req.body.enrichContext !== false && githubRepoFullName) {
-      // SACRED: Always include CLAUDE.md content from the selected project repository
+    if (req.body.enrichContext !== false) {
+      let contextParts = [];
+      
+      // 1. Always include dev.md (static development principles)
       try {
-        // Extract owner and repo from githubRepoFullName (format: "owner/repo")
-        const [owner, repo] = githubRepoFullName.split('/');
-        const branch = repoBaseBranchName || 'main';
-        
-        // Fetch CLAUDE.md from the GitHub repository
-        const githubUrl = `https://api.github.com/repos/${owner}/${repo}/contents/CLAUDE.md?ref=${branch}`;
-        console.log(`Fetching CLAUDE.md from: ${githubUrl}`);
-        
-        const headers = {
-          'Accept': 'application/vnd.github.v3.raw',
-          'User-Agent': 'Terragon-Planning-Queue'
-        };
-        
-        // Add GitHub token if available for private repos
-        if (process.env.GITHUB_TOKEN) {
-          headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
-        }
-        
-        const response = await fetch(githubUrl, { headers });
-        
-        if (response.ok) {
-          const claudeMdContent = await response.text();
-          
-          // Prepend CLAUDE.md content to the message
-          processedMessage = `# SACRED PROJECT CONTEXT (CLAUDE.md from ${githubRepoFullName})\n\n${claudeMdContent}\n\n---\n\n# USER REQUEST\n\n${message}`;
-          
-          console.log(`Enriched message with CLAUDE.md content from ${githubRepoFullName}`);
-        } else {
-          console.log(`CLAUDE.md not found in ${githubRepoFullName}, proceeding without sacred context`);
-        }
+        const devMdPath = path.join(process.cwd(), 'public', 'dev.md');
+        const devMdContent = await fs.readFile(devMdPath, 'utf-8');
+        contextParts.push(`# UNIVERSAL DEVELOPMENT PRINCIPLES (dev.md)\n\n${devMdContent}`);
+        console.log('Included universal dev.md principles');
       } catch (error) {
-        console.log(`Error fetching CLAUDE.md from ${githubRepoFullName}:`, error.message);
+        console.log('Error reading dev.md:', error.message);
+      }
+      
+      // 2. Include project-specific CLAUDE.md if repository is specified
+      if (githubRepoFullName) {
+        try {
+          // Extract owner and repo from githubRepoFullName (format: "owner/repo")
+          const [owner, repo] = githubRepoFullName.split('/');
+          const branch = repoBaseBranchName || 'main';
+          
+          const headers = {
+            'Accept': 'application/vnd.github.v3.raw',
+            'User-Agent': 'Terragon-Planning-Queue'
+          };
+          
+          // Add GitHub token if available for private repos
+          if (process.env.GITHUB_TOKEN) {
+            headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+          }
+          
+          // Fetch CLAUDE.md
+          const claudeUrl = `https://api.github.com/repos/${owner}/${repo}/contents/CLAUDE.md?ref=${branch}`;
+          console.log(`Fetching CLAUDE.md from: ${claudeUrl}`);
+          
+          const claudeResponse = await fetch(claudeUrl, { headers });
+          
+          if (claudeResponse.ok) {
+            const claudeMdContent = await claudeResponse.text();
+            contextParts.push(`# PROJECT-SPECIFIC CONTEXT (CLAUDE.md from ${githubRepoFullName})\n\n${claudeMdContent}`);
+            console.log(`Included CLAUDE.md from ${githubRepoFullName}`);
+          } else {
+            console.log(`CLAUDE.md not found in ${githubRepoFullName}`);
+          }
+          
+          // 3. Try to fetch task.md if it exists
+          const taskUrl = `https://api.github.com/repos/${owner}/${repo}/contents/task.md?ref=${branch}`;
+          console.log(`Checking for task.md from: ${taskUrl}`);
+          
+          const taskResponse = await fetch(taskUrl, { headers });
+          
+          if (taskResponse.ok) {
+            const taskMdContent = await taskResponse.text();
+            contextParts.push(`# CURRENT TASK CONTEXT (task.md from ${githubRepoFullName})\n\n${taskMdContent}`);
+            console.log(`Included task.md from ${githubRepoFullName}`);
+          } else {
+            console.log(`task.md not found in ${githubRepoFullName}`);
+          }
+        } catch (error) {
+          console.log(`Error fetching project documents from ${githubRepoFullName}:`, error.message);
+        }
+      }
+      
+      // Combine all context parts with the user message
+      if (contextParts.length > 0) {
+        processedMessage = contextParts.join('\n\n---\n\n') + '\n\n---\n\n# USER REQUEST\n\n' + message;
+        console.log(`Enriched message with ${contextParts.length} context documents`);
       }
     }
 

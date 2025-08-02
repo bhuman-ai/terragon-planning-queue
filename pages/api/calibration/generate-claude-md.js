@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     const { calibrationData, scanResults, timestamp } = req.body;
     
     // Generate the sacred CLAUDE.md content
-    const claudeMdContent = generateClaudeMd(calibrationData, scanResults, timestamp);
+    const claudeMdContent = await generateClaudeMd(calibrationData, scanResults, timestamp);
     
     // Analyze for cleanup suggestions
     const cleanupSuggestions = await analyzeForCleanup(calibrationData, scanResults);
@@ -29,8 +29,23 @@ export default async function handler(req, res) {
   }
 }
 
-function generateClaudeMd(data, scanResults, timestamp) {
+async function generateClaudeMd(data, scanResults, timestamp) {
   const techStack = data.techStack || scanResults?.detectedTechStack || [];
+  
+  // Read the D3 CLAUDE.md to extract core principles
+  let d3Principles = '';
+  try {
+    const d3ClaudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
+    const d3ClaudeMdContent = await fs.readFile(d3ClaudeMdPath, 'utf-8');
+    
+    // Extract the Sacred Principles section
+    const principlesMatch = d3ClaudeMdContent.match(/## 3\. Sacred Principles & AI Instructions[\s\S]*?(?=##|$)/);
+    if (principlesMatch) {
+      d3Principles = principlesMatch[0];
+    }
+  } catch (error) {
+    console.log('Could not read D3 CLAUDE.md for principles');
+  }
   
   return `# ${data.projectName || 'PROJECT'} - Sacred Source of Truth 🔥
 
