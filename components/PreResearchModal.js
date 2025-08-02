@@ -4,7 +4,8 @@ export default function PreResearchModal({
   show, 
   onClose, 
   task,
-  onSubmit 
+  onSubmit,
+  githubConfig = {}
 }) {
   const [answers, setAnswers] = useState({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -33,7 +34,9 @@ export default function PreResearchModal({
           message: `${task.title}: ${task.description}`,
           context: {
             priority: task.priority,
-            taskId: task.id
+            taskId: task.id,
+            githubRepoFullName: githubConfig.owner && githubConfig.repo ? `${githubConfig.owner}/${githubConfig.repo}` : null,
+            repoBaseBranchName: githubConfig.branch || 'main'
           }
         })
       });

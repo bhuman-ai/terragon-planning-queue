@@ -3,7 +3,6 @@ import RequirementsModal from '../components/RequirementsModal';
 import PreResearchModal from '../components/PreResearchModal';
 import PostResearchModal from '../components/PostResearchModal';
 import ProposalReviewModal from '../components/ProposalReviewModal';
-import ProjectInterviewModal from '../components/ProjectInterviewModal';
 import TaskCreationProgress from '../components/TaskCreationProgress';
 import TaskMonitorDashboard from '../components/TaskMonitorDashboard';
 import CalibrationWizard from '../components/CalibrationWizard';
@@ -39,8 +38,6 @@ export default function Home() {
   const [showTaskProgress, setShowTaskProgress] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState(null);
   const [showTaskMonitor, setShowTaskMonitor] = useState(false);
-  const [showProjectInterview, setShowProjectInterview] = useState(false);
-  const [projectData, setProjectData] = useState(null);
   const [showCalibration, setShowCalibration] = useState(false);
   const [hasClaudeMd, setHasClaudeMd] = useState(null);
   const [conversation, setConversation] = useState([
@@ -214,9 +211,10 @@ export default function Home() {
       }
     }
     
-    // Show project interview for first task or if no project data exists
-    if (useMetaAgent && !projectData) {
-      setShowProjectInterview(true);
+    // Check if we need to run calibration first (no CLAUDE.md)
+    if (useMetaAgent && hasClaudeMd === false) {
+      alert('⚠️ No CLAUDE.md found! Please run repository calibration first to create your sacred source of truth.');
+      setShowCalibration(true);
       return;
     }
     
@@ -748,19 +746,6 @@ Format the response as a structured implementation plan with clear subtasks and 
     }
   }
   
-  // Handle project interview completion
-  async function handleProjectInterviewComplete(data) {
-    setProjectData(data);
-    setShowProjectInterview(false);
-    
-    // Store project data in localStorage
-    localStorage.setItem('projectData', JSON.stringify(data));
-    
-    showStatus('✅ Project setup complete! Now creating your task...', 'success');
-    
-    // Continue with task creation
-    await submitToPlanningQueue();
-  }
   
   // Handle calibration completion
   async function handleCalibrationComplete(calibrationResult) {
@@ -1283,6 +1268,7 @@ Format the response as a structured implementation plan with clear subtasks and 
         }}
         task={currentTask}
         onSubmit={handlePreResearchSubmit}
+        githubConfig={state.githubConfig}
       />
       
       {/* NEW: Post-Research Modal (Phase 2) */}
@@ -1306,12 +1292,6 @@ Format the response as a structured implementation plan with clear subtasks and 
         onModify={handleProposalModify}
       />
       
-      {/* Project Interview Modal */}
-      <ProjectInterviewModal
-        show={showProjectInterview}
-        onClose={() => setShowProjectInterview(false)}
-        onComplete={handleProjectInterviewComplete}
-      />
       
       {/* Calibration Wizard */}
       <CalibrationWizard
