@@ -3,6 +3,7 @@ import RequirementsModal from '../components/RequirementsModal';
 import PreResearchModal from '../components/PreResearchModal';
 import PostResearchModal from '../components/PostResearchModal';
 import ProposalReviewModal from '../components/ProposalReviewModal';
+import ProjectInterviewModal from '../components/ProjectInterviewModal';
 import TaskCreationProgress from '../components/TaskCreationProgress';
 import TaskMonitorDashboard from '../components/TaskMonitorDashboard';
 
@@ -37,15 +38,29 @@ export default function Home() {
   const [showTaskProgress, setShowTaskProgress] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState(null);
   const [showTaskMonitor, setShowTaskMonitor] = useState(false);
+  const [showProjectInterview, setShowProjectInterview] = useState(false);
+  const [projectData, setProjectData] = useState(null);
   const [conversation, setConversation] = useState([
     { role: 'system', content: 'Ready to help you plan tasks. Connect to Terragon to begin.' }
   ]);
 
+  // Load saved data on mount
   useEffect(() => {
+    // Load project data
+    const savedProjectData = localStorage.getItem('projectData');
+    if (savedProjectData) {
+      try {
+        setProjectData(JSON.parse(savedProjectData));
+      } catch (e) {
+        console.error('Failed to load project data:', e);
+      }
+    }
+    
     // Load saved data
     const savedToken = localStorage.getItem('terragonSession');
     if (savedToken) {
       setSessionInput(savedToken);
+      setState(prev => ({ ...prev, sessionToken: savedToken }));
       // Auto-connect if we have a saved token
       setTimeout(() => connectToTerragon(savedToken), 100);
     }
@@ -158,6 +173,12 @@ export default function Home() {
       return;
     }
     
+    // Show project interview for first task or if no project data exists
+    if (useMetaAgent && !projectData) {
+      setShowProjectInterview(true);
+      return;
+    }
+    
     const task = {
       id: Date.now(),
       title: taskTitle,
@@ -196,9 +217,9 @@ Please provide:
 2. Required technologies and dependencies
 3. Potential challenges and solutions
 4. Time estimate for completion
-5. A GitHub issue description with @terragon-labs mention
+5. A structured task description ready for Terragon API
 
-Format the response as a structured plan that can be converted to a GitHub issue.`;
+Format the response as a structured implementation plan with clear subtasks and deliverables.`;
     
     // If MetaAgent is enabled, start with pre-research questions
     if (useMetaAgent) {
@@ -296,12 +317,12 @@ Format the response as a structured plan that can be converted to a GitHub issue
           addMessage('assistant', 'Task is being processed by Terragon AI...');
         }
         
-        // Simulate GitHub issue creation after a delay
+        // Update task status after processing
         setTimeout(() => {
           task.phase = 'ready';
-          task.githubIssue = Math.floor(Math.random() * 1000);
+          task.terragonTaskId = task.terragonTaskId || `terragon-${task.id}`;
           updateQueue(task);
-          showStatus(`GitHub issue #${task.githubIssue} created!`, 'success');
+          showStatus(`Task ready for implementation!`, 'success');
         }, 3000);
       } else {
         let errorMsg;
@@ -686,6 +707,20 @@ Format the response as a structured plan that can be converted to a GitHub issue
     }
   }
   
+  // Handle project interview completion
+  async function handleProjectInterviewComplete(data) {
+    setProjectData(data);
+    setShowProjectInterview(false);
+    
+    // Store project data in localStorage
+    localStorage.setItem('projectData', JSON.stringify(data));
+    
+    showStatus('✅ Project setup complete! Now creating your task...', 'success');
+    
+    // Continue with task creation
+    await submitToPlanningQueue();
+  }
+
   // Execute the approved task
   async function executeApprovedTask(proposal) {
     try {
@@ -699,7 +734,10 @@ Format the response as a structured plan that can be converted to a GitHub issue
           description: proposal.originalTask.description,
           decomposition: proposal.decomposition,
           sessionToken: state.sessionToken,
-          githubRepoFullName: `${state.githubConfig.owner}/${state.githubConfig.repo}`
+          githubRepoFullName: `${state.githubConfig.owner}/${state.githubConfig.repo}`,
+          originalTask: proposal.originalTask,
+          requirements: proposal.requirements,
+          research: proposal.research
         })
       });
       
@@ -1070,7 +1108,7 @@ Format the response as a structured plan that can be converted to a GitHub issue
                         </span>
                       </>
                     )}
-                    {task.githubIssue && <span>GitHub #{task.githubIssue}</span>}
+                    {task.terragonTaskId && <span>Task: {task.terragonTaskId}</span>}
                     {task.metaAgentTaskId && <span>Task ID: {task.metaAgentTaskId}</span>}
                     <span>{new Date(task.createdAt).toLocaleTimeString()}</span>
                   </div>
@@ -1148,6 +1186,13 @@ Format the response as a structured plan that can be converted to a GitHub issue
         onApprove={handleProposalApprove}
         onReject={handleProposalReject}
         onModify={handleProposalModify}
+      />
+      
+      {/* Project Interview Modal */}
+      <ProjectInterviewModal
+        show={showProjectInterview}
+        onClose={() => setShowProjectInterview(false)}
+        onComplete={handleProjectInterviewComplete}
       />
       
       {/* Task Creation Progress */}

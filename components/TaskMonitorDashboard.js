@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTaskProgress } from '../hooks/useTaskProgress';
 
 export default function TaskMonitorDashboard({ show, onClose }) {
   const [activeTasks, setActiveTasks] = useState([]);
@@ -8,7 +9,7 @@ export default function TaskMonitorDashboard({ show, onClose }) {
   const fetchActiveTasks = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/task/active/list');
+      const response = await fetch('/api/task-monitor/active');
       const data = await response.json();
       
       if (data.success) {
@@ -24,13 +25,14 @@ export default function TaskMonitorDashboard({ show, onClose }) {
 
   const handleResumeTask = async (taskId, userInput) => {
     try {
-      const response = await fetch('/api/task/active/resume', {
+      const response = await fetch('/api/discord-bot/response', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           taskId,
-          userInput,
-          resumeContext: { source: 'dashboard' }
+          userResponse: userInput,
+          userId: 'dashboard',
+          messageId: Date.now().toString()
         })
       });
 
