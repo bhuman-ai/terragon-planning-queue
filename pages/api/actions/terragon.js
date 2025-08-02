@@ -5,13 +5,35 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { sessionToken, payload, actionId } = req.body;
+    const { sessionToken, message, githubRepoFullName, repoBaseBranchName } = req.body;
     
     if (!sessionToken) {
       return res.status(401).json({ error: 'Session token required' });
     }
 
-    console.log('Server action request:', { hasPayload: !!payload, actionId });
+    console.log('Server action request:', { 
+      hasMessage: !!message, 
+      repo: githubRepoFullName 
+    });
+
+    // Build the payload in Terragon's expected format
+    const terragonPayload = [{
+      message: {
+        type: "user",
+        model: "sonnet",
+        parts: [{
+          type: "rich-text",
+          nodes: [{
+            type: "text",
+            text: message
+          }]
+        }],
+        timestamp: new Date().toISOString()
+      },
+      githubRepoFullName: githubRepoFullName || "bhuman-ai/gesture_generator",
+      repoBaseBranchName: repoBaseBranchName || "main",
+      saveAsDraft: false
+    }];
 
     // Forward to Terragon with proper headers
     const response = await fetch('https://www.terragonlabs.com/dashboard', {
@@ -23,21 +45,37 @@ export default async function handler(req, res) {
         'Cookie': `__Secure-better-auth.session_token=${sessionToken}`,
         'Origin': 'https://www.terragonlabs.com',
         'Referer': 'https://www.terragonlabs.com/dashboard',
-        'Next-Action': actionId || generateActionId()
+        'Next-Action': generateActionId(),
+        'Next-Router-State-Tree': '%5B%22%22%2C%7B%22children%22%3A%5B%22(sidebar)%22%2C%7B%22children%22%3A%5B%22(site-header)%22%2C%7B%22children%22%3A%5B%22dashboard%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(terragonPayload)
     });
 
     const result = await response.text();
+    console.log('Terragon response status:', response.status);
     
-    // Parse any task IDs from the response
-    const taskIdMatch = result.match(/"id":"([a-f0-9-]+)"/);
+    // Try to extract task/thread ID from response
+    let taskId = null;
+    const idPatterns = [
+      /"id":"([a-f0-9-]+)"/,
+      /"threadId":"([a-f0-9-]+)"/,
+      /task\/([a-f0-9-]+)/
+    ];
+    
+    for (const pattern of idPatterns) {
+      const match = result.match(pattern);
+      if (match) {
+        taskId = match[1];
+        break;
+      }
+    }
     
     res.status(200).json({
       success: response.ok,
       status: response.status,
-      data: result,
-      taskId: taskIdMatch ? taskIdMatch[1] : null
+      data: result.substring(0, 500), // Limit response size for debugging
+      taskId: taskId,
+      fullResponse: result.length > 500 ? 'truncated' : 'complete'
     });
   } catch (error) {
     console.error('Server action error:', error);

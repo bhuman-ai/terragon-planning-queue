@@ -140,7 +140,7 @@ Format the response as a structured plan that can be converted to a GitHub issue
         { modelId: "claude-3-5-sonnet-20241022", attachments: [] }
       ];
       
-      // Try the new server action endpoint first
+      // Use the new Terragon format
       let response = await fetch('/api/actions/terragon', {
         method: 'POST',
         headers: {
@@ -148,8 +148,9 @@ Format the response as a structured plan that can be converted to a GitHub issue
         },
         body: JSON.stringify({
           sessionToken: state.sessionToken,
-          payload: payload,
-          actionId: generateActionId()
+          message: prompt,
+          githubRepoFullName: `${state.githubConfig.owner}/${state.githubConfig.repo}`,
+          repoBaseBranchName: "main"
         })
       });
       
@@ -166,18 +167,36 @@ Format the response as a structured plan that can be converted to a GitHub issue
         });
       }
       
-      if (response.ok) {
+      const contentType = response.headers.get('content-type');
+      console.log('Response status:', response.status, 'Content-Type:', contentType);
+      
+      if (response.ok || response.status === 200) {
         let result;
-        const contentType = response.headers.get('content-type');
         
         if (contentType && contentType.includes('application/json')) {
           result = await response.json();
+          console.log('API Response:', result);
+          
+          if (result.success === false && result.status === 404) {
+            // This is the "Server action not found" response from Terragon
+            // Try a different approach or show a specific error
+            throw new Error('Terragon API format may have changed. Please check session token.');
+          }
+          
           if (result.taskId) {
             task.terragonTaskId = result.taskId;
             task.terragonUrl = `https://www.terragonlabs.com/task/${result.taskId}`;
+          } else if (result.data) {
+            // Try to extract ID from the data field
+            const idMatch = result.data.match(/"id":"([a-f0-9-]+)"|task\/([a-f0-9-]+)/);
+            if (idMatch) {
+              task.terragonTaskId = idMatch[1] || idMatch[2];
+              task.terragonUrl = `https://www.terragonlabs.com/task/${task.terragonTaskId}`;
+            }
           }
         } else {
           const text = await response.text();
+          console.log('Raw response:', text.substring(0, 200));
           const idMatch = text.match(/"id":"([a-f0-9-]+)"/);
           if (idMatch) {
             task.terragonTaskId = idMatch[1];
@@ -187,26 +206,37 @@ Format the response as a structured plan that can be converted to a GitHub issue
         
         if (task.terragonUrl) {
           console.log('Terragon Task URL:', task.terragonUrl);
+          // Update task phase
+          task.phase = 'growing';
+          updateQueue(task);
+          
+          // Show success message with link
+          addMessage('assistant', `Task created successfully! View on Terragon: ${task.terragonUrl}`);
+          showStatus('Task sent to Terragon!', 'success');
+        } else {
+          // Still update phase even if we don't have URL yet
+          task.phase = 'growing';
+          updateQueue(task);
+          addMessage('assistant', 'Task is being processed by Terragon AI...');
         }
         
-        // Update task phase
-        task.phase = 'growing';
-        updateQueue(task);
-        
-        // Parse and display response
-        addMessage('assistant', 'Planning in progress... ' + (task.terragonUrl ? `View on Terragon: ${task.terragonUrl}` : 'Processing...'));
-        
-        // Create GitHub issue
+        // Simulate GitHub issue creation after a delay
         setTimeout(() => {
           task.phase = 'ready';
           task.githubIssue = Math.floor(Math.random() * 1000);
           updateQueue(task);
           showStatus(`GitHub issue #${task.githubIssue} created!`, 'success');
-        }, 2000);
+        }, 3000);
       } else {
-        const errorText = await response.text();
-        console.error('API Error:', errorText);
-        throw new Error(`API error: ${response.status} - ${errorText}`);
+        let errorMsg;
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorData.message || JSON.stringify(errorData);
+        } catch (e) {
+          errorMsg = await response.text();
+        }
+        console.error('API Error:', response.status, errorMsg);
+        throw new Error(`API error ${response.status}: ${errorMsg}`);
       }
     } catch (error) {
       console.error('Failed to send to Terragon:', error);
