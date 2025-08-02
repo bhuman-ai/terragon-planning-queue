@@ -5,11 +5,16 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "bot": "node lib/discord-bot/start.js",
+    "dev:all": "concurrently \"npm run dev\" \"npm run bot\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.3",
     "axios": "^1.11.0",
+    "concurrently": "^8.2.2",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5",
     "next": "14.0.4",
     "react": "18.2.0",
     "react-dom": "18.2.0"

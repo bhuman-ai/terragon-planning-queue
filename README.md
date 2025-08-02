@@ -12,11 +12,14 @@ AI-powered autonomous task planning and execution with GitHub integration.
 - **Mobile Responsive**: Works seamlessly on all devices
 
 ### 🧠 Meta-Agent (NEW)
+- **Dynamic Question Generation**: AI-generated questions specific to each task (no templates!)
 - **Two-Phase Intelligence**: Pre-research and post-research question system
+- **"I Don't Know" Option**: Available for every question at any point
 - **Autonomous Research**: Perplexity-powered web research before planning
 - **Smart Task Decomposition**: Breaks complex tasks into <10 minute micro-tasks
 - **User Approval Workflow**: Review and approve plans before execution
 - **Autonomous Execution**: Continues working even when you're offline
+- **Discord Bot Integration**: Interactive Q&A during task execution
 - **Discord Notifications**: Get alerts when Meta-Agent needs your input
 
 ## 📦 Quick Deploy to Vercel

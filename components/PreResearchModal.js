@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function PreResearchModal({ 
   show, 
@@ -9,70 +9,99 @@ export default function PreResearchModal({
   const [answers, setAnswers] = useState({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [preResearchQuestions, setPreResearchQuestions] = useState([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Basic pre-research questions that don't require codebase knowledge
-  const preResearchQuestions = [
-    {
-      id: 'scope',
-      question: 'What is the primary scope of this task?',
-      type: 'choice',
-      options: [
-        'New feature implementation',
-        'Bug fix or improvement',
-        'Refactoring existing code',
-        'Integration with external service',
-        'Performance optimization',
-        'Security enhancement'
-      ],
-      explanation: 'Understanding the general nature helps focus the research'
-    },
-    {
-      id: 'priority',
-      question: 'What is the urgency level for this task?',
-      type: 'choice',
-      options: [
-        'Critical - needs immediate attention',
-        'High - should be done this week',
-        'Medium - can be scheduled flexibly',
-        'Low - nice to have when time permits'
-      ],
-      explanation: 'Helps prioritize research depth and implementation approach'
-    },
-    {
-      id: 'user_impact',
-      question: 'Who will be primarily affected by this change?',
-      type: 'multiple',
-      options: [
-        'End users directly',
-        'Development team',
-        'System administrators',
-        'Third-party integrations',
-        'Performance/scalability',
-        'Security/compliance'
-      ],
-      explanation: 'Understanding impact helps guide research focus'
-    },
-    {
-      id: 'constraints',
-      question: 'Are there any specific constraints or requirements?',
-      type: 'text',
-      multiline: true,
-      placeholder: 'e.g., must use specific libraries, backwards compatibility needs, performance targets, etc.',
-      explanation: 'Constraints will influence the research and solution approach'
-    },
-    {
-      id: 'context',
-      question: 'Any additional context or background information?',
-      type: 'text',
-      multiline: true,
-      placeholder: 'e.g., related to other features, business requirements, technical debt, etc.',
-      explanation: 'Extra context helps with more targeted research'
+  // Fetch dynamic questions when modal opens
+  useEffect(() => {
+    if (show && task) {
+      fetchDynamicQuestions();
     }
-  ];
+  }, [show, task]);
+
+  const fetchDynamicQuestions = async () => {
+    setIsLoadingQuestions(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/meta-agent/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'pre-research-requirements',
+          message: `${task.title}: ${task.description}`,
+          context: {
+            priority: task.priority,
+            taskId: task.id
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to get questions: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.questions && data.questions.length > 0) {
+        setPreResearchQuestions(data.questions);
+      } else {
+        throw new Error('No questions generated');
+      }
+    } catch (err) {
+      console.error('Failed to fetch dynamic questions:', err);
+      setError(err.message);
+      // Fallback to basic questions if dynamic generation fails
+      setPreResearchQuestions([
+        {
+          id: 'approach',
+          question: `How would you like to approach "${task.title}"?`,
+          type: 'text',
+          multiline: true,
+          placeholder: 'Describe your preferred approach or any specific requirements'
+        }
+      ]);
+    } finally {
+      setIsLoadingQuestions(false);
+    }
+  };
 
   if (!show || !task) return null;
 
+  // Show loading state while fetching questions
+  if (isLoadingQuestions) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000
+      }}>
+        <div style={{
+          backgroundColor: '#1a1a1a',
+          border: '1px solid #333',
+          borderRadius: '10px',
+          padding: '40px',
+          textAlign: 'center',
+          color: '#e0e0e0'
+        }}>
+          <h3 style={{ color: '#00ff88' }}>🧠 Generating Dynamic Questions...</h3>
+          <p style={{ color: '#888' }}>Analyzing your task to create relevant questions</p>
+        </div>
+      </div>
+    );
+  }
+
   const currentQuestion = preResearchQuestions[currentQuestionIndex];
+  if (!currentQuestion) return null;
+  
   const isLastQuestion = currentQuestionIndex === preResearchQuestions.length - 1;
   const canProceed = answers[currentQuestion.id] && 
     (currentQuestion.type !== 'text' || answers[currentQuestion.id].trim());
@@ -229,9 +258,9 @@ export default function PreResearchModal({
           </div>
 
           <div style={{ marginBottom: '30px' }}>
-            {currentQuestion.type === 'choice' && (
+            {(currentQuestion.type === 'choice' || currentQuestion.type === 'single-choice') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {currentQuestion.options.map(option => (
+                {currentQuestion.options && currentQuestion.options.map(option => (
                   <button
                     key={option}
                     onClick={() => handleAnswer(currentQuestion.id, option)}
@@ -250,12 +279,30 @@ export default function PreResearchModal({
                     {option}
                   </button>
                 ))}
+                {/* Always add "I don't know" option */}
+                <button
+                  onClick={() => handleAnswer(currentQuestion.id, "I don't know")}
+                  style={{
+                    padding: '12px 16px',
+                    backgroundColor: answers[currentQuestion.id] === "I don't know" ? '#ff880022' : '#0f0f0f',
+                    border: answers[currentQuestion.id] === "I don't know" ? '2px solid #ff8800' : '1px solid #333',
+                    borderRadius: '8px',
+                    color: '#ff8800',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    fontStyle: 'italic',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  🤷 I don't know / Not applicable
+                </button>
               </div>
             )}
 
-            {currentQuestion.type === 'multiple' && (
+            {(currentQuestion.type === 'multiple' || currentQuestion.type === 'multi-choice') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {currentQuestion.options.map(option => {
+                {currentQuestion.options && currentQuestion.options.map(option => {
                   const currentAnswers = answers[currentQuestion.id] || [];
                   const isSelected = currentAnswers.includes(option);
                   
@@ -299,27 +346,68 @@ export default function PreResearchModal({
                     </button>
                   );
                 })}
+                {/* "I don't know" option for multi-choice */}
+                <button
+                  onClick={() => handleAnswer(currentQuestion.id, ["I don't know"])}
+                  style={{
+                    padding: '10px 14px',
+                    backgroundColor: (answers[currentQuestion.id] || []).includes("I don't know") ? '#ff880022' : '#0f0f0f',
+                    border: (answers[currentQuestion.id] || []).includes("I don't know") ? '2px solid #ff8800' : '1px solid #333',
+                    borderRadius: '8px',
+                    color: '#ff8800',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    fontSize: '14px',
+                    fontStyle: 'italic',
+                    transition: 'all 0.2s ease',
+                    marginTop: '10px'
+                  }}
+                >
+                  🤷 I don't know / Not applicable
+                </button>
               </div>
             )}
 
             {currentQuestion.type === 'text' && (
-              <textarea
-                value={answers[currentQuestion.id] || ''}
-                onChange={(e) => handleAnswer(currentQuestion.id, e.target.value)}
-                placeholder={currentQuestion.placeholder}
-                style={{
-                  width: '100%',
-                  minHeight: currentQuestion.multiline ? '100px' : '40px',
-                  padding: '12px',
-                  backgroundColor: '#0f0f0f',
-                  border: '1px solid #333',
-                  borderRadius: '6px',
-                  color: '#fff',
-                  fontSize: '14px',
-                  resize: 'vertical',
-                  fontFamily: 'inherit'
-                }}
-              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <textarea
+                  value={answers[currentQuestion.id] === "I don't know" ? '' : (answers[currentQuestion.id] || '')}
+                  onChange={(e) => handleAnswer(currentQuestion.id, e.target.value)}
+                  placeholder={currentQuestion.placeholder || 'Type your answer here...'}
+                  disabled={answers[currentQuestion.id] === "I don't know"}
+                  style={{
+                    width: '100%',
+                    minHeight: currentQuestion.multiline !== false ? '100px' : '40px',
+                    padding: '12px',
+                    backgroundColor: answers[currentQuestion.id] === "I don't know" ? '#1a1a1a' : '#0f0f0f',
+                    border: '1px solid #333',
+                    borderRadius: '6px',
+                    color: answers[currentQuestion.id] === "I don't know" ? '#666' : '#fff',
+                    fontSize: '14px',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                    opacity: answers[currentQuestion.id] === "I don't know" ? 0.5 : 1
+                  }}
+                />
+                <button
+                  onClick={() => handleAnswer(currentQuestion.id, "I don't know")}
+                  style={{
+                    padding: '10px 14px',
+                    backgroundColor: answers[currentQuestion.id] === "I don't know" ? '#ff880022' : '#0f0f0f',
+                    border: answers[currentQuestion.id] === "I don't know" ? '2px solid #ff8800' : '1px solid #333',
+                    borderRadius: '8px',
+                    color: '#ff8800',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontStyle: 'italic',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  🤷 I don't know / Skip this question
+                </button>
+              </div>
             )}
           </div>
         </div>
