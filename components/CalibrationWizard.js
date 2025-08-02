@@ -446,15 +446,20 @@ function CalibrationInterview({ questions, answers, onAnswer, onComplete }) {
           placeholder="Type your answer here..."
           style={{
             width: '100%',
-            minHeight: currentQuestion.multiline ? '150px' : '80px',
+            minHeight: currentQuestion.multiline ? '150px' : '100px',
             padding: '15px',
             backgroundColor: '#0f0f0f',
             border: '1px solid #333',
             borderRadius: '8px',
             color: '#fff',
             fontSize: '14px',
-            resize: 'vertical'
+            fontFamily: 'inherit',
+            resize: 'vertical',
+            display: 'block',
+            marginBottom: '20px',
+            outline: 'none'
           }}
+          autoFocus
         />
       )}
 
@@ -479,6 +484,58 @@ function CalibrationInterview({ questions, answers, onAnswer, onComplete }) {
               {option}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Multi choice */}
+      {currentQuestion.type === 'multi-choice' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+          {currentQuestion.options.map(option => {
+            const currentAnswers = answers[currentQuestion.id] || [];
+            const isSelected = currentAnswers.includes(option);
+            
+            return (
+              <button
+                key={option}
+                onClick={() => {
+                  const newAnswers = isSelected
+                    ? currentAnswers.filter(a => a !== option)
+                    : [...currentAnswers, option];
+                  onAnswer(currentQuestion.id, newAnswers);
+                }}
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: isSelected ? '#ff6b6b22' : '#0f0f0f',
+                  border: isSelected ? '2px solid #ff6b6b' : '1px solid #333',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  fontSize: '14px',
+                  transition: 'all 0.2s ease',
+                  textAlign: 'left'
+                }}
+              >
+                <span style={{
+                  width: '16px',
+                  height: '16px',
+                  borderRadius: '3px',
+                  backgroundColor: isSelected ? '#ff6b6b' : 'transparent',
+                  border: '2px solid #ff6b6b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '10px',
+                  flexShrink: 0
+                }}>
+                  {isSelected && '✓'}
+                </span>
+                {option}
+              </button>
+            );
+          })}
         </div>
       )}
 
