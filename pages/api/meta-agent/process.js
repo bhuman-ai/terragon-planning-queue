@@ -106,6 +106,23 @@ export default async function handler(req, res) {
         result = await metaAgent.decomposeTask(taskSpec, requirements || {});
         break;
 
+      case 'project-interview':
+        // Generate dynamic project interview questions
+        const { phase, existingAnswers } = req.body;
+        
+        // Use requirements gatherer to generate intelligent questions
+        const projectContext = phase === 'initial' 
+          ? 'User is starting a new project. Ask intelligent questions to understand their project goals, technical requirements, and constraints.'
+          : 'User has provided initial answers. Ask follow-up questions to get more specific technical details.';
+          
+        const projectQuestions = await metaAgent.requirementsGatherer.generatePreResearchQuestions(
+          projectContext,
+          { phase, existingAnswers }
+        );
+        
+        result = projectQuestions;
+        break;
+
       default:
         return res.status(400).json({ error: 'Invalid action' });
     }

@@ -19,87 +19,46 @@ export default function ProjectInterviewModal({
   const generateInterviewQuestions = async () => {
     setIsGeneratingQuestions(true);
     
-    // Start with core questions about the project
-    const baseQuestions = [
-      {
-        id: 'project_type',
-        question: 'What are you planning to build?',
-        type: 'text',
-        placeholder: 'e.g., A task management app, An e-commerce site, A Chrome extension...',
-        required: true
-      },
-      {
-        id: 'main_goal',
-        question: 'What\'s the main goal or problem this solves?',
-        type: 'text',
-        placeholder: 'What pain point are you addressing? Who will use this?',
-        required: true
-      },
-      {
-        id: 'tech_preferences',
-        question: 'Do you have any technology preferences?',
-        type: 'multi-choice',
-        options: [
-          'React/Next.js',
-          'Vue.js',
-          'Angular',
-          'Vanilla JavaScript',
-          'Python/Django',
-          'Node.js/Express',
-          'Ruby on Rails',
-          'Other'
-        ]
-      },
-      {
-        id: 'timeline',
-        question: 'What\'s your timeline?',
-        type: 'single-choice',
-        options: [
-          'ASAP - Need it yesterday',
-          'This week',
-          'This month',
-          'No rush - learning project'
-        ]
-      },
-      {
-        id: 'experience_level',
-        question: 'How would you describe your technical experience?',
-        type: 'single-choice',
-        options: [
-          'Complete beginner',
-          'Some coding experience',
-          'Experienced developer',
-          'I have a team'
-        ]
+    try {
+      // Generate dynamic questions using AI
+      const response = await fetch('/api/meta-agent/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'project-interview',
+          phase: Object.keys(answers).length > 0 ? 'detailed' : 'initial',
+          existingAnswers: answers
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate questions: ${response.status}`);
       }
-    ];
 
-    // If we have answers to base questions, generate more specific ones
-    if (Object.keys(answers).length > 0) {
-      try {
-        const response = await fetch('/api/meta-agent/project-interview', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            baseAnswers: answers,
-            phase: 'detailed'
-          })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setInterviewQuestions([...baseQuestions, ...data.questions]);
-        } else {
-          setInterviewQuestions(baseQuestions);
+      const data = await response.json();
+      
+      if (data.questions && data.questions.length > 0) {
+        setInterviewQuestions(data.questions);
+      } else {
+        throw new Error('No questions generated');
+      }
+    } catch (error) {
+      console.error('Failed to generate dynamic project questions:', error);
+      
+      // Emergency fallback only
+      const fallbackQuestions = [
+        {
+          id: 'project_description',
+          question: 'Describe your project in your own words',
+          type: 'text',
+          placeholder: 'Tell me what you want to build...',
+          required: true
         }
-      } catch (error) {
-        console.error('Failed to generate dynamic questions:', error);
-        setInterviewQuestions(baseQuestions);
-      }
-    } else {
-      setInterviewQuestions(baseQuestions);
-    }
+      ];
 
+      setInterviewQuestions(fallbackQuestions);
+    }
+    
     setIsGeneratingQuestions(false);
   };
 
