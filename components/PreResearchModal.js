@@ -5,7 +5,8 @@ export default function PreResearchModal({
   onClose, 
   task,
   onSubmit,
-  githubConfig = {}
+  githubConfig = {},
+  userSettings = null
 }) {
   const [answers, setAnswers] = useState({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -36,7 +37,8 @@ export default function PreResearchModal({
             priority: task.priority,
             taskId: task.id,
             githubRepoFullName: githubConfig.owner && githubConfig.repo ? `${githubConfig.owner}/${githubConfig.repo}` : null,
-            repoBaseBranchName: githubConfig.branch || 'main'
+            repoBaseBranchName: githubConfig.branch || 'main',
+            userSettings: userSettings
           }
         })
       });
@@ -54,17 +56,32 @@ export default function PreResearchModal({
       }
     } catch (err) {
       console.error('Failed to fetch dynamic questions:', err);
-      setError(err.message);
-      // Fallback to basic questions if dynamic generation fails
-      setPreResearchQuestions([
-        {
-          id: 'approach',
-          question: `How would you like to approach "${task.title}"?`,
-          type: 'text',
-          multiline: true,
-          placeholder: 'Describe your preferred approach or any specific requirements'
-        }
-      ]);
+      
+      // Check if it's an API key issue
+      if (err.message.includes('401') || err.message.includes('authentication') || err.message.includes('invalid x-api-key')) {
+        setError('⚠️ CLAUDE_API_KEY is invalid or missing. Please check your environment variables.');
+        setPreResearchQuestions([
+          {
+            id: 'api-key-error',
+            question: '🔑 Meta-Agent requires a valid Claude API key to generate intelligent questions',
+            type: 'text',
+            multiline: true,
+            placeholder: 'Please set CLAUDE_API_KEY in your .env.local file, then restart the server'
+          }
+        ]);
+      } else {
+        setError(`Meta-Agent error: ${err.message}`);
+        // Fallback to basic questions if dynamic generation fails
+        setPreResearchQuestions([
+          {
+            id: 'approach',
+            question: `How would you like to approach "${task.title}"?`,
+            type: 'text',
+            multiline: true,
+            placeholder: 'Describe your preferred approach or any specific requirements'
+          }
+        ]);
+      }
     } finally {
       setIsLoadingQuestions(false);
     }

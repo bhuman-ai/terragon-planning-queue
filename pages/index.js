@@ -6,6 +6,7 @@ import ProposalReviewModal from '../components/ProposalReviewModal';
 import TaskCreationProgress from '../components/TaskCreationProgress';
 import TaskMonitorDashboard from '../components/TaskMonitorDashboard';
 import CalibrationWizard from '../components/CalibrationWizard';
+import UserSettingsModal from '../components/UserSettingsModal';
 
 export default function Home() {
   const [state, setState] = useState({
@@ -40,12 +41,20 @@ export default function Home() {
   const [showTaskMonitor, setShowTaskMonitor] = useState(false);
   const [showCalibration, setShowCalibration] = useState(false);
   const [hasClaudeMd, setHasClaudeMd] = useState(null);
+  const [showUserSettings, setShowUserSettings] = useState(false);
+  const [userSettings, setUserSettings] = useState(null);
   const [conversation, setConversation] = useState([
     { role: 'system', content: 'Ready to help you plan tasks. Connect to Terragon to begin.' }
   ]);
 
   // Load saved data on mount
   useEffect(() => {
+    // Load user settings
+    const savedUserSettings = localStorage.getItem('meta-agent-user-settings');
+    if (savedUserSettings) {
+      setUserSettings(JSON.parse(savedUserSettings));
+    }
+
     // Load project data
     const savedProjectData = localStorage.getItem('projectData');
     if (savedProjectData) {
@@ -777,6 +786,12 @@ Format the response as a structured implementation plan with clear subtasks and 
     }
   }
 
+  // Handle user settings save
+  const handleUserSettingsSave = (newSettings) => {
+    setUserSettings(newSettings);
+    console.log('User settings updated:', newSettings);
+  };
+
   // Execute the approved task
   async function executeApprovedTask(proposal) {
     try {
@@ -977,6 +992,54 @@ Format the response as a structured implementation plan with clear subtasks and 
               </div>
           </div>
         )}
+
+        {/* User Settings Section */}
+        <div style={{ 
+          background: '#1a1a1a', 
+          padding: '20px', 
+          borderRadius: '10px', 
+          border: '1px solid #333',
+          marginBottom: '20px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h3 style={{ 
+                color: '#0088ff', 
+                margin: 0,
+                fontSize: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                ⚙️ Meta-Agent Settings
+              </h3>
+              <p style={{ 
+                color: '#888', 
+                fontSize: '12px', 
+                margin: '5px 0 0 0' 
+              }}>
+                {userSettings 
+                  ? `Technical Level: ${userSettings.technicalKnowledge}, Style: ${userSettings.questioningStyle}` 
+                  : 'Configure how Meta-Agent generates questions for you'}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowUserSettings(true)}
+              style={{
+                background: userSettings ? '#333' : '#0088ff',
+                color: '#fff',
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: userSettings ? 'normal' : 'bold',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer'
+              }}
+            >
+              {userSettings ? 'Update Settings' : '⚙️ Configure'}
+            </button>
+          </div>
+        </div>
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
           <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '10px', border: '1px solid #333' }}>
@@ -1269,6 +1332,7 @@ Format the response as a structured implementation plan with clear subtasks and 
         task={currentTask}
         onSubmit={handlePreResearchSubmit}
         githubConfig={state.githubConfig}
+        userSettings={userSettings}
       />
       
       {/* NEW: Post-Research Modal (Phase 2) */}
@@ -1299,6 +1363,13 @@ Format the response as a structured implementation plan with clear subtasks and 
         onClose={() => setShowCalibration(false)}
         onComplete={handleCalibrationComplete}
         githubRepo={`${state.githubConfig.owner}/${state.githubConfig.repo}`}
+      />
+
+      {/* User Settings Modal */}
+      <UserSettingsModal
+        show={showUserSettings}
+        onClose={() => setShowUserSettings(false)}
+        onSave={handleUserSettingsSave}
       />
       
       {/* Task Creation Progress */}
