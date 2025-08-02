@@ -444,11 +444,18 @@ Format the response as a structured plan that can be converted to a GitHub issue
                     </span>
                     <span>Priority: {task.priority}</span>
                     {task.terragonUrl && (
-                      <span>
-                        <a href={task.terragonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#00ff88' }}>
-                          View on Terragon
-                        </a>
-                      </span>
+                      <>
+                        <span>
+                          <a href={`/task/${task.terragonTaskId}`} style={{ color: '#00ff88', marginRight: '10px' }}>
+                            Open Chat
+                          </a>
+                        </span>
+                        <span>
+                          <a href={task.terragonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#00aaff' }}>
+                            View on Terragon
+                          </a>
+                        </span>
+                      </>
                     )}
                     {task.githubIssue && <span>GitHub #{task.githubIssue}</span>}
                     <span>{new Date(task.createdAt).toLocaleTimeString()}</span>
