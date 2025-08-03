@@ -23,7 +23,7 @@ export default async function handler(req, res) {
       orchestration: {
         taskDocument: '',
         workflowSteps: [],
-        dependencies: new Map(),
+        dependencies: {},
         executionStatus: {}
       },
       execution: {

@@ -46,6 +46,7 @@ export default function Home() {
   const [showUserSettings, setShowUserSettings] = useState(false);
   const [userSettings, setUserSettings] = useState(null);
   const [currentView, setCurrentView] = useState('queue'); // 'queue' or 'workflow'
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [conversation, setConversation] = useState([
     { role: 'system', content: 'Ready to help you plan tasks. Connect to Terragon to begin.' }
   ]);
@@ -196,6 +197,11 @@ export default function Home() {
   }
 
   async function submitToPlanningQueue() {
+    // Prevent double submission
+    if (isSubmitting) {
+      return;
+    }
+
     // Allow Meta-Agent to work without Terragon connection
     if (!state.connected && !useMetaAgent) {
       showStatus('Please connect to Terragon first', 'error');
@@ -206,6 +212,8 @@ export default function Home() {
       showStatus('Please fill in all fields', 'error');
       return;
     }
+
+    setIsSubmitting(true);
 
     // Warn if Meta-Agent is disabled
     if (!useMetaAgent) {
@@ -219,6 +227,7 @@ export default function Home() {
         'Are you sure you want to continue without planning?';
       );
       if (!confirmed) {
+        setIsSubmitting(false);
         return;
       }
     }
@@ -227,6 +236,7 @@ export default function Home() {
     if (useMetaAgent && hasClaudeMd === false) {
       alert('⚠️ No CLAUDE.md found! Please run repository calibration first to create your sacred source of truth.');
       setShowCalibration(true);
+      setIsSubmitting(false);
       return;
     }
 
@@ -252,8 +262,15 @@ export default function Home() {
     setTaskTitle('');
     setTaskDescription('');
 
-    // Send to Terragon for planning
-    await sendToTerragon(task);
+    try {
+      // Send to Terragon for planning
+      await sendToTerragon(task);
+    } catch (error) {
+      console.error('Error submitting task:', error);
+      showStatus('Failed to submit task', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   async function sendToTerragon(task) {
@@ -288,7 +305,7 @@ Format the response as a structured implementation plan with clear subtasks and 
 
     try {
       const payload = [
-        task.threadId,;
+        task.threadId,
         { role: 'user', content: prompt },
         null,
         { modelId: 'claude-3-5-sonnet-20241022', attachments: [] }
@@ -1287,7 +1304,9 @@ Format the response as a structured implementation plan with clear subtasks and 
               <option value='medium'>Medium Priority</option>
               <option value='high'>High Priority</option>
             </select>
-            <button onClick={submitToPlanningQueue}>🌱 Submit to Planning Queue</button>
+            <button onClick={submitToPlanningQueue} disabled={isSubmitting}>
+              {isSubmitting ? '⏳ Submitting...' : '🌱 Submit to Planning Queue'}
+            </button>
           </div>
 
           <div>
