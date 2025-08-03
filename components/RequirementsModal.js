@@ -271,7 +271,7 @@ export default function RequirementsModal({
                   const isSelected = currentAnswers.includes(option);
 
                   return (
-                    <button;
+                    <button
                       key={idx}
                       onClick={() => {
                         if (isSelected) {

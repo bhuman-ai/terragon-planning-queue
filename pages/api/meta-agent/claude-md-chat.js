@@ -195,7 +195,7 @@ function parseAssistantResponse(response) {
       'Explain the project architecture',
       'What needs updating?',
       'Show me recent changes',
-      'Check document health';
+      'Check document health'
     ];
 
     generalSuggestions.forEach(suggestion => {
@@ -253,7 +253,7 @@ function extractTechStackInfo(content) {
     return 'I can see references to your tech stack in the document. The technology stack section contains your current frameworks and dependencies.';
   }
 
-  return 'I couldn't find a specific tech stack section. Your CLAUDE.md may need to be updated to include current technologies and dependencies.';
+  return "I couldn't find a specific tech stack section. Your CLAUDE.md may need to be updated to include current technologies and dependencies.";
 }
 
 /**

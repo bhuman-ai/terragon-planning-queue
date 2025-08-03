@@ -207,14 +207,14 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
 
   const renderMarkdown = (content) => {
     // Simple markdown rendering - in production you'd use a proper markdown parser
-    return content;
-      .replace(/^# (.*$)/gm, '<h1 style='color: #00ff88; border-bottom: 2px solid #333; padding-bottom: 10px; margin: 20px 0 15px 0;'>$1</h1>')
-      .replace(/^## (.*$)/gm, '<h2 style='color: #66bbff; margin: 20px 0 10px 0;'>$1</h2>')
-      .replace(/^### (.*$)/gm, '<h3 style='color: #ffaa66; margin: 15px 0 8px 0;'>$1</h3>')
-      .replace(/^\*\*(.*?)\*\*/gm, '<strong style='color: #fff;'>$1</strong>')
-      .replace(/^\* (.*$)/gm, '<li style='margin: 5px 0;'>$1</li>')
-      .replace(/^- (.*$)/gm, '<li style='margin: 5px 0;'>$1</li>')
-      .replace(/`([^`]+)`/g, '<code style='background: #333; color: #ffaa66; padding: 2px 4px; border-radius: 3px;'>$1</code>')
+    return content
+      .replace(/^# (.*$)/gm, '<h1 style="color: #00ff88; border-bottom: 2px solid #333; padding-bottom: 10px; margin: 20px 0 15px 0;">$1</h1>')
+      .replace(/^## (.*$)/gm, '<h2 style="color: #66bbff; margin: 20px 0 10px 0;">$2</h2>')
+      .replace(/^### (.*$)/gm, '<h3 style="color: #ffaa66; margin: 15px 0 8px 0;">$1</h3>')
+      .replace(/^\*\*(.*?)\*\*/gm, '<strong style="color: #fff;">$1</strong>')
+      .replace(/^\* (.*$)/gm, '<li style="margin: 5px 0;">$1</li>')
+      .replace(/^- (.*$)/gm, '<li style="margin: 5px 0;">$1</li>')
+      .replace(/`([^`]+)`/g, '<code style="background: #333; color: #ffaa66; padding: 2px 4px; border-radius: 3px;">$1</code>')
       .replace(/\n/g, '<br/>');
   };
 
@@ -437,7 +437,7 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
               }}>
                 <div style={{
                   backgroundColor: message.role === 'user' ? '#003366' :
-                                   message.role === 'system' ? '#333' : '#0f0f0f',
+                    message.role === 'system' ? '#333' : '#0f0f0f',
                   border: '1px solid #333',
                   borderRadius: '12px',
                   padding: '12px',

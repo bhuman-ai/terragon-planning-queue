@@ -273,7 +273,7 @@ export default function ProjectInterviewModal({
                 const isSelected = currentAnswers.includes(option);
 
                 return (
-                  <button;
+                  <button
                     key={option}
                     onClick={() => {
                       const newAnswers = isSelected

@@ -80,8 +80,8 @@ export default async function handler(req, res) {
  * Generate instruction for Terragon based on user's response
  */
 async function generateTerragonInstruction(taskData, userResponse) {
-  // If user said 'I don't know', provide a default instruction
-  if (userResponse.toLowerCase() === 'i don't know') {
+  // If user said "I don't know", provide a default instruction
+  if (userResponse.toLowerCase() === "i don't know") {
     return `Continue with the task using your best judgment. The user is unsure about: '${taskData.pauseReason}'. Proceed with standard implementation patterns.`;
   }
 

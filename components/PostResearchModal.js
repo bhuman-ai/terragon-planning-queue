@@ -16,7 +16,7 @@ export default function PostResearchModal({
   const currentQuestion = questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
-  const canProceed = answers[currentQuestion?.id] &&;
+  const canProceed = answers[currentQuestion?.id] &&
     (currentQuestion?.type !== 'text' || answers[currentQuestion.id].trim());
 
   const handleAnswer = (questionId, answer) => {
@@ -257,11 +257,11 @@ export default function PostResearchModal({
                       const isSelected = currentAnswers.includes(option);
 
                       return (
-                        <button;
+                        <button
                           key={option}
                           onClick={() => {
                             const newAnswers = isSelected
-                              ? currentAnswers.filter(a => a !== option);
+                              ? currentAnswers.filter(a => a !== option)
                               : [...currentAnswers, option];
                             handleAnswer(currentQuestion.id, newAnswers);
                           }}

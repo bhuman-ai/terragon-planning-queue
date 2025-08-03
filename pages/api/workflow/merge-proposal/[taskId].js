@@ -43,7 +43,7 @@ export default async function handler(req, res) {
 
       // Read task metadata for context
       const metadata = JSON.parse(
-        await fs.readFile(path.join(taskPath, '.task-metadata.json'), 'utf-8');
+        await fs.readFile(path.join(taskPath, '.task-metadata.json'), 'utf-8')
       );
 
       res.status(200).json({
@@ -68,7 +68,7 @@ export default async function handler(req, res) {
 
       if (!action || !['approve', 'reject'].includes(action)) {
         return res.status(400).json({
-          error: 'Invalid action. Must be 'approve' or 'reject''
+          error: "Invalid action. Must be 'approve' or 'reject'"
         });
       }
 

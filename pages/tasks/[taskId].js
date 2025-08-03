@@ -155,6 +155,6 @@ function renderMarkdown(content) {
     .replace(/^/, '<p>')
     .replace(/$/, '</p>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>');
 }

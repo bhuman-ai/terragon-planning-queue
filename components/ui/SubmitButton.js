@@ -19,7 +19,7 @@ const SubmitButton = ({
   }
 
   return (
-    <button;
+    <button
       type={type}
       disabled={disabled || loading}
       onClick={handleClick}

@@ -224,7 +224,7 @@ export default function Home() {
         '• Research and best practices analysis\n' +
         '• Detailed task decomposition\n' +
         '• Proposal review\n\n' +
-        'Are you sure you want to continue without planning?';
+        'Are you sure you want to continue without planning?'
       );
       if (!confirmed) {
         setIsSubmitting(false);
@@ -1242,6 +1242,7 @@ Format the response as a structured implementation plan with clear subtasks and 
 
         {/* Content based on current view */}
         {currentView === 'queue' ? (
+        <>
         <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '10px', border: '1px solid #333', marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
             <h2 style={{ color: '#00ff88', margin: 0 }}>📋 Planning Queue</h2>
@@ -1400,7 +1401,7 @@ Format the response as a structured implementation plan with clear subtasks and 
             ))}
           </div>
         </div>
-      </div>
+      </>
       ) : (
         /* Workflow Hierarchy View */
         <WorkflowHierarchy />

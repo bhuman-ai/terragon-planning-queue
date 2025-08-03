@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     // Build the payload for sending a message to an existing task
     // Based on the actual Terragon API format
     const payload = [
-      taskId,;
+      taskId,
       {
         role: 'user',
         content: message

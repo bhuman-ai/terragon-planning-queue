@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     const hierarchyManager = new HierarchyManager();
     const validation = await hierarchyManager.validateProjectMdEdit(
       proposedChanges,
-      mergeProposalId;
+      mergeProposalId
     );
 
     if (!validation.allowed) {
