@@ -75,7 +75,8 @@ export default async function handler(req, res) {
         const items = Array.isArray(responseData) ? responseData : [];
 
         // Process items in parallel but limit concurrency
-        const BATCH_SIZE = 5;
+        // Reduce batch size for more files to respect rate limits
+        const BATCH_SIZE = 3;
         for (let i = 0; i < items.length; i += BATCH_SIZE) {
           const batch = items.slice(i, i + BATCH_SIZE);
 
@@ -120,19 +121,38 @@ export default async function handler(req, res) {
                        (filePath.startsWith('.github/') || !filePath.includes('/'))) {
                 results.push(filePath);
               }
+              // *** NEW: Include all source code files ***
+              else if ([
+                '.js', '.jsx', '.ts', '.tsx', '.vue', '.svelte',
+                '.py', '.go', '.rs', '.rb', '.php', '.java', '.cpp', '.c', '.h',
+                '.css', '.scss', '.sass', '.less',
+                '.json', '.xml', '.toml', '.ini', '.conf'
+              ].some(ext => fileName.endsWith(ext))) {
+                results.push(filePath);
+              }
             } else if (item.type === 'dir') {
               // Skip deep nested directories to avoid rate limits
               const depth = path.split('/').filter(p => p).length;
               // Scan important directories regardless of depth
               const importantDirs = ['docs', 'documentation', '.github'];
+              // *** NEW: Include source code directories ***
+              const sourceCodeDirs = ['src', 'lib', 'components', 'pages', 'api', 'utils', 'hooks', 'services', 'modules', 'features', 'views', 'controllers', 'models', 'middleware', 'config', 'types', 'interfaces', 'schemas', 'tests', '__tests__', 'test', 'spec'];
               const dirName = item.name.toLowerCase();
 
-              if (depth < 2 || importantDirs.includes(dirName)) {
+              // Allow deeper scanning for source code directories (up to depth 4)
+              const maxDepth = sourceCodeDirs.includes(dirName) ? 4 : 2;
+              
+              if (depth < maxDepth || importantDirs.includes(dirName) || sourceCodeDirs.includes(dirName)) {
                 const subResults = await scanGitHubDirectory(item.path);
                 results.push(...subResults);
               }
             }
           }));
+          
+          // Add small delay between batches to respect rate limits
+          if (i + BATCH_SIZE < items.length) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
         }
       } catch (error) {
         console.error(`Error scanning directory ${path}:`, error);
