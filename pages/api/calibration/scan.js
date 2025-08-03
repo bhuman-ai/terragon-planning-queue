@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       'User-Agent': 'Terragon-Planning-Queue'
     };
     
-    if (process.env.GITHUB_TOKEN) {
+    if (process.env.GITHUB_TOKEN && process.env.GITHUB_TOKEN !== 'YOUR_GITHUB_TOKEN_HERE') {
       headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
     }
     
@@ -45,11 +45,33 @@ export default async function handler(req, res) {
         const response = await fetch(url, { headers });
         
         if (!response.ok) {
-          console.error(`Failed to scan ${path}: ${response.status}`);
+          const errorText = await response.text();
+          console.error(`Failed to scan ${path}: ${response.status} - ${errorText}`);
+          
+          // If it's a 401, the token is invalid or missing
+          if (response.status === 401) {
+            throw new Error(`GitHub authentication failed. Please check your GITHUB_TOKEN in .env.local`);
+          }
+          
+          // If it's a 404, the repo might not exist or be private
+          if (response.status === 404) {
+            throw new Error(`Repository ${owner}/${repoName} not found or is private. You may need a GitHub token.`);
+          }
+          
+          // If it's a 403, we might have hit rate limits
+          if (response.status === 403) {
+            const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
+            const rateLimitReset = response.headers.get('x-ratelimit-reset');
+            throw new Error(`GitHub API rate limit exceeded. Remaining: ${rateLimitRemaining}, Reset: ${rateLimitReset}`);
+          }
+          
           return results;
         }
         
-        const items = await response.json();
+        const responseData = await response.json();
+        
+        // Handle both array and object responses
+        const items = Array.isArray(responseData) ? responseData : [];
         
         // Process items in parallel but limit concurrency
         const BATCH_SIZE = 5;
@@ -67,29 +89,44 @@ export default async function handler(req, res) {
               const fileName = item.name.toLowerCase();
               const filePath = item.path;
               
-              if (fileName.endsWith('.md') || 
-                  fileName.includes('readme') ||
-                  fileName === 'package.json' ||
-                  fileName === 'requirements.txt' ||
-                  fileName === 'setup.py' ||
-                  fileName === 'pyproject.toml' ||
-                  fileName === 'cargo.toml' ||
-                  fileName === 'go.mod' ||
-                  fileName === 'composer.json' ||
-                  fileName === 'gemfile' ||
-                  fileName.endsWith('.yml') ||
-                  fileName.endsWith('.yaml') ||
-                  fileName === '.env.example' ||
-                  fileName === 'dockerfile' ||
-                  fileName === 'docker-compose.yml' ||
-                  filePath.includes('docs/') ||
-                  filePath.includes('documentation/')) {
+              // Always include markdown files
+              if (fileName.endsWith('.md')) {
+                results.push(filePath);
+              }
+              // Include README files (case insensitive)
+              else if (fileName.startsWith('readme')) {
+                results.push(filePath);
+              }
+              // Include common config files
+              else if ([
+                'package.json',
+                'requirements.txt',
+                'setup.py',
+                'pyproject.toml',
+                'cargo.toml',
+                'go.mod',
+                'composer.json',
+                'gemfile',
+                '.env.example',
+                'dockerfile',
+                'docker-compose.yml',
+                'docker-compose.yaml'
+              ].includes(fileName)) {
+                results.push(filePath);
+              }
+              // Include YAML/YML files in .github or root
+              else if ((fileName.endsWith('.yml') || fileName.endsWith('.yaml')) && 
+                       (filePath.startsWith('.github/') || !filePath.includes('/'))) {
                 results.push(filePath);
               }
             } else if (item.type === 'dir') {
               // Skip deep nested directories to avoid rate limits
               const depth = path.split('/').filter(p => p).length;
-              if (depth < 3) {
+              // Scan important directories regardless of depth
+              const importantDirs = ['docs', 'documentation', '.github'];
+              const dirName = item.name.toLowerCase();
+              
+              if (depth < 2 || importantDirs.includes(dirName)) {
                 const subResults = await scanGitHubDirectory(item.path);
                 results.push(...subResults);
               }
@@ -104,10 +141,13 @@ export default async function handler(req, res) {
     }
     
     // Start scanning from root
-    console.log(`Starting repository scan for ${repo}...`);
-    scanResults.existingDocs = await scanGitHubDirectory();
-    scanResults.fileCount = scanResults.existingDocs.length;
-    console.log(`Found ${scanResults.fileCount} documentation files`);
+    try {
+      scanResults.existingDocs = await scanGitHubDirectory();
+      scanResults.fileCount = scanResults.existingDocs.length;
+    } catch (scanError) {
+      console.error('Scan error:', scanError.message);
+      scanResults.error = scanError.message;
+    }
 
     // Analyze package.json from GitHub
     try {
