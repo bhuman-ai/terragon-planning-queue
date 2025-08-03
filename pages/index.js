@@ -405,8 +405,8 @@ Format the response as a structured implementation plan with clear subtasks and 
       }
     } catch (error) {
       console.error('Failed to send to Terragon:', error);
-      addMessage('assistant', `Error: ${error}`.message);
-      showStatus(`Failed to process task: ${error}`.message, 'error');
+      addMessage('assistant', `Error: ${error.message}`);
+      showStatus(`Failed to process task: ${error.message}`, 'error');
     }
   }
 
