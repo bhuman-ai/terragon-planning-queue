@@ -1,0 +1,10 @@
+# Vercel ignore file
+# Ignore test and development files
+*.test.js
+*.spec.js
+__tests__
+__mocks__
+.env.local
+.env.development
+fix-*.js
+check-*.js
