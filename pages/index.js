@@ -1064,12 +1064,12 @@ Format the response as a structured implementation plan with clear subtasks and 
                         cursor: 'pointer'
                       }}
                     >
-                      🎤 Dynamic Calibration
+                      🎤 Dynamic Calibration (Voice)
                     </button>
                     <button
                       onClick={() => setShowCalibration(true)}
                       style={{
-                        background: hasClaudeMd ? '#333' : '#666',
+                        background: hasClaudeMd ? '#444' : '#666',
                         color: '#fff',
                         padding: '8px 16px',
                         fontSize: '13px',
@@ -1079,7 +1079,7 @@ Format the response as a structured implementation plan with clear subtasks and 
                         cursor: 'pointer'
                       }}
                     >
-                      {hasClaudeMd ? 'Interview Update' : '📝 Interview Mode'}
+                      {hasClaudeMd ? '📝 Interview Update' : '📝 Interview Mode'}
                     </button>
                   </div>
                 </div>
@@ -1545,4 +1545,3 @@ Format the response as a structured implementation plan with clear subtasks and 
     </div>
   );
 }
-// Force rebuild: Sun Aug  3 12:34:58 EDT 2025
