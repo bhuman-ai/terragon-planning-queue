@@ -5,7 +5,7 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [chatMessages, setChatMessages] = useState([;
+  const [chatMessages, setChatMessages] = useState([
     {
       role: 'assistant',
       content: 'Hello! I\'m your Meta-Agent assistant. I can help you understand, update, and maintain your CLAUDE.md sacred document. What would you like to know?',

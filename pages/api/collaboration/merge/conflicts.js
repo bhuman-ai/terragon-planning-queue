@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 async function handleDetectConflicts(req, res) {
   try {
     // Verify agent authentication
-    const agentAuth = req.headers['x-agent-auth'];
+    const agentAuth = req.headers['x-agent-auth'] || req.headers['X-Agent-Auth'];
     if (!verifyAgentAuth.validateToken(agentAuth)) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }
@@ -69,7 +69,7 @@ async function handleDetectConflicts(req, res) {
 async function handleGetConflicts(req, res) {
   try {
     // Verify agent authentication
-    const agentAuth = req.headers['x-agent-auth'];
+    const agentAuth = req.headers['x-agent-auth'] || req.headers['X-Agent-Auth'];
     if (!verifyAgentAuth.validateToken(agentAuth)) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }

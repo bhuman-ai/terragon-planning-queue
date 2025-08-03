@@ -129,7 +129,7 @@ async function handleSSEConnection(req, res) {
 async function handleStateUpdate(req, res) {
   try {
     // Verify agent authentication
-    const agentAuth = req.headers['x-agent-auth'];
+    const agentAuth = req.headers['x-agent-auth'] || req.headers['X-Agent-Auth'];
     if (!verifyAgentAuth.validateToken(agentAuth)) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }
