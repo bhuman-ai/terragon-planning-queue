@@ -187,12 +187,12 @@ export default function Home() {
           setSessionInput(token);
         }
       } else {
-        showStatus(`Invalid session: ${result}`.message, 'error');
+        showStatus(`Invalid session: ${result.message}`, 'error');
         // Clear saved token if it's invalid
         localStorage.removeItem('terragonSession');
       }
     } catch (error) {
-      showStatus(`Failed to connect: ${error}`.message, 'error');
+      showStatus(`Failed to connect: ${error.message}`, 'error');
     }
   }
 
