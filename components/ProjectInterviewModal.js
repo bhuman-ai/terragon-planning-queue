@@ -277,7 +277,7 @@ export default function ProjectInterviewModal({
                     key={option}
                     onClick={() => {
                       const newAnswers = isSelected
-                        ? currentAnswers.filter(a => a !== option);
+                        ? currentAnswers.filter(a => a !== option)
                         : [...currentAnswers, option];
                       handleAnswer(currentQuestion.id, newAnswers);
                     }}

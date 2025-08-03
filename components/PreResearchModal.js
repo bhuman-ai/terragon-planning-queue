@@ -123,7 +123,7 @@ export default function PreResearchModal({
   if (!currentQuestion) return null;
 
   const isLastQuestion = currentQuestionIndex === preResearchQuestions.length - 1;
-  // Allow proceeding with 'I don't know' or any answer
+  // Allow proceeding with "I don't know" or any answer
   const canProceed = answers[currentQuestion.id] !== undefined && answers[currentQuestion.id] !== '';
 
   const handleAnswer = (questionId, answer) => {
@@ -301,13 +301,13 @@ export default function PreResearchModal({
                     {option}
                   </button>
                 ))}
-                {/* Always add 'I don't know' option */}
+                {/* Always add "I don't know" option */}
                 <button
-                  onClick={() => handleAnswer(currentQuestion.id, 'I don't know')}
+                  onClick={() => handleAnswer(currentQuestion.id, "I don't know")}
                   style={{
                     padding: '12px 16px',
-                    backgroundColor: answers[currentQuestion.id] === 'I don't know' ? '#ff880022' : '#0f0f0f',
-                    border: answers[currentQuestion.id] === 'I don't know' ? '2px solid #ff8800' : '1px solid #333',
+                    backgroundColor: answers[currentQuestion.id] === "I don't know" ? '#ff880022' : '#0f0f0f',
+                    border: answers[currentQuestion.id] === "I don't know" ? '2px solid #ff8800' : '1px solid #333',
                     borderRadius: '8px',
                     color: '#ff8800',
                     cursor: 'pointer',
@@ -407,13 +407,13 @@ export default function PreResearchModal({
                     </button>
                   );
                 })}
-                {/* 'I don't know' option for multi-choice */}
+                {/* "I don't know" option for multi-choice */}
                 <button
-                  onClick={() => handleAnswer(currentQuestion.id, ['I don't know'])}
+                  onClick={() => handleAnswer(currentQuestion.id, ["I don't know"])}
                   style={{
                     padding: '10px 14px',
-                    backgroundColor: (answers[currentQuestion.id] || []).includes('I don't know') ? '#ff880022' : '#0f0f0f',
-                    border: (answers[currentQuestion.id] || []).includes('I don't know') ? '2px solid #ff8800' : '1px solid #333',
+                    backgroundColor: (answers[currentQuestion.id] || []).includes("I don't know") ? '#ff880022' : '#0f0f0f',
+                    border: (answers[currentQuestion.id] || []).includes("I don't know") ? '2px solid #ff8800' : '1px solid #333',
                     borderRadius: '8px',
                     color: '#ff8800',
                     cursor: 'pointer',
@@ -434,30 +434,30 @@ export default function PreResearchModal({
             {currentQuestion.type === 'text' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <textarea
-                  value={answers[currentQuestion.id] === 'I don't know' ? '' : (answers[currentQuestion.id] || '')}
+                  value={answers[currentQuestion.id] === "I don't know" ? '' : (answers[currentQuestion.id] || '')}
                   onChange={(e) => handleAnswer(currentQuestion.id, e.target.value)}
                   placeholder={currentQuestion.placeholder || 'Type your answer here...'}
-                  disabled={answers[currentQuestion.id] === 'I don't know'}
+                  disabled={answers[currentQuestion.id] === "I don't know"}
                   style={{
                     width: '100%',
                     minHeight: currentQuestion.multiline !== false ? '100px' : '40px',
                     padding: '12px',
-                    backgroundColor: answers[currentQuestion.id] === 'I don't know' ? '#1a1a1a' : '#0f0f0f',
+                    backgroundColor: answers[currentQuestion.id] === "I don't know" ? '#1a1a1a' : '#0f0f0f',
                     border: '1px solid #333',
                     borderRadius: '6px',
-                    color: answers[currentQuestion.id] === 'I don't know' ? '#666' : '#fff',
+                    color: answers[currentQuestion.id] === "I don't know" ? '#666' : '#fff',
                     fontSize: '14px',
                     resize: 'vertical',
                     fontFamily: 'inherit',
-                    opacity: answers[currentQuestion.id] === 'I don't know' ? 0.5 : 1
+                    opacity: answers[currentQuestion.id] === "I don't know" ? 0.5 : 1
                   }}
                 />
                 <button
-                  onClick={() => handleAnswer(currentQuestion.id, 'I don't know')}
+                  onClick={() => handleAnswer(currentQuestion.id, "I don't know")}
                   style={{
                     padding: '10px 14px',
-                    backgroundColor: answers[currentQuestion.id] === 'I don't know' ? '#ff880022' : '#0f0f0f',
-                    border: answers[currentQuestion.id] === 'I don't know' ? '2px solid #ff8800' : '1px solid #333',
+                    backgroundColor: answers[currentQuestion.id] === "I don't know" ? '#ff880022' : '#0f0f0f',
+                    border: answers[currentQuestion.id] === "I don't know" ? '2px solid #ff8800' : '1px solid #333',
                     borderRadius: '8px',
                     color: '#ff8800',
                     cursor: 'pointer',
