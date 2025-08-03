@@ -5,7 +5,6 @@ import PostResearchModal from '../components/PostResearchModal';
 import ProposalReviewModal from '../components/ProposalReviewModal';
 import TaskCreationProgress from '../components/TaskCreationProgress';
 import TaskMonitorDashboard from '../components/TaskMonitorDashboard';
-import CalibrationWizard from '../components/CalibrationWizard';
 import DynamicCalibrationWizard from '../components/DynamicCalibrationWizard';
 import UserSettingsModal from '../components/UserSettingsModal';
 import ClaudeAutoUpdaterPanel from '../components/ClaudeAutoUpdaterPanel';
@@ -42,7 +41,6 @@ export default function Home() {
   const [showTaskProgress, setShowTaskProgress] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState(null);
   const [showTaskMonitor, setShowTaskMonitor] = useState(false);
-  const [showCalibration, setShowCalibration] = useState(false);
   const [showDynamicCalibration, setShowDynamicCalibration] = useState(false);
   const [hasClaudeMd, setHasClaudeMd] = useState(null);
   const [showUserSettings, setShowUserSettings] = useState(false);
@@ -124,7 +122,7 @@ export default function Home() {
 
       // If no CLAUDE.md exists and user saves GitHub config, show calibration
       if (!data.exists && state.githubConfig.owner && state.githubConfig.repo) {
-        setShowCalibration(true);
+        setShowDynamicCalibration(true);
       }
     } catch (error) {
       console.error('Failed to check for CLAUDE.md:', error);
@@ -778,35 +776,6 @@ Format the response as a structured implementation plan with clear subtasks and 
   }
 
 
-  // Handle calibration completion
-  async function handleCalibrationComplete(calibrationResult) {
-    const { claudeMd, cleanup, calibrationData } = calibrationResult;
-
-    // Mark calibration as complete
-    setHasClaudeMd(true);
-    setShowCalibration(false);
-
-    // Show success message
-    showStatus('🔥 Sacred calibration complete! CLAUDE.md is now your source of truth.', 'success');
-
-    // If cleanup was approved, execute it
-    if (cleanup && cleanup.length > 0) {
-      showStatus(`Cleaning up ${cleanup.length} obsolete files...`, 'info');
-
-      try {
-        await fetch('/api/calibration/cleanup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ files: cleanup })
-        });
-
-        showStatus('✨ Cleanup complete! Your repository is now aligned with CLAUDE.md', 'success');
-      } catch (error) {
-        console.error('Cleanup failed:', error);
-        showStatus('Cleanup failed, but calibration is complete', 'warning');
-      }
-    }
-  }
 
   // Handle dynamic calibration completion
   async function handleDynamicCalibrationComplete(result) {
@@ -1050,38 +1019,21 @@ Format the response as a structured implementation plan with clear subtasks and 
                       📖 View Document
                     </button>
                   )}
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      onClick={() => setShowDynamicCalibration(true)}
-                      style={{
-                        background: hasClaudeMd ? '#00aa88' : '#00ff88',
-                        color: '#000',
-                        padding: '8px 16px',
-                        fontSize: '13px',
-                        fontWeight: 'bold',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      🎤 Dynamic Calibration (Voice)
-                    </button>
-                    <button
-                      onClick={() => setShowCalibration(true)}
-                      style={{
-                        background: hasClaudeMd ? '#444' : '#666',
-                        color: '#fff',
-                        padding: '8px 16px',
-                        fontSize: '13px',
-                        fontWeight: 'normal',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {hasClaudeMd ? '📝 Interview Update' : '📝 Interview Mode'}
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => setShowDynamicCalibration(true)}
+                    style={{
+                      background: hasClaudeMd ? '#00aa88' : '#00ff88',
+                      color: '#000',
+                      padding: '8px 16px',
+                      fontSize: '13px',
+                      fontWeight: 'bold',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {hasClaudeMd ? '🎤 Update Calibration' : '🔥 Start Calibration'}
+                  </button>
                 </div>
               </div>
           </div>
@@ -1502,14 +1454,6 @@ Format the response as a structured implementation plan with clear subtasks and 
         onModify={handleProposalModify}
       />
 
-
-      {/* Calibration Wizard */}
-      <CalibrationWizard
-        show={showCalibration}
-        onClose={() => setShowCalibration(false)}
-        onComplete={handleCalibrationComplete}
-        githubRepo={`${state.githubConfig.owner}/${state.githubConfig.repo}`}
-      />
 
       {/* Dynamic Calibration Wizard */}
       <DynamicCalibrationWizard
