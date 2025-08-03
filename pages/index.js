@@ -45,6 +45,7 @@ export default function Home() {
   const [hasClaudeMd, setHasClaudeMd] = useState(null);
   const [showUserSettings, setShowUserSettings] = useState(false);
   const [userSettings, setUserSettings] = useState(null);
+  const [projectData, setProjectData] = useState(null);
   const [currentView, setCurrentView] = useState('queue'); // 'queue' or 'workflow'
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [conversation, setConversation] = useState([
