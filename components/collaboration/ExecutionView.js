@@ -239,7 +239,7 @@ export default function ExecutionView({
   const updateAgentStatus = (agentUpdate) => {
     setActiveAgents(prev => {
       const updated = prev.map(agent =>
-        agent.id === agentUpdate.id;
+        agent.id === agentUpdate.id
           ? { ...agent, ...agentUpdate }
           : agent
       );

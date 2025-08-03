@@ -20,7 +20,7 @@ export default function IdeationView({
   const [draftContent, setDraftContent] = useState(initialDraft);
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
-  const [chatMessages, setChatMessages] = useState([;
+  const [chatMessages, setChatMessages] = useState([
     {
       id: 'welcome',
       role: 'assistant',

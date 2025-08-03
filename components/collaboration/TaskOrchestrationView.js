@@ -25,7 +25,7 @@ export default function TaskOrchestrationView({
   const [dependencies, setDependencies] = useState(new Map());
   const [executionStatus, setExecutionStatus] = useState({});
   const [timeEstimates, setTimeEstimates] = useState({});
-  const [chatMessages, setChatMessages] = useState([;
+  const [chatMessages, setChatMessages] = useState([
     {
       id: 'welcome',
       role: 'assistant',

@@ -31,7 +31,7 @@ export default function MergeReviewView({
   const [validationStatus, setValidationStatus] = useState({});
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState([]);
-  const [chatMessages, setChatMessages] = useState([;
+  const [chatMessages, setChatMessages] = useState([
     {
       id: 'welcome',
       role: 'assistant',

@@ -125,7 +125,7 @@ export default function CollaborationHub({
     }
 
     // Execution phase completion check
-    const executionComplete = Object.values(sessionData.orchestration.executionStatus);
+    const executionComplete = Object.values(sessionData.orchestration.executionStatus)
       .filter(status => status === 'completed').length > 0;
 
     if (executionComplete) {
