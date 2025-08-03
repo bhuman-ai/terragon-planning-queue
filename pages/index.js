@@ -910,8 +910,53 @@ Format the response as a structured implementation plan with clear subtasks and 
   }
 
   return (
-    <div>
-      <h1>Simplified Test</h1>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#e0e0e0', padding: '20px' }}>
+      <style jsx global>{`
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        input, textarea, select {
+          width: 100%;
+          padding: 12px;
+          background: #0a0a0a;
+          border: 1px solid #333;
+          border-radius: 5px;
+          color: #e0e0e0;
+          font-family: inherit;
+          margin-bottom: 10px;
+        }
+
+        button {
+          padding: 12px 24px;
+          background: #00ff88;
+          color: #0a0a0a;
+          border: none;
+          border-radius: 5px;
+          font-size: 16px;
+          cursor: pointer;
+          font-weight: bold;
+          transition: all 0.3s;
+        }
+
+        button:hover {
+          background: #00cc6a;
+          transform: translateY(-1px);
+        }
+
+        button:disabled {
+          background: #333;
+          color: #666;
+          cursor: not-allowed;
+          transform: none;
+        }
+      `}</style>
 
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <h1 style={{ textAlign: 'center', color: '#00ff88', fontSize: '2.5em', marginBottom: '10px' }}>
@@ -1198,11 +1243,170 @@ Format the response as a structured implementation plan with clear subtasks and 
 
         {/* Content based on current view */}
         {currentView === 'queue' ? (
-          <div>Simple test content</div>
-        ) : (
-          <WorkflowHierarchy />
-        )}
+        <>
+        <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '10px', border: '1px solid #333', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h2 style={{ color: '#00ff88', margin: 0 }}>📋 Planning Queue</h2>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <button
+                onClick={() => setShowTaskMonitor(true)}
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: '#333',
+                  color: '#00aaff',
+                  border: '1px solid #555',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                🤖 Task Monitor
+              </button>
+              {state.planningQueue.length > 0 && (
+                <button
+                  onClick={() => {
+                  setState(prev => ({ ...prev, planningQueue: [] }));
+                  localStorage.removeItem('planningQueue');
+                  showStatus('All tasks cleared', 'info');
+                }}
+                style={{
+                  padding: '5px 10px',
+                  background: '#ff3300',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '3px',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                Clear All Tasks
+              </button>
+            )}
+            </div>
+          </div>
+          <div style={{ marginBottom: '20px' }}>
+            <h3 style={{ marginBottom: '10px' }}>New Task Planning Request</h3>
+            <input
+              type='text'
+              placeholder='Task title...'
+              value={taskTitle}
+              onChange={(e) => setTaskTitle(e.target.value)}
+            />
+            <textarea
+              rows='4'
+              placeholder='Describe what you want to build...'
+              value={taskDescription}
+              onChange={(e) => setTaskDescription(e.target.value)}
+            />
+            <select value={taskPriority} onChange={(e) => setTaskPriority(e.target.value)}>
+              <option value='low'>Low Priority</option>
+              <option value='medium'>Medium Priority</option>
+              <option value='high'>High Priority</option>
+            </select>
+            <button onClick={submitToPlanningQueue} disabled={isSubmitting}>
+              {isSubmitting ? '⏳ Submitting...' : '🌱 Submit to Planning Queue'}
+            </button>
+          </div>
 
+          <div>
+            {state.planningQueue.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#666', padding: '40px' }}>
+                No tasks in planning queue
+              </p>
+            ) : (
+              state.planningQueue.map(task => (
+                <div key={task.id} style={{
+                  background: '#0a0a0a',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  marginBottom: '10px',
+                  border: '1px solid #333',
+                  borderLeft: `4px solid ${task.phase === 'seedling' ? '#ffaa00' : task.phase === 'growing' ? '#00aaff' : '#00ff88'}`
+                }}>
+                  <div style={{ fontWeight: 'bold', color: '#00ff88', marginBottom: '5px' }}>
+                    {task.title}
+                  </div>
+                  <div style={{ color: '#aaa', margin: '5px 0' }}>{task.description}</div>
+                  <div style={{ fontSize: '12px', color: '#888', display: 'flex', gap: '15px' }}>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '2px 8px',
+                      borderRadius: '3px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      background: task.phase === 'seedling' ? '#ffaa0033' : task.phase === 'growing' ? '#00aaff33' : '#00ff8833',
+                      color: task.phase === 'seedling' ? '#ffaa00' : task.phase === 'growing' ? '#00aaff' : '#00ff88'
+                    }}>
+                      {task.phase === 'seedling' ? '🌱' : task.phase === 'growing' ? '🌿' : '🌳'} {task.phase}
+                    </span>
+                    <span>Priority: {task.priority}</span>
+                    {task.taskPath && (
+                      <span>
+                        <a href={`file://${task.taskPath}`} style={{ color: '#ffaa00' }}>
+                          📁 Task Folder
+                        </a>
+                      </span>
+                    )}
+                    {task.terragonUrl && (
+                      <>
+                        <span>
+                          <a href={`/task/${task.terragonTaskId}`} style={{ color: '#00ff88', marginRight: '10px' }}>
+                            Open Chat
+                          </a>
+                        </span>
+                        <span>
+                          <a href={task.terragonUrl} target='_blank' rel='noopener noreferrer' style={{ color: '#00aaff' }}>
+                            View on Terragon
+                          </a>
+                        </span>
+                      </>
+                    )}
+                    {task.terragonTaskId && <span>Task: {task.terragonTaskId}</span>}
+                    {task.metaAgentTaskId && <span>Task ID: {task.metaAgentTaskId}</span>}
+                    <span>{new Date(task.createdAt).toLocaleTimeString()}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '10px', border: '1px solid #333' }}>
+          <h2 style={{ color: '#00ff88', marginBottom: '15px' }}>💬 Terragon Conversation</h2>
+          <div style={{
+            background: '#0a0a0a',
+            padding: '15px',
+            borderRadius: '5px',
+            maxHeight: '400px',
+            overflowY: 'auto',
+            border: '1px solid #333',
+            fontFamily: 'Monaco, Menlo, monospace',
+            fontSize: '12px'
+          }}>
+            {conversation.map((msg, idx) => (
+              <div key={idx} style={{
+                marginBottom: '15px',
+                padding: '10px',
+                borderRadius: '5px',
+                background: msg.role === 'user' ? '#00ff8822' : '#00aaff22',
+                borderLeft: `3px solid ${msg.role === 'user' ? '#00ff88' : '#00aaff'}`
+              }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '5px', textTransform: 'uppercase', fontSize: '10px' }}>
+                  {msg.role}
+                </div>
+                <div>{msg.content}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </>
+      ) : (
+        /* Workflow Hierarchy View */
+        <WorkflowHierarchy />
+      )}
 
       {/* DEPRECATED Requirements Modal (old single-phase) */}
       <RequirementsModal
@@ -1236,6 +1440,17 @@ Format the response as a structured implementation plan with clear subtasks and 
         onSubmit={handlePostResearchSubmit}
       />
 
+      {/* Proposal Review Modal */}
+      <ProposalReviewModal
+        isOpen={showProposal}
+        onClose={() => setShowProposal(false)}
+        proposal={currentProposal}
+        onApprove={handleProposalApprove}
+        onReject={handleProposalReject}
+        onModify={handleProposalModify}
+      />
+
+
       {/* Calibration Wizard */}
       <CalibrationWizard
         show={showCalibration}
@@ -1266,7 +1481,7 @@ Format the response as a structured implementation plan with clear subtasks and 
         show={showTaskMonitor}
         onClose={() => setShowTaskMonitor(false)}
       />
-    </div>
+      </div>
     </div>
   );
 }
