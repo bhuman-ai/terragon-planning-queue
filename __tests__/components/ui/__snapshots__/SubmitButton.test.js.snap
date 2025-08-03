@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SubmitButton Rendering matches snapshot 1`] = `
+<button
+  aria-busy="false"
+  aria-disabled="false"
+  class="button primary  "
+  type="button"
+>
+  <span
+    class="content"
+  >
+    Submit
+  </span>
+</button>
+`;
