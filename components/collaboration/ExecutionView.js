@@ -544,7 +544,7 @@ export default function ExecutionView({
                 gap: '15px',
                 alignItems: 'flex-start',
                 backgroundColor: log.level === 'error' ? '#1a0000' :
-                                log.level === 'warn' ? '#1a1200' : 'transparent'
+                  log.level === 'warn' ? '#1a1200' : 'transparent'
               }}>
                 <span style={{
                   color: '#666',

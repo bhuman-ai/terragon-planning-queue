@@ -407,7 +407,7 @@ export default function CollaborationHub({
               style={{
                 padding: '10px 15px',
                 backgroundColor: currentView === view ? '#003366' :
-                                workflowProgress[view] === 'locked' ? '#1a1a1a' : '#333',
+                  workflowProgress[view] === 'locked' ? '#1a1a1a' : '#333',
                 border: `2px solid ${getProgressColor(
                   currentView === view ? 'current' : workflowProgress[view]
                 )}`,
@@ -507,14 +507,14 @@ export default function CollaborationHub({
                     }}>
                       <span style={{
                         color: notification.type === 'error' ? '#ff6666' :
-                              notification.type === 'success' ? '#00ff88' :
-                              notification.type === 'warning' ? '#ffaa66' : '#66bbff',
+                          notification.type === 'success' ? '#00ff88' :
+                            notification.type === 'warning' ? '#ffaa66' : '#66bbff',
                         fontSize: '16px',
                         flexShrink: 0
                       }}>
                         {notification.type === 'error' ? '❌' :
-                         notification.type === 'success' ? '✅' :
-                         notification.type === 'warning' ? '⚠️' : 'ℹ️'}
+                          notification.type === 'success' ? '✅' :
+                            notification.type === 'warning' ? '⚠️' : 'ℹ️'}
                       </span>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '14px', marginBottom: '5px' }}>

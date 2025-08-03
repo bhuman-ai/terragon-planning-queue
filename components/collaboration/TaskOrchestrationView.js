@@ -126,12 +126,12 @@ export default function TaskOrchestrationView({
   };
 
   const generateTaskDocument = (steps, deps) => {
-    const doc = `# Task Orchestration Document\n\n`;
+    const doc = '# Task Orchestration Document\n\n';
     doc += `**Session ID:** ${sessionId}\n`;
     doc += `**Generated:** ${new Date().toISOString()}\n`;
     doc += `**Total Steps:** ${steps.length}\n\n`;
 
-    doc += `## Workflow Overview\n\n`;
+    doc += '## Workflow Overview\n\n';
     steps.forEach((step, index) => {
       doc += `### Step ${index + 1}: ${step.title}\n`;
       doc += `**Duration:** ${step.estimatedDuration || 'TBD'}\n`;
@@ -144,11 +144,11 @@ export default function TaskOrchestrationView({
       }
 
       if (step.deliverables && step.deliverables.length > 0) {
-        doc += `**Deliverables:**\n`;
+        doc += '**Deliverables:**\n';
         step.deliverables.forEach(deliverable => {
           doc += `- ${deliverable}\n`;
         });
-        doc += `\n`;
+        doc += '\n';
       }
     });
 
@@ -198,15 +198,15 @@ export default function TaskOrchestrationView({
       const status = executionStatus[step.id] || 'pending';
 
       ctx.fillStyle = isSelected ? '#003366' :
-                     status === 'completed' ? '#004d00' :
-                     status === 'in_progress' ? '#664400' :
-                     status === 'failed' ? '#660000' : '#1a1a1a';
+        status === 'completed' ? '#004d00' :
+          status === 'in_progress' ? '#664400' :
+            status === 'failed' ? '#660000' : '#1a1a1a';
       ctx.fillRect(x, y, stepWidth, stepHeight);
 
       ctx.strokeStyle = isSelected ? '#66bbff' :
-                       status === 'completed' ? '#00aa44' :
-                       status === 'in_progress' ? '#ffaa66' :
-                       status === 'failed' ? '#aa4444' : '#333';
+        status === 'completed' ? '#00aa44' :
+          status === 'in_progress' ? '#ffaa66' :
+            status === 'failed' ? '#aa4444' : '#333';
       ctx.lineWidth = isSelected ? 3 : 1;
       ctx.strokeRect(x, y, stepWidth, stepHeight);
 
@@ -215,7 +215,7 @@ export default function TaskOrchestrationView({
       ctx.font = '12px system-ui';
       ctx.textAlign = 'left';
       const maxTitleWidth = stepWidth - 10;
-      const title = step.title.length > 20 ? step.title.substr(0, 17) + '...' : step.title;
+      const title = step.title.length > 20 ? `${step.title.substr(0, 17)}...` : step.title;
       ctx.fillText(title, x + 5, y + 15);
 
       // Draw step number
@@ -227,14 +227,14 @@ export default function TaskOrchestrationView({
       if (step.assignedAgent) {
         ctx.fillStyle = '#66bbff';
         ctx.font = '10px system-ui';
-        const agent = step.assignedAgent.length > 15 ? step.assignedAgent.substr(0, 12) + '...' : step.assignedAgent;
+        const agent = step.assignedAgent.length > 15 ? `${step.assignedAgent.substr(0, 12)}...` : step.assignedAgent;
         ctx.fillText(`Agent: ${agent}`, x + 5, y + 45);
       }
 
       // Draw status indicator
       ctx.fillStyle = status === 'completed' ? '#00ff88' :
-                     status === 'in_progress' ? '#ffaa66' :
-                     status === 'failed' ? '#ff6666' : '#888';
+        status === 'in_progress' ? '#ffaa66' :
+          status === 'failed' ? '#ff6666' : '#888';
       ctx.beginPath();
       ctx.arc(x + stepWidth - 15, y + 15, 6, 0, 2 * Math.PI);
       ctx.fill();
@@ -341,7 +341,7 @@ export default function TaskOrchestrationView({
       executionStatus[depId] !== 'completed');
 
     if (uncompletedDeps.length > 0) {
-      addSystemMessage(`Cannot execute step: incomplete dependencies`);
+      addSystemMessage('Cannot execute step: incomplete dependencies');
       return;
     }
 
@@ -425,7 +425,7 @@ export default function TaskOrchestrationView({
         const data = await response.json();
 
         const assistantMessage = {
-          id: Date.now().toString() + '-ai',
+          id: `${Date.now().toString()}-ai`,
           role: 'assistant',
           content: data.response,
           timestamp: new Date().toISOString(),
@@ -443,7 +443,7 @@ export default function TaskOrchestrationView({
     } catch (error) {
       console.error('Chat error:', error);
       setChatMessages(prev => [...prev, {
-        id: Date.now().toString() + '-error',
+        id: `${Date.now().toString()}-error`,
         role: 'assistant',
         content: `Error: ${error.message}`,
         timestamp: new Date().toISOString(),
@@ -662,8 +662,8 @@ export default function TaskOrchestrationView({
                       borderRadius: '50%',
                       backgroundColor:
                         executionStatus[step.id] === 'completed' ? '#00aa44' :
-                        executionStatus[step.id] === 'in_progress' ? '#ffaa66' :
-                        executionStatus[step.id] === 'failed' ? '#aa4444' : '#333',
+                          executionStatus[step.id] === 'in_progress' ? '#ffaa66' :
+                            executionStatus[step.id] === 'failed' ? '#aa4444' : '#333',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -715,8 +715,8 @@ export default function TaskOrchestrationView({
                             }}
                           >
                             {executionStatus[step.id] === 'completed' ? '✅ Done' :
-                             executionStatus[step.id] === 'in_progress' ? '⏳ Running' :
-                             '▶️ Execute'}
+                              executionStatus[step.id] === 'in_progress' ? '⏳ Running' :
+                                '▶️ Execute'}
                           </button>
                         </div>
                       )}
@@ -802,7 +802,7 @@ export default function TaskOrchestrationView({
                 borderRadius: '50%',
                 backgroundColor:
                   message.role === 'user' ? '#0066cc' :
-                  message.role === 'system' ? '#666' : '#00aa44',
+                    message.role === 'system' ? '#666' : '#00aa44',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -810,14 +810,14 @@ export default function TaskOrchestrationView({
                 flexShrink: 0
               }}>
                 {message.role === 'user' ? '👤' :
-                 message.role === 'system' ? '⚙️' : '🤖'}
+                  message.role === 'system' ? '⚙️' : '🤖'}
               </div>
 
               <div style={{ flex: 1, maxWidth: '85%' }}>
                 <div style={{
                   backgroundColor:
                     message.role === 'user' ? '#003366' :
-                    message.role === 'system' ? '#333' : '#0f0f0f',
+                      message.role === 'system' ? '#333' : '#0f0f0f',
                   border: '1px solid #333',
                   borderRadius: '12px',
                   padding: '12px',

@@ -171,7 +171,7 @@ export default function IdeationView({
         const data = await response.json();
 
         const assistantMessage = {
-          id: Date.now().toString() + '-ai',
+          id: `${Date.now().toString()}-ai`,
           role: 'assistant',
           content: data.response,
           timestamp: new Date().toISOString(),
@@ -190,7 +190,7 @@ export default function IdeationView({
     } catch (error) {
       console.error('Chat error:', error);
       setChatMessages(prev => [...prev, {
-        id: Date.now().toString() + '-error',
+        id: `${Date.now().toString()}-error`,
         role: 'assistant',
         content: `Error: ${error.message}`,
         timestamp: new Date().toISOString(),
@@ -544,7 +544,7 @@ export default function IdeationView({
                 borderRadius: '50%',
                 backgroundColor:
                   message.role === 'user' ? '#0066cc' :
-                  message.role === 'system' ? '#666' : '#00aa44',
+                    message.role === 'system' ? '#666' : '#00aa44',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -552,14 +552,14 @@ export default function IdeationView({
                 flexShrink: 0
               }}>
                 {message.role === 'user' ? '👤' :
-                 message.role === 'system' ? '⚙️' : '🤖'}
+                  message.role === 'system' ? '⚙️' : '🤖'}
               </div>
 
               <div style={{ flex: 1, maxWidth: '85%' }}>
                 <div style={{
                   backgroundColor:
                     message.role === 'user' ? '#003366' :
-                    message.role === 'system' ? '#333' : '#0f0f0f',
+                      message.role === 'system' ? '#333' : '#0f0f0f',
                   border: '1px solid #333',
                   borderRadius: '12px',
                   padding: '12px',
