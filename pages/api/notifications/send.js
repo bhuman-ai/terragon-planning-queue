@@ -183,11 +183,11 @@ export default async function handler(req, res) {
             From: process.env.TWILIO_PHONE,
             Body: `🤖 Task '${taskTitle}' needs input: ${message.substring(0, 100)}... View: ${process.env.VERCEL_URL}/task/${taskId}`
           }), {
-          headers: {
-            'Authorization': `Basic ${twilioAuth}`,
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        });
+            headers: {
+              'Authorization': `Basic ${twilioAuth}`,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          });
 
         results.push({ channel: 'sms', status: 'sent' });
       } catch (error) {

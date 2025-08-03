@@ -368,11 +368,11 @@ export default function PreResearchModal({
                   const isSelected = currentAnswers.includes(option);
 
                   return (
-                    <button;
+                    <button
                       key={option}
                       onClick={() => {
                         const newAnswers = isSelected
-                          ? currentAnswers.filter(a => a !== option);
+                          ? currentAnswers.filter(a => a !== option)
                           : [...currentAnswers, option];
                         handleAnswer(currentQuestion.id, newAnswers);
                       }}

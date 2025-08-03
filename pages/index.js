@@ -46,7 +46,7 @@ export default function Home() {
   const [showUserSettings, setShowUserSettings] = useState(false);
   const [userSettings, setUserSettings] = useState(null);
   const [currentView, setCurrentView] = useState('queue'); // 'queue' or 'workflow'
-  const [conversation, setConversation] = useState([;
+  const [conversation, setConversation] = useState([
     { role: 'system', content: 'Ready to help you plan tasks. Connect to Terragon to begin.' }
   ]);
 
