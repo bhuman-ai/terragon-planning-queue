@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import ClaudeMdVersionHistory from './ClaudeMdVersionHistory';
 
-export default function CalibrationWizard({ 
-  show, 
-  onClose, 
+export default function CalibrationWizard({
+  show,
+  onClose,
   onComplete,
-  githubRepo 
+  githubRepo
 }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [calibrationData, setCalibrationData] = useState({
@@ -42,19 +42,19 @@ export default function CalibrationWizard({
 
   const startRepositoryScan = async () => {
     setIsScanning(true);
-    
+
     try {
       const response = await fetch('/api/calibration/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           repo: githubRepo,
           includePatterns: ['*.md', 'README*', 'docs/**', 'package.json', '*.config.js']
         })
       });
 
       if (!response.ok) throw new Error('Scan failed');
-      
+
       const results = await response.json();
       setScanResults(results);
       setCalibrationData(prev => ({
@@ -63,13 +63,13 @@ export default function CalibrationWizard({
         techStack: results.detectedTechStack || [],
         currentPhase: results.suggestedPhase || 'development'
       }));
-      
+
       // Auto-advance to interview
       setTimeout(() => {
         setCurrentStep(1);
         generateInterviewQuestions(results);
       }, 2000);
-      
+
     } catch (error) {
       console.error('Repository scan failed:', error);
       // Still advance to interview with minimal data
@@ -82,7 +82,7 @@ export default function CalibrationWizard({
 
   const generateInterviewQuestions = async (scanData) => {
     setIsGeneratingQuestions(true);
-    
+
     try {
       const response = await fetch('/api/calibration/generate-questions', {
         method: 'POST',
@@ -94,10 +94,10 @@ export default function CalibrationWizard({
       });
 
       if (!response.ok) throw new Error('Failed to generate questions');
-      
+
       const data = await response.json();
       setQuestions(data.questions || getDefaultQuestions());
-      
+
     } catch (error) {
       console.error('Failed to generate questions:', error);
       setQuestions(getDefaultQuestions());
@@ -166,7 +166,7 @@ export default function CalibrationWizard({
     });
 
     if (!response.ok) throw new Error('Failed to generate CLAUDE.md');
-    
+
     const { content, suggestedCleanup } = await response.json();
     return { content, suggestedCleanup };
   };
@@ -174,20 +174,20 @@ export default function CalibrationWizard({
   const handleComplete = async () => {
     try {
       const { content, suggestedCleanup } = await generateClaudeMd();
-      
+
       // Save CLAUDE.md
       await fetch('/api/calibration/save-claude-md', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content })
       });
-      
+
       onComplete({
         claudeMd: content,
         cleanup: suggestedCleanup,
         calibrationData
       });
-      
+
     } catch (error) {
       console.error('Failed to complete calibration:', error);
     }
@@ -247,7 +247,7 @@ export default function CalibrationWizard({
           }}>
             Creating your holy source of truth - CLAUDE.md
           </p>
-          
+
           {/* Progress */}
           <div style={{
             marginTop: '20px'
@@ -374,7 +374,7 @@ export default function CalibrationWizard({
           >
             Cancel Calibration
           </button>
-          
+
           <div style={{
             fontSize: '12px',
             color: '#666'
@@ -399,7 +399,7 @@ export default function CalibrationWizard({
 function CalibrationInterview({ questions, answers, onAnswer, onComplete }) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const currentQuestion = questions[currentQuestionIndex];
-  
+
   if (!currentQuestion) return null;
 
   const handleNext = () => {
@@ -445,7 +445,7 @@ function CalibrationInterview({ questions, answers, onAnswer, onComplete }) {
         <textarea
           value={answers[currentQuestion.id] || ''}
           onChange={(e) => onAnswer(currentQuestion.id, e.target.value)}
-          placeholder="Type your answer here..."
+          placeholder='Type your answer here...'
           style={{
             width: '100%',
             minHeight: currentQuestion.multiline ? '150px' : '100px',
@@ -495,7 +495,7 @@ function CalibrationInterview({ questions, answers, onAnswer, onComplete }) {
           {currentQuestion.options.map(option => {
             const currentAnswers = answers[currentQuestion.id] || [];
             const isSelected = currentAnswers.includes(option);
-            
+
             return (
               <button
                 key={option}
@@ -563,14 +563,14 @@ function CalibrationInterview({ questions, answers, onAnswer, onComplete }) {
         >
           ← Previous
         </button>
-        
+
         <div style={{
           fontSize: '14px',
           color: '#666'
         }}>
           Question {currentQuestionIndex + 1} of {questions.length}
         </div>
-        
+
         <button
           onClick={handleNext}
           disabled={!canProceed}
@@ -609,7 +609,7 @@ function ClaudeMdReview({ content, repository, onConfirm, onEdit }) {
 
   const generateClaudeMd = async () => {
     setIsGenerating(true);
-    
+
     try {
       const response = await fetch('/api/calibration/generate-claude-md', {
         method: 'POST',
@@ -621,19 +621,18 @@ function ClaudeMdReview({ content, repository, onConfirm, onEdit }) {
       });
 
       if (!response.ok) throw new Error('Failed to generate CLAUDE.md');
-      
+
       const data = await response.json();
       const markdown = data.claudeMarkdown;
-      
+
       setGeneratedMarkdown(markdown);
       setEditedMarkdown(markdown);
-      
+
     } catch (error) {
       console.error('Failed to generate CLAUDE.md:', error);
-      // Fallback to basic template
-      const fallbackMarkdown = generateBasicClaudeMd(content);
-      setGeneratedMarkdown(fallbackMarkdown);
-      setEditedMarkdown(fallbackMarkdown);
+      // Handle error properly - investigate root cause
+      alert('Failed to generate CLAUDE.md. Please check your API configuration and try again.');
+      throw error; // Re-throw to handle at higher level
     } finally {
       setIsGenerating(false);
     }
@@ -683,30 +682,30 @@ ${data.techStack?.map(tech => `- ${tech}`).join('\n') || '- Technology stack to 
 
   const validateMarkdown = (markdown) => {
     const errors = [];
-    
+
     if (!markdown.includes('# ') && !markdown.includes('## 1. Project Overview')) {
       errors.push('Missing main project title or Project Overview section');
     }
-    
+
     if (!markdown.includes('Project Overview') || !markdown.includes('Coding Standards')) {
       errors.push('Missing required sections (Project Overview, Coding Standards)');
     }
-    
+
     if (markdown.includes('TODO') || markdown.includes('PLACEHOLDER')) {
       errors.push('Contains TODO items or placeholders that need to be filled');
     }
-    
+
     if (markdown.length < 500) {
       errors.push('Document appears too short - may be missing important details');
     }
-    
+
     return errors;
   };
 
   const handleSaveChanges = () => {
     const errors = validateMarkdown(editedMarkdown);
     setValidationErrors(errors);
-    
+
     if (errors.length === 0) {
       onEdit({ ...content, claudeMarkdown: editedMarkdown });
       setIsEditing(false);
@@ -715,7 +714,7 @@ ${data.techStack?.map(tech => `- ${tech}`).join('\n') || '- Technology stack to 
 
   const handleConfirm = async () => {
     const errors = validateMarkdown(editedMarkdown);
-    
+
     if (errors.length > 0) {
       setValidationErrors(errors);
       return;
@@ -736,7 +735,7 @@ ${data.techStack?.map(tech => `- ${tech}`).join('\n') || '- Technology stack to 
       });
 
       if (!response.ok) throw new Error('Failed to save CLAUDE.md');
-      
+
       onConfirm();
     } catch (error) {
       console.error('Failed to save CLAUDE.md:', error);
@@ -819,13 +818,13 @@ ${data.techStack?.map(tech => `- ${tech}`).join('\n') || '- Technology stack to 
             {isEditing ? 'Preview' : 'Edit'}
           </button>
         </div>
-        
+
         <div style={{ padding: '20px', maxHeight: '500px', overflowY: 'auto' }}>
           {isEditing ? (
             <textarea
               value={editedMarkdown}
               onChange={(e) => setEditedMarkdown(e.target.value)}
-              placeholder="Edit your CLAUDE.md content here..."
+              placeholder='Edit your CLAUDE.md content here...'
               style={{
                 width: '100%',
                 minHeight: '400px',
@@ -861,7 +860,7 @@ ${data.techStack?.map(tech => `- ${tech}`).join('\n') || '- Technology stack to 
         <textarea
           value={reviewNotes}
           onChange={(e) => setReviewNotes(e.target.value)}
-          placeholder="Add any notes about this CLAUDE.md version..."
+          placeholder='Add any notes about this CLAUDE.md version...'
           style={{
             width: '100%',
             minHeight: '80px',
@@ -899,7 +898,7 @@ ${data.techStack?.map(tech => `- ${tech}`).join('\n') || '- Technology stack to 
               Save Changes
             </button>
           )}
-          
+
           <button
             onClick={() => {
               setEditedMarkdown(generatedMarkdown);
@@ -936,7 +935,7 @@ ${data.techStack?.map(tech => `- ${tech}`).join('\n') || '- Technology stack to 
             </button>
           )}
         </div>
-        
+
         <button
           onClick={handleConfirm}
           disabled={validationErrors.length > 0}
@@ -993,7 +992,7 @@ function CleanupReview({ suggestions, onComplete }) {
       <h2 style={{ color: '#fff', marginBottom: '20px' }}>
         Suggested Cleanup
       </h2>
-      
+
       <p style={{ color: '#888', marginBottom: '20px' }}>
         Based on your CLAUDE.md, these files appear to be obsolete:
       </p>
@@ -1023,7 +1022,7 @@ function CleanupReview({ suggestions, onComplete }) {
               }}
             >
               <input
-                type="checkbox"
+                type='checkbox'
                 checked={selectedFiles.includes(file)}
                 onChange={(e) => {
                   if (e.target.checked) {
@@ -1059,7 +1058,7 @@ function CleanupReview({ suggestions, onComplete }) {
         >
           Skip Cleanup
         </button>
-        
+
         <button
           onClick={() => onComplete({ cleanup: selectedFiles })}
           style={{

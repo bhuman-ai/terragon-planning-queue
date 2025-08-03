@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 
 /**
  * MergeReviewView - Diff visualization and conflict resolution
- * 
+ *
  * Features:
  * - Side-by-side diff visualization
  * - Intelligent conflict detection and resolution
@@ -31,7 +31,7 @@ export default function MergeReviewView({
   const [validationStatus, setValidationStatus] = useState({});
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState([]);
-  const [chatMessages, setChatMessages] = useState([
+  const [chatMessages, setChatMessages] = useState([;
     {
       id: 'welcome',
       role: 'assistant',
@@ -68,11 +68,11 @@ export default function MergeReviewView({
 
   const analyzeDifferences = async () => {
     setIsAnalyzing(true);
-    
+
     try {
       const response = await fetch('/api/collaboration/merge/analyze', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -87,15 +87,15 @@ export default function MergeReviewView({
 
       if (response.ok) {
         const data = await response.json();
-        
+
         setDiffData(data.diff || []);
         setConflicts(data.conflicts || []);
         setAiSuggestions(data.suggestions || []);
         setValidationStatus(data.validation || {});
         setMergedContent(data.merged || modifiedContent);
-        
+
         addSystemMessage(`Analysis complete: ${data.conflicts?.length || 0} conflicts found`);
-        
+
         // Auto-resolve simple conflicts if AI-assisted mode
         if (mergeStrategy === 'ai_assisted' && data.autoResolutions) {
           applyAutoResolutions(data.autoResolutions);
@@ -121,7 +121,7 @@ export default function MergeReviewView({
     try {
       const response = await fetch('/api/collaboration/merge/resolve', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -135,13 +135,13 @@ export default function MergeReviewView({
 
       if (response.ok) {
         const data = await response.json();
-        
+
         setMergedContent(data.updatedContent);
         setResolvedConflicts(prev => new Set([...prev, conflictId]));
-        
+
         // Update conflicts list
-        setConflicts(prev => prev.map(conflict => 
-          conflict.id === conflictId 
+        setConflicts(prev => prev.map(conflict =>
+          conflict.id === conflictId
             ? { ...conflict, resolved: true, resolution }
             : conflict
         ));
@@ -156,11 +156,11 @@ export default function MergeReviewView({
 
   const validateMerge = async () => {
     setIsAnalyzing(true);
-    
+
     try {
       const response = await fetch('/api/collaboration/merge/validate', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -175,11 +175,11 @@ export default function MergeReviewView({
       if (response.ok) {
         const validation = await response.json();
         setValidationStatus(validation);
-        
+
         const status = validation.valid ? 'passed' : 'failed';
         const issues = validation.issues?.length || 0;
         addSystemMessage(`Validation ${status}: ${issues} issues found`);
-        
+
         return validation.valid;
       }
     } catch (error) {
@@ -207,7 +207,7 @@ export default function MergeReviewView({
     try {
       const response = await fetch('/api/collaboration/merge/complete', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -248,7 +248,7 @@ export default function MergeReviewView({
     try {
       const response = await fetch('/api/collaboration/merge/chat', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -270,7 +270,7 @@ export default function MergeReviewView({
 
       if (response.ok) {
         const data = await response.json();
-        
+
         const assistantMessage = {
           id: Date.now().toString() + '-ai',
           role: 'assistant',
@@ -325,7 +325,7 @@ export default function MergeReviewView({
     try {
       const response = await fetch('/api/collaboration/merge/apply-suggestion', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -397,8 +397,8 @@ export default function MergeReviewView({
         <span style={{ color: '#666', minWidth: '40px', flexShrink: 0 }}>
           {line.lineNumber}
         </span>
-        <span style={{ 
-          color: line.type === 'removed' ? '#ff6666' : 
+        <span style={{
+          color: line.type === 'removed' ? '#ff6666' :
                 line.type === 'added' ? '#00ff88' : '#e0e0e0',
           flex: 1
         }}>
@@ -438,9 +438,9 @@ export default function MergeReviewView({
           borderBottom: '1px solid #333',
           backgroundColor: '#1a1a1a'
         }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '15px'
           }}>
@@ -452,7 +452,7 @@ export default function MergeReviewView({
                 Diff Visualization • Conflict Resolution • Document Integrity
               </p>
             </div>
-            
+
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <div style={{
                 padding: '4px 8px',
@@ -479,9 +479,9 @@ export default function MergeReviewView({
                   fontSize: '12px'
                 }}
               >
-                <option value="side_by_side">📊 Side by Side</option>
-                <option value="unified">📝 Unified</option>
-                <option value="merged">🔀 Merged</option>
+                <option value='side_by_side'>📊 Side by Side</option>
+                <option value='unified'>📝 Unified</option>
+                <option value='merged'>🔀 Merged</option>
               </select>
 
               <select
@@ -496,9 +496,9 @@ export default function MergeReviewView({
                   fontSize: '12px'
                 }}
               >
-                <option value="manual">👤 Manual</option>
-                <option value="ai_assisted">🤖 AI Assisted</option>
-                <option value="auto">⚡ Auto</option>
+                <option value='manual'>👤 Manual</option>
+                <option value='ai_assisted'>🤖 AI Assisted</option>
+                <option value='auto'>⚡ Auto</option>
               </select>
 
               <button
@@ -538,10 +538,10 @@ export default function MergeReviewView({
           </div>
 
           {/* Status Summary */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '20px', 
-            fontSize: '12px', 
+          <div style={{
+            display: 'flex',
+            gap: '20px',
+            fontSize: '12px',
             color: '#666'
           }}>
             <span>Conflicts: {unresolvedConflicts.length}</span>
@@ -748,9 +748,9 @@ export default function MergeReviewView({
                       alignItems: 'center',
                       marginBottom: '8px'
                     }}>
-                      <h4 style={{ 
-                        color: conflict.resolved ? '#00ff88' : '#ff6666', 
-                        margin: 0, 
+                      <h4 style={{
+                        color: conflict.resolved ? '#00ff88' : '#ff6666',
+                        margin: 0,
                         fontSize: '14px'
                       }}>
                         {conflict.type} Conflict
@@ -759,22 +759,22 @@ export default function MergeReviewView({
                         Line {conflict.line}
                       </span>
                     </div>
-                    
-                    <p style={{ 
-                      fontSize: '12px', 
-                      color: '#ccc', 
+
+                    <p style={{
+                      fontSize: '12px',
+                      color: '#ccc',
                       margin: '0 0 8px 0',
                       lineHeight: '1.4'
                     }}>
                       {conflict.description}
                     </p>
-                    
+
                     {conflict.resolved && (
                       <div style={{ fontSize: '11px', color: '#888' }}>
                         ✅ Resolved: {conflict.resolution?.type}
                       </div>
                     )}
-                    
+
                     {!conflict.resolved && !readonly && (
                       <div style={{ marginTop: '8px' }}>
                         <button
@@ -856,8 +856,8 @@ export default function MergeReviewView({
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
-                  backgroundColor: 
-                    message.role === 'user' ? '#0066cc' : 
+                  backgroundColor:
+                    message.role === 'user' ? '#0066cc' :
                     message.role === 'system' ? '#666' : '#00aa44',
                   display: 'flex',
                   alignItems: 'center',
@@ -865,14 +865,14 @@ export default function MergeReviewView({
                   fontSize: '16px',
                   flexShrink: 0
                 }}>
-                  {message.role === 'user' ? '👤' : 
+                  {message.role === 'user' ? '👤' :
                    message.role === 'system' ? '⚙️' : '🤖'}
                 </div>
 
                 <div style={{ flex: 1, maxWidth: '85%' }}>
                   <div style={{
-                    backgroundColor: 
-                      message.role === 'user' ? '#003366' : 
+                    backgroundColor:
+                      message.role === 'user' ? '#003366' :
                       message.role === 'system' ? '#333' : '#0f0f0f',
                     border: '1px solid #333',
                     borderRadius: '12px',
@@ -894,7 +894,7 @@ export default function MergeReviewView({
                 </div>
               </div>
             ))}
-            
+
             {isAnalyzing && (
               <div style={{
                 display: 'flex',
@@ -927,7 +927,7 @@ export default function MergeReviewView({
                 </div>
               </div>
             )}
-            
+
             <div ref={chatEndRef} />
           </div>
 
@@ -941,7 +941,7 @@ export default function MergeReviewView({
                 value={currentMessage}
                 onChange={(e) => setCurrentMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask about conflicts, request merge suggestions, or validate changes..."
+                placeholder='Ask about conflicts, request merge suggestions, or validate changes...'
                 disabled={isAnalyzing}
                 style={{
                   flex: 1,

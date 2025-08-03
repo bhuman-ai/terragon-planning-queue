@@ -10,33 +10,32 @@ export default async function handler(req, res) {
   try {
     const projectRoot = process.cwd();
     const claudeMdPath = path.join(projectRoot, 'CLAUDE.md');
-    
+
     // Check if CLAUDE.md exists
     let exists = false;
-    let content = null;
     let integrity = null;
-    
+
     try {
-      content = await fs.readFile(claudeMdPath, 'utf-8');
+      await fs.readFile(claudeMdPath, 'utf-8');
       exists = true;
-      
+
       // Check integrity
       const checker = new ClaudeIntegrityChecker(projectRoot);
       integrity = await checker.checkIntegrity();
-      
+
     } catch (error) {
       if (error.code !== 'ENOENT') {
         throw error;
       }
     }
-    
+
     // Check for drift if CLAUDE.md exists
     let driftReport = null;
     if (exists) {
       const checker = new ClaudeIntegrityChecker(projectRoot);
       driftReport = await checker.detectDrift();
     }
-    
+
     res.status(200).json({
       exists,
       valid: integrity?.valid || false,

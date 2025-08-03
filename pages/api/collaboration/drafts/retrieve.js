@@ -16,8 +16,8 @@ export default async function handler(req, res) {
     const { draftId, version, includeHistory } = req.query;
 
     if (!draftId) {
-      return res.status(400).json({ 
-        error: 'Missing required parameter: draftId' 
+      return res.status(400).json({
+        error: 'Missing required parameter: draftId'
       });
     }
 
@@ -31,20 +31,18 @@ export default async function handler(req, res) {
     let targetContent = draft.content;
     let targetVersion = draft.version;
     let targetMetadata = draft.metadata;
-    
+
     if (version && parseInt(version) !== draft.version) {
       const requestedVersion = parseInt(version);
-      const versionEntry = draft.versionHistory.find(
-        v => v.version === requestedVersion
-      );
-      
+      const versionEntry = draft.versionHistory.find(v => v.version === requestedVersion);
+
       if (!versionEntry) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           error: `Version ${requestedVersion} not found`,
           availableVersions: draft.versionHistory.map(v => v.version)
         });
       }
-      
+
       targetContent = versionEntry.content;
       targetVersion = versionEntry.version;
       targetMetadata = {
@@ -101,9 +99,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Draft retrieval error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to retrieve draft',
-      details: error.message 
+      details: error.message
     });
   }
 }

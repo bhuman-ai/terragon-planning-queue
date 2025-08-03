@@ -28,27 +28,27 @@ export function useTaskProgress(taskId) {
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        
+
         switch (data.type) {
           case 'connected':
             console.log('✅ SSE connection established');
             break;
-            
+
           case 'update':
             setTaskData(data.task);
             break;
-            
+
           case 'complete':
             console.log('🏁 Task complete, closing connection');
             eventSource.close();
             setIsConnected(false);
             break;
-            
+
           case 'error':
             console.error('❌ SSE error:', data.message);
             setError(data.message);
             break;
-            
+
           default:
             console.log('📦 Unknown SSE message type:', data.type);
         }
@@ -61,7 +61,7 @@ export function useTaskProgress(taskId) {
       console.error('❌ SSE connection error:', err);
       setError('Connection lost. Retrying...');
       setIsConnected(false);
-      
+
       // EventSource will automatically reconnect
     };
 

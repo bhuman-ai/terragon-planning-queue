@@ -42,7 +42,7 @@ export default async function handler(req, res) {
 
     const result = await response.text();
     console.log('Terragon response status:', response.status);
-    
+
     // Set proper content type for the response
     res.setHeader('Content-Type', response.headers.get('content-type') || 'text/plain');
     res.status(response.status).send(result);
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
 
 function generateActionId() {
   const chars = '0123456789abcdef';
-  let result = '';
+  const result = '';
   for (let i = 0; i < 40; i++) {
     result += chars[Math.floor(Math.random() * chars.length)];
   }

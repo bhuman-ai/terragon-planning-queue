@@ -18,7 +18,7 @@ export default function ClaudeAutoUpdaterPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'status' })
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setStatus(data);
@@ -36,7 +36,7 @@ export default function ClaudeAutoUpdaterPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'detect' })
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setLastAction(data);
@@ -57,7 +57,7 @@ export default function ClaudeAutoUpdaterPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update', forceUpdate })
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setLastAction(data);
@@ -79,7 +79,7 @@ export default function ClaudeAutoUpdaterPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'backup' })
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setLastAction(data);
@@ -116,9 +116,9 @@ export default function ClaudeAutoUpdaterPanel() {
       marginBottom: '20px'
     }}>
       {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: expanded ? '20px' : '0'
       }}>
@@ -130,15 +130,15 @@ export default function ClaudeAutoUpdaterPanel() {
             backgroundColor: getStatusColor(),
             boxShadow: `0 0 8px ${getStatusColor()}44`
           }} />
-          <h3 style={{ 
-            color: '#fff', 
+          <h3 style={{
+            color: '#fff',
             margin: 0,
             fontSize: '18px'
           }}>
             🤖 CLAUDE.md Auto-Updater
           </h3>
-          <span style={{ 
-            color: '#888', 
+          <span style={{
+            color: '#888',
             fontSize: '14px',
             backgroundColor: '#0f0f0f',
             padding: '4px 8px',
@@ -147,7 +147,7 @@ export default function ClaudeAutoUpdaterPanel() {
             {getStatusText()}
           </span>
         </div>
-        
+
         <button
           onClick={() => setExpanded(!expanded)}
           style={{
@@ -184,13 +184,13 @@ export default function ClaudeAutoUpdaterPanel() {
               }}>
                 <div style={{ color: '#888', marginBottom: '4px' }}>Next Check</div>
                 <div style={{ color: '#fff' }}>
-                  {status.nextScheduledCheck ? 
-                    new Date(status.nextScheduledCheck).toLocaleTimeString() : 
+                  {status.nextScheduledCheck ?
+                    new Date(status.nextScheduledCheck).toLocaleTimeString() :
                     'Unknown'
                   }
                 </div>
               </div>
-              
+
               <div style={{
                 backgroundColor: '#0f0f0f',
                 padding: '12px',
@@ -202,7 +202,7 @@ export default function ClaudeAutoUpdaterPanel() {
                   {status.backupCount} stored
                 </div>
               </div>
-              
+
               <div style={{
                 backgroundColor: '#0f0f0f',
                 padding: '12px',
@@ -211,8 +211,8 @@ export default function ClaudeAutoUpdaterPanel() {
               }}>
                 <div style={{ color: '#888', marginBottom: '4px' }}>Last Update</div>
                 <div style={{ color: '#fff' }}>
-                  {status.lastUpdate ? 
-                    new Date(status.lastUpdate.timestamp).toLocaleDateString() : 
+                  {status.lastUpdate ?
+                    new Date(status.lastUpdate.timestamp).toLocaleDateString() :
                     'Never'
                   }
                 </div>
@@ -243,7 +243,7 @@ export default function ClaudeAutoUpdaterPanel() {
             >
               🔍 Detect Changes
             </button>
-            
+
             <button
               onClick={() => executeUpdate(false)}
               disabled={isLoading}
@@ -260,7 +260,7 @@ export default function ClaudeAutoUpdaterPanel() {
             >
               🚀 Smart Update
             </button>
-            
+
             <button
               onClick={() => executeUpdate(true)}
               disabled={isLoading}
@@ -277,7 +277,7 @@ export default function ClaudeAutoUpdaterPanel() {
             >
               ⚡ Force Update
             </button>
-            
+
             <button
               onClick={createBackup}
               disabled={isLoading}
@@ -294,7 +294,7 @@ export default function ClaudeAutoUpdaterPanel() {
             >
               💾 Create Backup
             </button>
-            
+
             <button
               onClick={loadStatus}
               disabled={isLoading}
@@ -322,14 +322,14 @@ export default function ClaudeAutoUpdaterPanel() {
               padding: '15px',
               marginBottom: '15px'
             }}>
-              <h4 style={{ 
+              <h4 style={{
                 color: lastAction.error ? '#ff6666' : '#66bbff',
                 margin: '0 0 10px 0',
                 fontSize: '16px'
               }}>
                 {lastAction.error ? '❌ Error' : '✅ Result'}
               </h4>
-              
+
               {lastAction.error ? (
                 <div style={{ color: '#ffaaaa', fontSize: '14px' }}>
                   {lastAction.error}
@@ -339,7 +339,7 @@ export default function ClaudeAutoUpdaterPanel() {
                   <div style={{ color: '#fff', marginBottom: '10px', fontSize: '14px' }}>
                     {lastAction.message}
                   </div>
-                  
+
                   {lastAction.triggers && (
                     <div style={{ fontSize: '13px', color: '#ccc' }}>
                       <strong>Changes Detected:</strong> {lastAction.triggers.changeCount}
@@ -347,9 +347,9 @@ export default function ClaudeAutoUpdaterPanel() {
                         <ul style={{ margin: '8px 0 0 20px', padding: 0 }}>
                           {lastAction.triggers.changes.slice(0, 5).map((change, idx) => (
                             <li key={idx} style={{ marginBottom: '4px' }}>
-                              <span style={{ 
-                                color: change.severity === 'HIGH' ? '#ff8888' : 
-                                       change.severity === 'MEDIUM' ? '#ffaa88' : '#88ff88'
+                              <span style={{
+                                color: change.severity === 'HIGH' ? '#ff8888' :
+                                  change.severity === 'MEDIUM' ? '#ffaa88' : '#88ff88'
                               }}>
                                 {change.type}
                               </span>: {change.message}
@@ -364,10 +364,10 @@ export default function ClaudeAutoUpdaterPanel() {
                       )}
                     </div>
                   )}
-                  
+
                   {lastAction.updated && (
-                    <div style={{ 
-                      color: '#88ff88', 
+                    <div style={{
+                      color: '#88ff88',
                       fontSize: '13px',
                       marginTop: '8px',
                       fontWeight: 'bold'
@@ -396,12 +396,12 @@ export default function ClaudeAutoUpdaterPanel() {
                     marginBottom: '8px',
                     fontSize: '13px'
                   }}>
-                    <div style={{ 
-                      display: 'flex', 
+                    <div style={{
+                      display: 'flex',
                       justifyContent: 'space-between',
                       marginBottom: '4px'
                     }}>
-                      <span style={{ 
+                      <span style={{
                         color: update.success ? '#88ff88' : '#ff8888',
                         fontWeight: 'bold'
                       }}>

@@ -1,13 +1,13 @@
 // Jest setup file for testing configuration
-import '@testing-library/jest-dom'
+import '@testing-library/jest-dom';
 
 // Mock environment variables for testing
-process.env.NODE_ENV = 'test'
-process.env.CLAUDE_API_KEY = 'test-claude-key'
-process.env.PERPLEXITY_API_KEY = 'test-perplexity-key'
-process.env.DISCORD_BOT_TOKEN = 'test-discord-token'
-process.env.DISCORD_CHANNEL_ID = 'test-channel-id'
-process.env.CRON_SECRET = 'test-cron-secret'
+process.env.NODE_ENV = 'test';
+process.env.CLAUDE_API_KEY = 'test-claude-key';
+process.env.PERPLEXITY_API_KEY = 'test-perplexity-key';
+process.env.DISCORD_BOT_TOKEN = 'test-discord-token';
+process.env.DISCORD_CHANNEL_ID = 'test-channel-id';
+process.env.CRON_SECRET = 'test-cron-secret';
 
 // Mock Next.js router
 jest.mock('next/router', () => ({
@@ -26,11 +26,11 @@ jest.mock('next/router', () => ({
       events: {
         on: jest.fn(),
         off: jest.fn(),
-        emit: jest.fn(),
-      },
-    }
-  },
-}))
+        emit: jest.fn()
+      }
+    };
+  }
+}));
 
 // Mock Vercel KV for testing
 jest.mock('@vercel/kv', () => ({
@@ -58,21 +58,21 @@ jest.mock('@vercel/kv', () => ({
     smembers: jest.fn(),
     sismember: jest.fn()
   }
-}))
+}));
 
 // Mock crypto for deterministic testing
-const crypto = require('crypto')
-const originalRandomUUID = crypto.randomUUID
+const crypto = require('crypto');
+const originalRandomUUID = crypto.randomUUID;
 
 // Create a deterministic UUID generator for testing
-let uuidCounter = 0
+let uuidCounter = 0;
 crypto.randomUUID = jest.fn(() => {
-  return `test-uuid-${++uuidCounter}`
-})
+  return `test-uuid-${++uuidCounter}`;
+});
 
 // Mock Date.now for deterministic timestamps
-const originalDateNow = Date.now
-Date.now = jest.fn(() => 1640995200000) // Fixed timestamp: 2022-01-01 00:00:00 UTC
+const originalDateNow = Date.now;
+Date.now = jest.fn(() => 1640995200000); // Fixed timestamp: 2022-01-01 00:00:00 UTC
 
 // Mock file system operations for security components
 jest.mock('fs/promises', () => ({
@@ -83,7 +83,7 @@ jest.mock('fs/promises', () => ({
   stat: jest.fn(),
   unlink: jest.fn(),
   readdir: jest.fn()
-}))
+}));
 
 // Global test utilities
 global.testUtils = {
@@ -94,14 +94,14 @@ global.testUtils = {
     sessionToken: `test-session-${agentId}`,
     authenticated: true
   }),
-  
+
   createMockClaudeContent: () => `# Test CLAUDE.md
 ## Sacred Principles
 - NO SIMULATIONS
 - NO FALLBACKS
 - ALWAYS REAL
 `,
-  
+
   createMockDraft: (id = 'test-draft-1') => ({
     id,
     sessionId: 'test-session-1',
@@ -113,9 +113,9 @@ global.testUtils = {
       lastModified: new Date().toISOString(),
       version: 1
     },
-    checksum: 'test-checksum-' + id
+    checksum: `test-checksum-${id}`
   }),
-  
+
   createMockCheckpoint: (id = 'test-checkpoint-1') => ({
     id,
     sessionId: 'test-session-1',
@@ -128,108 +128,108 @@ global.testUtils = {
     },
     rollbackData: null
   }),
-  
+
   mockVercelKV: {
     // Helper to setup KV mocks for specific tests
     setupMockData: (data) => {
-      const { kv } = require('@vercel/kv')
-      kv.get.mockImplementation((key) => Promise.resolve(data[key] || null))
-      kv.set.mockResolvedValue('OK')
-      kv.exists.mockImplementation((key) => Promise.resolve(!!data[key]))
+      const { kv } = require('@vercel/kv');
+      kv.get.mockImplementation((key) => Promise.resolve(data[key] || null));
+      kv.set.mockResolvedValue('OK');
+      kv.exists.mockImplementation((key) => Promise.resolve(!!data[key]));
       kv.keys.mockImplementation((pattern) => {
-        const keys = Object.keys(data).filter(key => 
+        const keys = Object.keys(data).filter(key =>
           pattern === '*' || key.includes(pattern.replace('*', ''))
-        )
-        return Promise.resolve(keys)
-      })
+        );
+        return Promise.resolve(keys);
+      });
     },
-    
+
     reset: () => {
-      const { kv } = require('@vercel/kv')
+      const { kv } = require('@vercel/kv');
       Object.keys(kv).forEach(method => {
         if (jest.isMockFunction(kv[method])) {
-          kv[method].mockReset()
+          kv[method].mockReset();
         }
-      })
+      });
     }
   },
-  
+
   mockFileSystem: {
     // Helper to setup filesystem mocks
     setupMockFiles: (files) => {
-      const fs = require('fs/promises')
+      const fs = require('fs/promises');
       fs.readFile.mockImplementation((path) => {
-        const content = files[path]
+        const content = files[path];
         if (content === undefined) {
-          return Promise.reject(new Error(`ENOENT: no such file or directory, open '${path}'`))
+          return Promise.reject(new Error(`ENOENT: no such file or directory, open '${path}'`));
         }
-        return Promise.resolve(content)
-      })
+        return Promise.resolve(content);
+      });
       fs.access.mockImplementation((path) => {
         if (files[path] === undefined) {
-          return Promise.reject(new Error(`ENOENT: no such file or directory, access '${path}'`))
+          return Promise.reject(new Error(`ENOENT: no such file or directory, access '${path}'`));
         }
-        return Promise.resolve()
-      })
+        return Promise.resolve();
+      });
       fs.stat.mockImplementation((path) => {
         if (files[path] === undefined) {
-          return Promise.reject(new Error(`ENOENT: no such file or directory, stat '${path}'`))
+          return Promise.reject(new Error(`ENOENT: no such file or directory, stat '${path}'`));
         }
         return Promise.resolve({
           size: files[path].length,
           mtime: new Date('2022-01-01T00:00:00.000Z'),
           ctime: new Date('2022-01-01T00:00:00.000Z')
-        })
-      })
+        });
+      });
     },
-    
+
     reset: () => {
-      const fs = require('fs/promises')
+      const fs = require('fs/promises');
       Object.keys(fs).forEach(method => {
         if (jest.isMockFunction(fs[method])) {
-          fs[method].mockReset()
+          fs[method].mockReset();
         }
-      })
+      });
     }
   }
-}
+};
 
 // Reset all mocks before each test
 beforeEach(() => {
   // Reset UUID counter
-  uuidCounter = 0
-  
+  uuidCounter = 0;
+
   // Reset mocks
-  global.testUtils.mockVercelKV.reset()
-  global.testUtils.mockFileSystem.reset()
-  
+  global.testUtils.mockVercelKV.reset();
+  global.testUtils.mockFileSystem.reset();
+
   // Clear all mocks
-  jest.clearAllMocks()
-})
+  jest.clearAllMocks();
+});
 
 // Cleanup after all tests
 afterAll(() => {
   // Restore original functions
-  crypto.randomUUID = originalRandomUUID
-  Date.now = originalDateNow
-})
+  crypto.randomUUID = originalRandomUUID;
+  Date.now = originalDateNow;
+});
 
 // Configure console to reduce noise in tests unless there's an error
-const originalError = console.error
-const originalWarn = console.warn
+const originalError = console.error;
+const originalWarn = console.warn;
 
 console.error = (...args) => {
   // Only show errors that aren't test-related
   if (args[0] && typeof args[0] === 'string' && args[0].includes('Warning:')) {
-    return
+    return;
   }
-  originalError.call(console, ...args)
-}
+  originalError.call(console, ...args);
+};
 
 console.warn = (...args) => {
   // Only show warnings that aren't test-related
   if (args[0] && typeof args[0] === 'string' && args[0].includes('Warning:')) {
-    return
+    return;
   }
-  originalWarn.call(console, ...args)
-}
+  originalWarn.call(console, ...args);
+};

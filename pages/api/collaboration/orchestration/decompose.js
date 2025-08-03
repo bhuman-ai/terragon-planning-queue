@@ -3,7 +3,7 @@ import { kv } from '@vercel/kv';
 import { verifyAgentAuth } from '../../../../lib/security/agent-auth';
 
 const anthropic = new Anthropic({
-  apiKey: process.env.CLAUDE_API_KEY,
+  apiKey: process.env.CLAUDE_API_KEY
 });
 
 export default async function handler(req, res) {
@@ -18,11 +18,11 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }
 
-    const { 
-      sessionId, 
-      taskDescription, 
-      context, 
-      requirements 
+    const {
+      sessionId,
+      taskDescription,
+      context,
+      requirements
     } = req.body;
 
     // Get session data
@@ -31,9 +31,9 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Session not found' });
     }
 
-    const systemPrompt = `You are an expert task decomposition AI specializing in breaking down complex development tasks into manageable micro-tasks. 
+    const systemPrompt = `You are an expert task decomposition AI specializing in breaking down complex development tasks into manageable micro-tasks.
 
-REQUIREMENTS:
+REQUIREMENTS:;
 - Each step must be completable in under ${requirements.targetDuration || '10 minutes'}
 - Maximum ${requirements.maxSteps || 20} steps total
 - Include validation steps if requested: ${requirements.includeValidation}
@@ -49,22 +49,22 @@ SACRED PRINCIPLES (from CLAUDE.md):
 RESPONSE FORMAT:
 Return a JSON object with:
 {
-  "steps": [
+  'steps': [
     {
-      "id": "step_001",
-      "title": "Clear action title",
-      "description": "Detailed description with specific actions",
-      "estimatedDuration": "5 minutes",
-      "assignedAgent": "suggested-agent-type",
-      "dependencies": ["step_id1", "step_id2"],
-      "deliverables": ["specific output 1", "specific output 2"],
-      "validationCriteria": ["how to verify completion"],
-      "priority": "high|medium|low"
+      'id': 'step_001',
+      'title': 'Clear action title',
+      'description': 'Detailed description with specific actions',
+      'estimatedDuration': '5 minutes',
+      'assignedAgent': 'suggested-agent-type',
+      'dependencies': ['step_id1', 'step_id2'],
+      'deliverables': ['specific output 1', 'specific output 2'],
+      'validationCriteria': ['how to verify completion'],
+      'priority': 'high|medium|low'
     }
   ],
-  "dependencies": [["step_001", ["prerequisite_step"]]],
-  "timeEstimates": {"step_001": 300000},
-  "recommendedAgents": ["frontend-developer", "backend-architect"]
+  'dependencies': [['step_001', ['prerequisite_step']]],
+  'timeEstimates': {'step_001': 300000},
+  'recommendedAgents': ['frontend-developer', 'backend-architect']
 }`;
 
     const userPrompt = `Task to decompose: ${taskDescription}
@@ -175,9 +175,9 @@ Be extremely specific about what needs to be built, tested, and delivered.`;
 
   } catch (error) {
     console.error('Task decomposition error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to decompose task',
-      details: error.message 
+      details: error.message
     });
   }
 }

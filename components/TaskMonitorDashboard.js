@@ -11,7 +11,7 @@ export default function TaskMonitorDashboard({ show, onClose }) {
     try {
       const response = await fetch('/api/task-monitor/active');
       const data = await response.json();
-      
+
       if (data.success) {
         setActiveTasks(data.tasks);
         setLastUpdated(data.lastUpdated);
@@ -107,18 +107,18 @@ export default function TaskMonitorDashboard({ show, onClose }) {
           alignItems: 'center'
         }}>
           <div>
-            <h2 style={{ 
-              color: '#00aaff', 
+            <h2 style={{
+              color: '#00aaff',
               margin: 0,
               fontSize: '18px',
               fontWeight: 'bold'
             }}>
               🤖 Autonomous Task Monitor
             </h2>
-            <div style={{ 
-              fontSize: '14px', 
+            <div style={{
+              fontSize: '14px',
               color: '#888',
-              marginTop: '5px' 
+              marginTop: '5px'
             }}>
               {activeTasks.length} active tasks • Updates every 5 minutes
             </div>
@@ -176,9 +176,9 @@ export default function TaskMonitorDashboard({ show, onClose }) {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               {activeTasks.map(task => (
-                <TaskCard 
-                  key={task.id} 
-                  task={task} 
+                <TaskCard
+                  key={task.id}
+                  task={task}
                   onResume={handleResumeTask}
                   getStatusColor={getStatusColor}
                   getStatusIcon={getStatusIcon}
@@ -238,8 +238,8 @@ function TaskCard({ task, onResume, getStatusColor, getStatusIcon }) {
             marginBottom: '5px'
           }}>
             <span style={{ fontSize: '16px' }}>{getStatusIcon(task.status)}</span>
-            <h4 style={{ 
-              margin: 0, 
+            <h4 style={{
+              margin: 0,
               color: '#fff',
               fontSize: '16px'
             }}>
@@ -248,7 +248,7 @@ function TaskCard({ task, onResume, getStatusColor, getStatusIcon }) {
             <span style={{
               fontSize: '12px',
               padding: '2px 6px',
-              backgroundColor: getStatusColor(task.status) + '22',
+              backgroundColor: `${getStatusColor(task.status)}22`,
               color: getStatusColor(task.status),
               borderRadius: '10px',
               textTransform: 'uppercase',
@@ -257,7 +257,7 @@ function TaskCard({ task, onResume, getStatusColor, getStatusIcon }) {
               {task.status}
             </span>
           </div>
-          
+
           <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>
             Started: {new Date(task.createdAt).toLocaleString()} • Step {task.currentStep}
           </div>
@@ -304,7 +304,7 @@ function TaskCard({ task, onResume, getStatusColor, getStatusIcon }) {
               <textarea
                 value={resumeInput}
                 onChange={(e) => setResumeInput(e.target.value)}
-                placeholder="Enter your response to resume the task..."
+                placeholder='Enter your response to resume the task...'
                 style={{
                   width: '100%',
                   minHeight: '60px',

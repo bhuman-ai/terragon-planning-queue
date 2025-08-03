@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     // Ensure data directory exists
     const dataDir = path.join(process.cwd(), 'data');
     const activeTasksDir = path.join(dataDir, 'active-tasks');
-    
+
     await fs.mkdir(activeTasksDir, { recursive: true });
 
     // Prepare task data for monitoring

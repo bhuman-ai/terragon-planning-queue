@@ -10,12 +10,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { 
-    message, 
-    claudeMdContent, 
-    repoInfo, 
+  const {
+    message,
+    claudeMdContent,
+    repoInfo,
     userSettings,
-    chatHistory = [] 
+    chatHistory = []
   } = req.body;
 
   if (!message) {
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
   const claudeApiKey = process.env.CLAUDE_API_KEY;
   if (!claudeApiKey) {
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Claude API key not configured',
       response: 'Sorry, I need a Claude API key to assist you. Please configure CLAUDE_API_KEY in your environment variables.'
     });
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     });
 
     const assistantResponse = response.content[0].text;
-    
+
     // Parse response for actions and suggestions
     const parsedResponse = parseAssistantResponse(assistantResponse);
 
@@ -60,17 +60,17 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Meta-agent chat error:', error);
-    
+
     // Provide helpful fallback responses
     const fallbackResponse = generateFallbackResponse(message, claudeMdContent);
-    
+
     res.status(200).json({
       response: fallbackResponse,
       suggestions: [
-        "Show me the tech stack",
-        "What are the sacred principles?",
-        "How do I update this document?",
-        "Check for drift"
+        'Show me the tech stack',
+        'What are the sacred principles?',
+        'How do I update this document?',
+        'Check for drift'
       ],
       error: error.message
     });
@@ -81,14 +81,14 @@ export default async function handler(req, res) {
  * Build comprehensive prompt for meta-agent
  */
 function buildMetaAgentPrompt(message, claudeMdContent, repoInfo, userSettings, chatHistory) {
-  const recentHistory = chatHistory.slice(-6).map(msg => 
+  const recentHistory = chatHistory.slice(-6).map(msg =>
     `${msg.role}: ${msg.content}`
   ).join('\n');
 
   return `You are a Meta-Agent Assistant specializing in CLAUDE.md sacred document management. You help users understand, analyze, and maintain their project's sacred documentation.
 
 CURRENT CLAUDE.MD DOCUMENT:
-\`\`\`markdown
+\`\`\`markdown;
 ${claudeMdContent.substring(0, 6000)}${claudeMdContent.length > 6000 ? '\n... (truncated)' : ''}
 \`\`\`
 
@@ -107,7 +107,7 @@ ${userSettings ? `
 RECENT CHAT HISTORY:
 ${recentHistory}
 
-USER MESSAGE: "${message}"
+USER MESSAGE: '${message}'
 
 INSTRUCTIONS:
 You are an expert assistant for CLAUDE.md sacred documents. Your role is to:
@@ -131,15 +131,15 @@ Your response should be conversational and helpful. If you suggest actions, incl
 
 For actionable suggestions, you can include:
 - SUGGEST_UPDATE: if document needs updating
-- SUGGEST_BACKUP: if backup should be created  
+- SUGGEST_BACKUP: if backup should be created
 - SUGGEST_REFRESH: if document should be reloaded
 - DETECT_DRIFT: if drift analysis is needed
 
 EXAMPLE RESPONSES:
-- For "What's the tech stack?": Analyze the Technology Stack section and provide a clear summary
-- For "Is this document current?": Check for signs of drift and provide analysis
-- For "How do I add a new dependency?": Explain the process and sacred principles involved
-- For "What are the sacred rules?": Extract and explain the absolute rules/principles
+- For 'What's the tech stack?': Analyze the Technology Stack section and provide a clear summary
+- For 'Is this document current?': Check for signs of drift and provide analysis
+- For 'How do I add a new dependency?': Explain the process and sacred principles involved
+- For 'What are the sacred rules?': Extract and explain the absolute rules/principles
 
 Remember: The CLAUDE.md is a living, sacred document that must be treated with respect while being practical and useful.
 
@@ -162,12 +162,12 @@ function parseAssistantResponse(response) {
     result.action = { type: 'trigger_update' };
     result.suggestions.push('Trigger document update');
   }
-  
+
   if (response.includes('SUGGEST_BACKUP')) {
     result.action = { type: 'create_backup' };
     result.suggestions.push('Create backup');
   }
-  
+
   if (response.includes('SUGGEST_REFRESH')) {
     result.action = { type: 'refresh_document' };
     result.suggestions.push('Refresh document');
@@ -178,12 +178,12 @@ function parseAssistantResponse(response) {
     result.suggestions.push('Show me the dependencies');
     result.suggestions.push('Check for new technologies');
   }
-  
+
   if (response.toLowerCase().includes('sacred') || response.toLowerCase().includes('principle')) {
     result.suggestions.push('List all sacred rules');
     result.suggestions.push('Check for violations');
   }
-  
+
   if (response.toLowerCase().includes('drift') || response.toLowerCase().includes('current')) {
     result.suggestions.push('Analyze document drift');
     result.suggestions.push('Compare with project state');
@@ -195,9 +195,9 @@ function parseAssistantResponse(response) {
       'Explain the project architecture',
       'What needs updating?',
       'Show me recent changes',
-      'Check document health'
+      'Check document health';
     ];
-    
+
     generalSuggestions.forEach(suggestion => {
       if (result.suggestions.length < 4 && !result.suggestions.includes(suggestion)) {
         result.suggestions.push(suggestion);
@@ -219,23 +219,23 @@ function parseAssistantResponse(response) {
  */
 function generateFallbackResponse(message, claudeMdContent) {
   const msg = message.toLowerCase();
-  
+
   if (msg.includes('tech') || msg.includes('stack') || msg.includes('dependencies')) {
     return extractTechStackInfo(claudeMdContent);
   }
-  
+
   if (msg.includes('sacred') || msg.includes('rule') || msg.includes('principle')) {
     return extractSacredPrinciples(claudeMdContent);
   }
-  
+
   if (msg.includes('architecture') || msg.includes('structure')) {
     return extractArchitectureInfo(claudeMdContent);
   }
-  
+
   if (msg.includes('update') || msg.includes('change') || msg.includes('modify')) {
-    return "I can help you update your CLAUDE.md document. The sacred document should only be modified through the calibration process or automatic updates to maintain its integrity. Would you like me to check if any updates are needed?";
+    return 'I can help you update your CLAUDE.md document. The sacred document should only be modified through the calibration process or automatic updates to maintain its integrity. Would you like me to check if any updates are needed?';
   }
-  
+
   return `I'm currently unable to access my full AI capabilities, but I can still help you with your CLAUDE.md document. Your document appears to be ${claudeMdContent.length} characters long. You can ask me about specific sections, request updates, or get guidance on maintaining the sacred document.`;
 }
 
@@ -247,13 +247,13 @@ function extractTechStackInfo(content) {
   if (techStackMatch) {
     return `Here's your current technology stack:\n\n${techStackMatch[1].trim()}`;
   }
-  
+
   const techMatch = content.match(/tech.*?stack|dependencies|frameworks/i);
   if (techMatch) {
-    return "I can see references to your tech stack in the document. The technology stack section contains your current frameworks and dependencies.";
+    return 'I can see references to your tech stack in the document. The technology stack section contains your current frameworks and dependencies.';
   }
-  
-  return "I couldn't find a specific tech stack section. Your CLAUDE.md may need to be updated to include current technologies and dependencies.";
+
+  return 'I couldn't find a specific tech stack section. Your CLAUDE.md may need to be updated to include current technologies and dependencies.';
 }
 
 /**
@@ -264,13 +264,13 @@ function extractSacredPrinciples(content) {
   if (sacredMatch) {
     return `Here are your sacred principles:\n\n${sacredMatch[1].trim()}`;
   }
-  
+
   const rulesMatch = content.match(/sacred.*?principles|absolute.*?rules/i);
   if (rulesMatch) {
-    return "Your document contains sacred principles that govern the project. These are the foundational rules that must never be violated.";
+    return 'Your document contains sacred principles that govern the project. These are the foundational rules that must never be violated.';
   }
-  
-  return "Every CLAUDE.md should have sacred principles. These are the absolute rules that guide all development decisions and cannot be compromised.";
+
+  return 'Every CLAUDE.md should have sacred principles. These are the absolute rules that guide all development decisions and cannot be compromised.';
 }
 
 /**
@@ -281,11 +281,11 @@ function extractArchitectureInfo(content) {
   if (archMatch) {
     return `Here's your project architecture:\n\n${archMatch[1].trim()}`;
   }
-  
+
   const structureMatch = content.match(/project.*?structure|file.*?structure|directory.*?structure/i);
   if (structureMatch) {
-    return "Your document contains project structure information that defines how your codebase is organized.";
+    return 'Your document contains project structure information that defines how your codebase is organized.';
   }
-  
-  return "Project architecture defines how your system is structured. This should include your core components, data flow, and organizational patterns.";
+
+  return 'Project architecture defines how your system is structured. This should include your core components, data flow, and organizational patterns.';
 }

@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   try {
     // Build GitHub API URL
     const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/CLAUDE.md?ref=${branch}`;
-    
+
     // Prepare headers
     const headers = {
       'Accept': 'application/vnd.github.v3.raw',
@@ -50,13 +50,13 @@ export default async function handler(req, res) {
           message: 'Repository is private or GitHub token is invalid'
         });
       }
-      
+
       throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
     }
 
     // Get content
     const content = await response.text();
-    
+
     // Get file metadata for last modified date
     let lastModified = null;
     try {
@@ -68,10 +68,10 @@ export default async function handler(req, res) {
           ...(process.env.GITHUB_TOKEN && { 'Authorization': `token ${process.env.GITHUB_TOKEN}` })
         }
       });
-      
+
       if (metadataResponse.ok) {
-        const metadata = await metadataResponse.json();
-        
+        await metadataResponse.json();
+
         // Get commit info for the file
         const commitsUrl = `https://api.github.com/repos/${owner}/${repo}/commits?path=CLAUDE.md&per_page=1`;
         const commitsResponse = await fetch(commitsUrl, {
@@ -81,7 +81,7 @@ export default async function handler(req, res) {
             ...(process.env.GITHUB_TOKEN && { 'Authorization': `token ${process.env.GITHUB_TOKEN}` })
           }
         });
-        
+
         if (commitsResponse.ok) {
           const commits = await commitsResponse.json();
           if (commits.length > 0) {
@@ -105,7 +105,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error(`❌ Error fetching CLAUDE.md from ${owner}/${repo}:`, error);
-    
+
     res.status(500).json({
       error: 'Failed to fetch CLAUDE.md',
       message: error.message,
@@ -148,8 +148,8 @@ This repository has not been calibrated yet. The sacred CLAUDE.md document needs
 
 ---
 
-**Repository**: ${owner}/${repo}  
-**Status**: 🔴 Not Calibrated  
+**Repository**: ${owner}/${repo}
+**Status**: 🔴 Not Calibrated
 **Action Required**: Initialize sacred document through calibration process
 
 *This is a placeholder document. Run calibration to create your actual CLAUDE.md.*`;

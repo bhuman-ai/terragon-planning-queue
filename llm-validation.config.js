@@ -16,7 +16,7 @@ module.exports = {
   targets: {
     all: [
       'lib/**/*.js',
-      'pages/**/*.js', 
+      'pages/**/*.js',
       'components/**/*.js'
     ],
     llm: [
@@ -64,7 +64,7 @@ module.exports = {
       message: 'Sacred Principle Violation: No simulations, mocks, or fake functionality allowed'
     },
 
-    // Rule 2: NO FALLBACKS  
+    // Rule 2: NO FALLBACKS
     noFallbacks: {
       enabled: true,
       severity: 'error',

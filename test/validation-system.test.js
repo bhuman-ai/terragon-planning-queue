@@ -18,7 +18,7 @@ describe('LLM Output Validation System', () => {
           return a + b;
         }
       `;
-      
+
       const result = binaryValidate(validCode, 'syntax');
       expect(result.isValid).toBe(true);
       expect(result.performanceMs).toBeLessThan(100);
@@ -31,7 +31,7 @@ describe('LLM Output Validation System', () => {
           return userInput;
         }
       `;
-      
+
       const result = binaryValidate(unsafeCode, 'security');
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('Security vulnerability detected');
@@ -44,7 +44,7 @@ describe('LLM Output Validation System', () => {
           return { fake: 'data' };
         }
       `;
-      
+
       const result = binaryValidate(mockCode, 'sacred');
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('Sacred principle violation');
@@ -52,7 +52,7 @@ describe('LLM Output Validation System', () => {
 
     test('should complete validation within performance threshold', () => {
       const testCode = 'const x = 1; const y = 2; const z = x + y;';
-      
+
       const result = binaryValidate(testCode, 'quality', { performanceThreshold: 50 });
       expect(result.performanceMs).toBeLessThan(50);
       expect(result.withinThreshold).toBe(true);
@@ -77,17 +77,17 @@ describe('LLM Output Validation System', () => {
           }
           return width * height;
         }
-        
+
         module.exports = calculateArea;
       `;
-      
+
       const result = validateLLMOutput(code, 'code', {
         language: 'javascript',
         securityLevel: 'high',
         validationLevel: 'strict',
         enforcesSacredPrinciples: true
       });
-      
+
       expect(result.isValid).toBe(true);
       expect(result.validationScore).toBeGreaterThan(80);
       expect(result.performanceMs).toBeLessThan(100);
@@ -103,13 +103,13 @@ describe('LLM Output Validation System', () => {
           return mockData; // Sacred violation
         }
       `;
-      
+
       const result = validateLLMOutput(problematicCode, 'code', {
         language: 'javascript',
         securityLevel: 'high',
         enforcesSacredPrinciples: true
       });
-      
+
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.securityIssues.length).toBeGreaterThan(0);
@@ -122,13 +122,13 @@ describe('LLM Output Validation System', () => {
     test('should validate React component against schema', () => {
       const reactComponent = `
         import React, { useState } from 'react';
-        
+
         /**
          * Button component with accessibility support
          */
         function Button({ children, onClick, disabled = false, type = 'button' }) {
           const [isPressed, setIsPressed] = useState(false);
-          
+
           return (
             <button
               type={type}
@@ -142,10 +142,10 @@ describe('LLM Output Validation System', () => {
             </button>
           );
         }
-        
+
         export default Button;
       `;
-      
+
       const result = validateBySchema(reactComponent, 'reactComponent');
       expect(result.isValid).toBe(true);
       expect(result.performanceMs).toBeLessThan(100);
@@ -163,7 +163,7 @@ describe('LLM Output Validation System', () => {
           "timestamp": "2025-08-03T10:30:00Z"
         }
       `;
-      
+
       const result = validateBySchema(apiResponse, 'apiResponse');
       expect(result.isValid).toBe(true);
       expect(result.securityIssues).toHaveLength(0);
@@ -179,7 +179,7 @@ describe('LLM Output Validation System', () => {
           }
         }
       `;
-      
+
       const result = validateBySchema(configWithSecrets, 'configFile');
       expect(result.isValid).toBe(false);
       expect(result.securityIssues.length).toBeGreaterThan(0);
@@ -191,18 +191,18 @@ describe('LLM Output Validation System', () => {
           it('should add two numbers correctly', () => {
             expect(add(2, 3)).toBe(5);
           });
-          
+
           it('should throw error for invalid input', () => {
             expect(() => add('a', 'b')).toThrow();
           });
-          
+
           it('should handle edge cases', () => {
             expect(add(0, 0)).toBe(0);
             expect(add(-1, 1)).toBe(0);
           });
         });
       `;
-      
+
       const result = validateBySchema(testFile, 'testFile');
       expect(result.isValid).toBe(true);
     });
@@ -215,12 +215,12 @@ describe('LLM Output Validation System', () => {
           eval('alert("test")'); // Security issue
         }
       `;
-      
+
       const result = eslintPlugin.binaryValidate(code, {
         enforcesSacredPrinciples: true,
         securityLevel: 'high'
       });
-      
+
       expect(result.isValid).toBe(false);
       expect(result.hasSecurityIssues).toBe(true);
       expect(result.errorCount).toBeGreaterThan(0);
@@ -233,11 +233,11 @@ describe('LLM Output Validation System', () => {
           return { mock: true };
         }
       `;
-      
+
       const result = eslintPlugin.validateLLMCode(mockCode, {
         enforcesSacredPrinciples: true
       });
-      
+
       expect(result.isValid).toBe(false);
       expect(result.sacredViolations.length).toBeGreaterThan(0);
     });
@@ -251,12 +251,12 @@ describe('LLM Output Validation System', () => {
         { content: '# Test\nSome content', type: 'documentation' },
         { content: '<div>Hello</div>', type: 'ui-component' }
       ];
-      
+
       for (const testCase of testCases) {
         const startTime = Date.now();
         const result = validateLLMOutput(testCase.content, testCase.type);
         const duration = Date.now() - startTime;
-        
+
         expect(duration).toBeLessThan(100);
         expect(result.performanceMs).toBeLessThan(100);
       }
@@ -264,17 +264,17 @@ describe('LLM Output Validation System', () => {
 
     test('should handle batch validation efficiently', async () => {
       const { batchValidate } = require('../lib/collaboration/llm-schemas.js');
-      
+
       const validations = Array.from({ length: 10 }, (_, i) => ({
         content: `function test${i}() { return ${i}; }`,
         schemaName: 'javascriptCode',
         index: i
       }));
-      
+
       const startTime = Date.now();
       const result = await batchValidate(validations, { concurrency: 3 });
       const totalTime = Date.now() - startTime;
-      
+
       expect(totalTime).toBeLessThan(500); // 50ms per validation max
       expect(result.summary.total).toBe(10);
       expect(result.summary.avgPerformance).toBeLessThan(100);
@@ -284,17 +284,17 @@ describe('LLM Output Validation System', () => {
   describe('Real-time Feedback System', () => {
     test('should provide cached validation results', async () => {
       const testCode = 'function hello() { return "world"; }';
-      
+
       // First validation
       const result1 = await validationFeedback.validateWithFeedback(testCode, {
         outputType: 'code'
       });
-      
+
       // Second validation (should be cached)
       const result2 = await validationFeedback.validateWithFeedback(testCode, {
         outputType: 'code'
       });
-      
+
       expect(result1.isValid).toBe(result2.isValid);
       expect(result2.fromCache).toBe(true);
       expect(result2.performanceMs).toBeLessThan(result1.performanceMs);
@@ -302,7 +302,7 @@ describe('LLM Output Validation System', () => {
 
     test('should track performance metrics', () => {
       const stats = validationFeedback.getPerformanceStats();
-      
+
       expect(stats).toHaveProperty('avg');
       expect(stats).toHaveProperty('min');
       expect(stats).toHaveProperty('max');
@@ -318,11 +318,11 @@ describe('LLM Output Validation System', () => {
           document.getElementById('output').innerHTML = msg;
         }
       `;
-      
+
       const result = validateLLMOutput(xssCode, 'code', {
         securityLevel: 'high'
       });
-      
+
       expect(result.securityIssues.length).toBeGreaterThan(0);
       expect(result.securityIssues[0].code).toContain('SECURITY');
     });
@@ -334,11 +334,11 @@ describe('LLM Output Validation System', () => {
           return db.query(query);
         }
       `;
-      
+
       const result = validateLLMOutput(sqlCode, 'code', {
         securityLevel: 'critical'
       });
-      
+
       expect(result.securityIssues.length).toBeGreaterThan(0);
     });
 
@@ -349,11 +349,11 @@ describe('LLM Output Validation System', () => {
           password: "super_secret_password"
         };
       `;
-      
+
       const result = validateLLMOutput(secretCode, 'code', {
         securityLevel: 'high'
       });
-      
+
       expect(result.securityIssues.length).toBeGreaterThan(0);
     });
   });
@@ -361,7 +361,7 @@ describe('LLM Output Validation System', () => {
   describe('Integration with Collaboration APIs', () => {
     test('should validate collaboration integration data', () => {
       const { validateCollaborationIntegration } = require('../lib/collaboration/validation.js');
-      
+
       const collaborationData = {
         content: `
           function processTask(task) {
@@ -374,9 +374,9 @@ describe('LLM Output Validation System', () => {
         outputType: 'code',
         language: 'javascript'
       };
-      
+
       const result = validateCollaborationIntegration(collaborationData, 'process-full-task');
-      
+
       expect(result.isValid).toBe(true);
       expect(result.collaborationReady).toBe(true);
       expect(result.performanceMs).toBeLessThan(100);

@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import styles from './SubmitButton.module.css'
-
+;
 const SubmitButton = ({
   onClick,
   type = 'button',
@@ -19,7 +19,7 @@ const SubmitButton = ({
   }
 
   return (
-    <button
+    <button;
       type={type}
       disabled={disabled || loading}
       onClick={handleClick}
@@ -28,7 +28,7 @@ const SubmitButton = ({
       aria-disabled={disabled || loading}
       {...rest}
     >
-      {loading && <span className={styles.spinner} aria-hidden="true" />}
+      {loading && <span className={styles.spinner} aria-hidden='true' />}
       <span className={styles.content}>{children}</span>
     </button>
   )
@@ -45,3 +45,4 @@ SubmitButton.propTypes = {
 }
 
 export default SubmitButton
+;

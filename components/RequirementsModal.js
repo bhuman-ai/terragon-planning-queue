@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 
-export default function RequirementsModal({ 
-  show, 
-  onClose, 
-  requirements, 
-  onSubmit 
+export default function RequirementsModal({
+  show,
+  onClose,
+  requirements,
+  onSubmit
 }) {
   const [answers, setAnswers] = useState({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showResearch, setShowResearch] = useState(false);
-  
+
   useEffect(() => {
     // Reset when new requirements come in
     if (requirements && requirements.questions) {
@@ -80,16 +80,16 @@ export default function RequirementsModal({
         maxHeight: '80vh',
         overflow: 'auto'
       }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '20px'
         }}>
           <h2 style={{ color: '#00ff88', margin: 0 }}>
             🧠 Meta-Agent Requirements Gathering
           </h2>
-          <button 
+          <button
             onClick={onClose}
             style={{
               background: 'none',
@@ -112,9 +112,9 @@ export default function RequirementsModal({
             borderRadius: '5px',
             border: '1px solid #00ff88'
           }}>
-            <div style={{ 
-              color: '#00ff88', 
-              fontSize: '14px', 
+            <div style={{
+              color: '#00ff88',
+              fontSize: '14px',
               fontWeight: 'bold',
               marginBottom: '10px',
               display: 'flex',
@@ -123,9 +123,9 @@ export default function RequirementsModal({
             }}>
               🧠 Context Analysis
             </div>
-            <p style={{ 
-              color: '#ccc', 
-              fontSize: '13px', 
+            <p style={{
+              color: '#ccc',
+              fontSize: '13px',
               lineHeight: '1.5',
               fontStyle: 'italic'
             }}>
@@ -159,7 +159,7 @@ export default function RequirementsModal({
               <span>{showResearch ? '▼' : '▶'}</span>
               🔍 Research Insights Available
             </button>
-            
+
             {showResearch && (
               <div style={{
                 marginTop: '10px',
@@ -205,8 +205,8 @@ export default function RequirementsModal({
         {/* Current Question */}
         {currentQuestion && (
           <div style={{ marginBottom: '30px' }}>
-            <h3 style={{ 
-              fontSize: '18px', 
+            <h3 style={{
+              fontSize: '18px',
               marginBottom: '15px',
               color: '#fff'
             }}>
@@ -221,17 +221,17 @@ export default function RequirementsModal({
                 marginBottom: '15px',
                 border: '1px solid #555'
               }}>
-                <div style={{ 
-                  color: '#ffaa00', 
-                  fontSize: '12px', 
+                <div style={{
+                  color: '#ffaa00',
+                  fontSize: '12px',
                   fontWeight: 'bold',
                   marginBottom: '5px'
                 }}>
                   💡 Why we're asking this:
                 </div>
-                <p style={{ 
-                  color: '#ccc', 
-                  fontSize: '13px', 
+                <p style={{
+                  color: '#ccc',
+                  fontSize: '13px',
                   lineHeight: '1.4',
                   margin: 0
                 }}>
@@ -269,9 +269,9 @@ export default function RequirementsModal({
                 {currentQuestion.options.map((option, idx) => {
                   const currentAnswers = answers[currentQuestion.id] || [];
                   const isSelected = currentAnswers.includes(option);
-                  
+
                   return (
-                    <button
+                    <button;
                       key={idx}
                       onClick={() => {
                         if (isSelected) {
@@ -355,9 +355,9 @@ export default function RequirementsModal({
                     resize: 'vertical'
                   }}
                 />
-                <div style={{ 
-                  fontSize: '12px', 
-                  color: '#666', 
+                <div style={{
+                  fontSize: '12px',
+                  color: '#666',
                   marginTop: '5px',
                   textAlign: 'right'
                 }}>
@@ -369,8 +369,8 @@ export default function RequirementsModal({
         )}
 
         {/* Navigation Buttons */}
-        <div style={{ 
-          display: 'flex', 
+        <div style={{
+          display: 'flex',
           justifyContent: 'space-between',
           marginTop: '30px'
         }}>
@@ -428,8 +428,8 @@ export default function RequirementsModal({
         </div>
 
         {/* Skip Option */}
-        <div style={{ 
-          textAlign: 'center', 
+        <div style={{
+          textAlign: 'center',
           marginTop: '20px',
           paddingTop: '20px',
           borderTop: '1px solid #333'

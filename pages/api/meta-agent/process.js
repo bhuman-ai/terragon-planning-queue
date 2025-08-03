@@ -59,8 +59,8 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'Message and preResearchAnswers are required for post-research action' });
         }
         result = await metaAgent.requirementsGatherer.generatePostResearchQuestions(
-          message, 
-          req.body.preResearchAnswers, 
+          message,
+          req.body.preResearchAnswers,
           context
         );
         break;
@@ -109,17 +109,17 @@ export default async function handler(req, res) {
       case 'project-interview':
         // Generate dynamic project interview questions
         const { phase, existingAnswers } = req.body;
-        
+
         // Use requirements gatherer to generate intelligent questions
-        const projectContext = phase === 'initial' 
+        const projectContext = phase === 'initial'
           ? 'User is starting a new project. Ask intelligent questions to understand their project goals, technical requirements, and constraints.'
           : 'User has provided initial answers. Ask follow-up questions to get more specific technical details.';
-          
+
         const projectQuestions = await metaAgent.requirementsGatherer.generatePreResearchQuestions(
           projectContext,
           { phase, existingAnswers }
         );
-        
+
         // Extract just the questions array for the frontend
         result = {
           questions: projectQuestions.questions || [],

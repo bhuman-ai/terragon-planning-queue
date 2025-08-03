@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
   try {
     const activeTasksDir = path.join(process.cwd(), 'data', 'active-tasks');
-    
+
     // Check if directory exists
     try {
       await fs.access(activeTasksDir);
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
           const taskPath = path.join(activeTasksDir, file);
           const taskData = await fs.readFile(taskPath, 'utf-8');
           const task = JSON.parse(taskData);
-          
+
           // Add summary info for UI
           tasks.push({
             id: task.id,

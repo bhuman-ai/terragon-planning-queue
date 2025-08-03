@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 
 /**
  * TaskOrchestrationView - Workflow management with Task.md
- * 
+ *
  * Features:
  * - Visual workflow designer with Task.md
  * - AI-powered task decomposition
@@ -25,7 +25,7 @@ export default function TaskOrchestrationView({
   const [dependencies, setDependencies] = useState(new Map());
   const [executionStatus, setExecutionStatus] = useState({});
   const [timeEstimates, setTimeEstimates] = useState({});
-  const [chatMessages, setChatMessages] = useState([
+  const [chatMessages, setChatMessages] = useState([;
     {
       id: 'welcome',
       role: 'assistant',
@@ -75,11 +75,11 @@ export default function TaskOrchestrationView({
 
   const decomposeTask = async (description) => {
     setIsLoading(true);
-    
+
     try {
       const response = await fetch('/api/collaboration/orchestration/decompose', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -98,19 +98,19 @@ export default function TaskOrchestrationView({
 
       if (response.ok) {
         const data = await response.json();
-        
+
         // Update workflow steps
         setWorkflowSteps(data.steps || []);
         setDependencies(new Map(data.dependencies || []));
         setTimeEstimates(data.timeEstimates || {});
         setCollaboratorAgents(data.recommendedAgents || []);
-        
+
         // Update task document
         const updatedDocument = generateTaskDocument(data.steps, data.dependencies);
         setTaskDocument(updatedDocument);
-        
+
         addSystemMessage(`Decomposed task into ${data.steps?.length || 0} steps with ${data.dependencies?.length || 0} dependencies`);
-        
+
         onTaskUpdate?.({
           steps: data.steps,
           dependencies: data.dependencies,
@@ -126,11 +126,11 @@ export default function TaskOrchestrationView({
   };
 
   const generateTaskDocument = (steps, deps) => {
-    let doc = `# Task Orchestration Document\n\n`;
+    const doc = `# Task Orchestration Document\n\n`;
     doc += `**Session ID:** ${sessionId}\n`;
     doc += `**Generated:** ${new Date().toISOString()}\n`;
     doc += `**Total Steps:** ${steps.length}\n\n`;
-    
+
     doc += `## Workflow Overview\n\n`;
     steps.forEach((step, index) => {
       doc += `### Step ${index + 1}: ${step.title}\n`;
@@ -138,11 +138,11 @@ export default function TaskOrchestrationView({
       doc += `**Agent:** ${step.assignedAgent || 'Unassigned'}\n`;
       doc += `**Status:** ${executionStatus[step.id] || 'Pending'}\n\n`;
       doc += `${step.description}\n\n`;
-      
+
       if (step.dependencies && step.dependencies.length > 0) {
         doc += `**Dependencies:** ${step.dependencies.join(', ')}\n\n`;
       }
-      
+
       if (step.deliverables && step.deliverables.length > 0) {
         doc += `**Deliverables:**\n`;
         step.deliverables.forEach(deliverable => {
@@ -196,8 +196,8 @@ export default function TaskOrchestrationView({
       // Draw step box
       const isSelected = selectedStep?.id === step.id;
       const status = executionStatus[step.id] || 'pending';
-      
-      ctx.fillStyle = isSelected ? '#003366' : 
+
+      ctx.fillStyle = isSelected ? '#003366' :
                      status === 'completed' ? '#004d00' :
                      status === 'in_progress' ? '#664400' :
                      status === 'failed' ? '#660000' : '#1a1a1a';
@@ -287,7 +287,7 @@ export default function TaskOrchestrationView({
     // Find clicked step
     const clickedStep = workflowSteps.find(step => {
       const pos = step._canvasPosition;
-      return pos && x >= pos.x && x <= pos.x + pos.width && 
+      return pos && x >= pos.x && x <= pos.x + pos.width &&;
              y >= pos.y && y <= pos.y + pos.height;
     });
 
@@ -301,7 +301,7 @@ export default function TaskOrchestrationView({
     try {
       const response = await fetch('/api/collaboration/orchestration/assign-agent', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -315,10 +315,10 @@ export default function TaskOrchestrationView({
 
       if (response.ok) {
         const data = await response.json();
-        
+
         // Update step with assigned agent
-        setWorkflowSteps(prev => prev.map(step => 
-          step.id === stepId 
+        setWorkflowSteps(prev => prev.map(step =>
+          step.id === stepId
             ? { ...step, assignedAgent: agentType, agentConfig: data.config }
             : step
         ));
@@ -337,9 +337,8 @@ export default function TaskOrchestrationView({
 
     // Check dependencies
     const stepDeps = dependencies.get(stepId) || [];
-    const uncompletedDeps = stepDeps.filter(depId => 
-      executionStatus[depId] !== 'completed'
-    );
+    const uncompletedDeps = stepDeps.filter(depId =>
+      executionStatus[depId] !== 'completed');
 
     if (uncompletedDeps.length > 0) {
       addSystemMessage(`Cannot execute step: incomplete dependencies`);
@@ -352,7 +351,7 @@ export default function TaskOrchestrationView({
     try {
       const response = await fetch('/api/collaboration/orchestration/execute-step', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -366,13 +365,13 @@ export default function TaskOrchestrationView({
 
       if (response.ok) {
         const data = await response.json();
-        setExecutionStatus(prev => ({ 
-          ...prev, 
-          [stepId]: data.success ? 'completed' : 'failed' 
+        setExecutionStatus(prev => ({
+          ...prev,
+          [stepId]: data.success ? 'completed' : 'failed'
         }));
 
         addSystemMessage(
-          data.success 
+          data.success
             ? `✅ Completed: ${step.title}`
             : `❌ Failed: ${step.title} - ${data.error}`
         );
@@ -404,7 +403,7 @@ export default function TaskOrchestrationView({
     try {
       const response = await fetch('/api/collaboration/orchestration/chat', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -424,7 +423,7 @@ export default function TaskOrchestrationView({
 
       if (response.ok) {
         const data = await response.json();
-        
+
         const assistantMessage = {
           id: Date.now().toString() + '-ai',
           role: 'assistant',
@@ -500,7 +499,7 @@ export default function TaskOrchestrationView({
     const completed = Object.values(executionStatus).filter(s => s === 'completed').length;
     const inProgress = Object.values(executionStatus).filter(s => s === 'in_progress').length;
     const failed = Object.values(executionStatus).filter(s => s === 'failed').length;
-    
+
     return { total, completed, inProgress, failed };
   };
 
@@ -527,9 +526,9 @@ export default function TaskOrchestrationView({
           borderBottom: '1px solid #333',
           backgroundColor: '#1a1a1a'
         }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '15px'
           }}>
@@ -541,7 +540,7 @@ export default function TaskOrchestrationView({
                 Task.md • Workflow Management & AI Coordination
               </p>
             </div>
-            
+
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <select
                 value={viewMode}
@@ -555,9 +554,9 @@ export default function TaskOrchestrationView({
                   fontSize: '12px'
                 }}
               >
-                <option value="visual">🎨 Visual</option>
-                <option value="document">📝 Document</option>
-                <option value="timeline">📅 Timeline</option>
+                <option value='visual'>🎨 Visual</option>
+                <option value='document'>📝 Document</option>
+                <option value='timeline'>📅 Timeline</option>
               </select>
 
               <button
@@ -578,10 +577,10 @@ export default function TaskOrchestrationView({
           </div>
 
           {/* Progress Stats */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '20px', 
-            fontSize: '12px', 
+          <div style={{
+            display: 'flex',
+            gap: '20px',
+            fontSize: '12px',
             color: '#666'
           }}>
             <span style={{ color: '#fff' }}>Total: {stats.total}</span>
@@ -605,7 +604,7 @@ export default function TaskOrchestrationView({
                   cursor: 'pointer'
                 }}
               />
-              
+
               {workflowSteps.length === 0 && (
                 <div style={{
                   position: 'absolute',
@@ -661,7 +660,7 @@ export default function TaskOrchestrationView({
                       width: '40px',
                       height: '40px',
                       borderRadius: '50%',
-                      backgroundColor: 
+                      backgroundColor:
                         executionStatus[step.id] === 'completed' ? '#00aa44' :
                         executionStatus[step.id] === 'in_progress' ? '#ffaa66' :
                         executionStatus[step.id] === 'failed' ? '#aa4444' : '#333',
@@ -676,7 +675,7 @@ export default function TaskOrchestrationView({
                     }}>
                       {index + 1}
                     </div>
-                    
+
                     <div style={{ flex: 1 }}>
                       <h4 style={{ color: '#ffaa66', margin: '0 0 5px 0' }}>
                         {step.title}
@@ -692,7 +691,7 @@ export default function TaskOrchestrationView({
                           </span>
                         )}
                       </div>
-                      
+
                       {!readonly && (
                         <div style={{ marginTop: '10px' }}>
                           <button
@@ -700,7 +699,7 @@ export default function TaskOrchestrationView({
                             disabled={
                               executionStatus[step.id] === 'in_progress' ||
                               executionStatus[step.id] === 'completed' ||
-                              (dependencies.get(step.id) || []).some(depId => 
+                              (dependencies.get(step.id) || []).some(depId =>
                                 executionStatus[depId] !== 'completed'
                               )
                             }
@@ -749,7 +748,7 @@ export default function TaskOrchestrationView({
               <span>Duration: {selectedStep.estimatedDuration || 'TBD'}</span>
               <span>Agent: {selectedStep.assignedAgent || 'Unassigned'}</span>
             </div>
-            
+
             {selectedStep.deliverables && (
               <div style={{ marginTop: '10px' }}>
                 <strong style={{ fontSize: '12px', color: '#ccc' }}>Deliverables:</strong>
@@ -801,8 +800,8 @@ export default function TaskOrchestrationView({
                 width: '32px',
                 height: '32px',
                 borderRadius: '50%',
-                backgroundColor: 
-                  message.role === 'user' ? '#0066cc' : 
+                backgroundColor:
+                  message.role === 'user' ? '#0066cc' :
                   message.role === 'system' ? '#666' : '#00aa44',
                 display: 'flex',
                 alignItems: 'center',
@@ -810,14 +809,14 @@ export default function TaskOrchestrationView({
                 fontSize: '16px',
                 flexShrink: 0
               }}>
-                {message.role === 'user' ? '👤' : 
+                {message.role === 'user' ? '👤' :
                  message.role === 'system' ? '⚙️' : '🤖'}
               </div>
 
               <div style={{ flex: 1, maxWidth: '85%' }}>
                 <div style={{
-                  backgroundColor: 
-                    message.role === 'user' ? '#003366' : 
+                  backgroundColor:
+                    message.role === 'user' ? '#003366' :
                     message.role === 'system' ? '#333' : '#0f0f0f',
                   border: '1px solid #333',
                   borderRadius: '12px',
@@ -839,7 +838,7 @@ export default function TaskOrchestrationView({
               </div>
             </div>
           ))}
-          
+
           {isLoading && (
             <div style={{
               display: 'flex',
@@ -872,7 +871,7 @@ export default function TaskOrchestrationView({
               </div>
             </div>
           )}
-          
+
           <div ref={chatEndRef} />
         </div>
 
@@ -886,7 +885,7 @@ export default function TaskOrchestrationView({
               value={currentMessage}
               onChange={(e) => setCurrentMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Describe a task to decompose, request agent assignments, or ask for guidance..."
+              placeholder='Describe a task to decompose, request agent assignments, or ask for guidance...'
               disabled={isLoading}
               style={{
                 flex: 1,

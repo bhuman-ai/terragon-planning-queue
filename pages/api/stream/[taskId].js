@@ -24,16 +24,16 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   let lastMessageCount = 0;
-  let pollCount = 0;
+  const pollCount = 0;
 
   // Function to fetch task updates
   async function fetchTaskUpdates() {
     try {
       pollCount++;
-      
+
       // Fetch the task data using the same format as message sending
       const routerStateTree = `%5B%22%22%2C%7B%22children%22%3A%5B%22(sidebar)%22%2C%7B%22children%22%3A%5B%22task%22%2C%7B%22children%22%3A%5B%5B%22id%22%2C%22${taskId}%22%2C%22d%22%5D%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D`;
-      
+
       // Fetch task data using the same format as shown in curl
       const response = await fetch(`https://www.terragonlabs.com/task/${taskId}`, {
         method: 'POST',
@@ -51,38 +51,38 @@ export default async function handler(req, res) {
       });
 
       if (!response.ok) {
-        res.write(`data: ${JSON.stringify({ 
-          type: 'error', 
-          error: 'Failed to fetch task', 
-          status: response.status 
+        res.write(`data: ${JSON.stringify({
+          type: 'error',
+          error: 'Failed to fetch task',
+          status: response.status
         })}\n\n`);
         return false;
       }
 
       const result = await response.text();
-      
+
       // Parse React Server Component response
       const messages = [];
       const lines = result.split('\n').filter(line => line.trim());
-      
+
       let taskData = null;
-      let streamContent = '';
-      
+      const streamContent = '';
+
       // Process each line
       for (const line of lines) {
         // Type 0: Initial metadata
         if (line.startsWith('0:')) {
           continue;
         }
-        
+
         // Type 2: Streaming content chunks
         if (line.startsWith('2:')) {
           const content = line.substring(2);
-          // Remove the prefix like "Tb52," or similar
+          // Remove the prefix like 'Tb52,' or similar
           const cleanContent = content.replace(/^[A-Za-z0-9]+,/, '');
           streamContent += cleanContent;
         }
-        
+
         // Type 1: Final JSON data
         if (line.startsWith('1:')) {
           try {
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
           }
         }
       }
-      
+
       // Parse messages from task data if available
       if (taskData && taskData.messages && Array.isArray(taskData.messages)) {
         taskData.messages.forEach(msg => {
@@ -105,7 +105,7 @@ export default async function handler(req, res) {
             } else if (typeof msg.parts[0] === 'string') {
               text = msg.parts[0];
             }
-            
+
             if (text) {
               messages.push({
                 type: 'user',
@@ -121,7 +121,7 @@ export default async function handler(req, res) {
             } else if (typeof msg.parts[0] === 'string') {
               text = msg.parts[0];
             }
-            
+
             if (text && text !== '$2') { // Skip placeholder
               messages.push({
                 type: 'assistant',
@@ -139,7 +139,7 @@ export default async function handler(req, res) {
           }
         });
       }
-      
+
       // If we have streaming content but no messages parsed, add it as assistant message
       if (messages.length === 0 && streamContent.trim()) {
         messages.push({
@@ -148,7 +148,7 @@ export default async function handler(req, res) {
           timestamp: new Date().toISOString()
         });
       }
-      
+
       // Include task status if available
       let taskStatus = null;
       if (taskData) {
@@ -162,7 +162,7 @@ export default async function handler(req, res) {
 
       // Send update if we have new messages
       if (messages.length > lastMessageCount) {
-        res.write(`data: ${JSON.stringify({ 
+        res.write(`data: ${JSON.stringify({
           type: 'messages',
           taskId: taskId,
           messages: messages,
@@ -174,7 +174,7 @@ export default async function handler(req, res) {
         lastMessageCount = messages.length;
       } else {
         // Send heartbeat
-        res.write(`data: ${JSON.stringify({ 
+        res.write(`data: ${JSON.stringify({
           type: 'heartbeat',
           taskId: taskId,
           pollCount: pollCount,
@@ -185,9 +185,9 @@ export default async function handler(req, res) {
 
       return true;
     } catch (error) {
-      res.write(`data: ${JSON.stringify({ 
+      res.write(`data: ${JSON.stringify({
         type: 'error',
-        error: error.message 
+        error: error.message
       })}\n\n`);
       return false;
     }
@@ -195,7 +195,7 @@ export default async function handler(req, res) {
 
   // Initial fetch
   const success = await fetchTaskUpdates();
-  
+
   if (success) {
     // Poll for updates every 2 seconds
     const pollInterval = setInterval(async () => {

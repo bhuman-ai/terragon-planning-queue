@@ -8,17 +8,17 @@ export default async function handler(req, res) {
 
   try {
     const { interviewData, includeDevPrinciples, calibrationData, scanResults, timestamp } = req.body;
-    
+
     // Support both the new format (interviewData) and legacy format (calibrationData)
     const data = interviewData || calibrationData;
     const currentTimestamp = timestamp || new Date().toISOString();
-    
+
     // Generate the sacred CLAUDE.md content
     const claudeMdContent = await generateClaudeMd(data, scanResults, currentTimestamp, includeDevPrinciples);
-    
+
     // Analyze for cleanup suggestions
     const cleanupSuggestions = await analyzeForCleanup(data, scanResults);
-    
+
     res.status(200).json({
       claudeMarkdown: claudeMdContent, // New expected format
       content: claudeMdContent, // Legacy support
@@ -36,20 +36,20 @@ export default async function handler(req, res) {
 
 async function generateClaudeMd(data, scanResults, timestamp, includeDevPrinciples = false) {
   const techStack = data.techStack || scanResults?.detectedTechStack || [];
-  
+
   // Read the D3 CLAUDE.md and dev.md to extract core principles if requested
   let d3Principles = '';
   let devPrinciples = '';
-  
+
   if (includeDevPrinciples) {
     try {
       const d3ClaudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
       const d3ClaudeMdContent = await fs.readFile(d3ClaudeMdPath, 'utf-8');
-      
+
       // Extract the Sacred Principles section
       const principlesMatch = d3ClaudeMdContent.match(/## 3\. Coding Standards & AI Instructions[\s\S]*?(?=## 4\.|$)/);
       if (principlesMatch) {
-        d3Principles = principlesMatch[0];
+        [d3Principles] = principlesMatch;
       }
     } catch (error) {
       console.log('Could not read D3 CLAUDE.md for principles');
@@ -63,7 +63,7 @@ async function generateClaudeMd(data, scanResults, timestamp, includeDevPrincipl
       console.log('Could not read dev.md for universal principles');
     }
   }
-  
+
   return `# ${data.projectName || 'PROJECT'} - Sacred Source of Truth 🔥
 
 > **IMPORTANT**: This is the HOLY SACRED source of truth for this project. ALL decisions must align with this document.
@@ -125,10 +125,15 @@ ${techStack.map(tech => `- ${tech}`).join('\n')}
 
 ## 4. Security Requirements (Non-Negotiable)
 
-${data.security_requirements ? (Array.isArray(data.security_requirements) 
-  ? data.security_requirements.map(req => `- ${req}`).join('\n')
-  : `- ${data.security_requirements}`) 
-  : '- Input validation on all endpoints\n- Authentication required for all mutations\n- Rate limiting on all APIs'}
+${(() => {
+    if (!data.security_requirements) {
+      return '- Input validation on all endpoints\n- Authentication required for all mutations\n- Rate limiting on all APIs';
+    }
+    if (Array.isArray(data.security_requirements)) {
+      return data.security_requirements.map(req => `- ${req}`).join('\n');
+    }
+    return `- ${data.security_requirements}`;
+  })()}
 
 ### Authentication Strategy
 - Method: ${data.auth_method || 'JWT with refresh tokens'}
@@ -144,7 +149,7 @@ ${data.performance_targets || `- API Response time: <200ms p95
 
 ### Optimization Priorities
 1. User-perceived performance
-2. Database query efficiency  
+2. Database query efficiency
 3. Bundle size optimization
 4. Caching strategy
 
@@ -190,10 +195,15 @@ ${d3Principles ? `\n### Meta-Agent Context Standards\n${d3Principles.replace(/^#
 
 ## 8. Error Handling Strategy
 
-${data.error_strategy ? (Array.isArray(data.error_strategy)
-  ? data.error_strategy.map(strategy => `- ${strategy}`).join('\n')
-  : `- ${data.error_strategy}`)
-  : '- User-friendly error messages\n- Comprehensive logging\n- Graceful degradation'}
+${(() => {
+    if (!data.error_strategy) {
+      return '- User-friendly error messages\n- Comprehensive logging\n- Graceful degradation';
+    }
+    if (Array.isArray(data.error_strategy)) {
+      return data.error_strategy.map(strategy => `- ${strategy}`).join('\n');
+    }
+    return `- ${data.error_strategy}`;
+  })()}
 
 ## 9. Third-Party Integrations
 
@@ -204,7 +214,7 @@ ${data.third_party_integrations || 'None currently. All integrations must be app
 ### Business Constraints
 ${data.business_constraints || '- Budget: To be defined\n- Timeline: Ongoing\n- Compliance: Standard web application'}
 
-### Technical Boundaries  
+### Technical Boundaries
 - No external dependencies without approval
 - All APIs must be versioned
 - Breaking changes require migration plan
@@ -237,7 +247,7 @@ ${data.scaling_expectations || '- Users: 10K MAU\n- Data: <1TB\n- Requests: 100K
 
 ### Confidence Levels
 - Architecture: HIGH
-- Security: HIGH  
+- Security: HIGH
 - Performance: MEDIUM
 - Scaling: MEDIUM
 
@@ -252,7 +262,7 @@ ${data.scaling_expectations || '- Users: 10K MAU\n- Data: <1TB\n- Requests: 100K
 
 async function analyzeForCleanup(calibrationData, scanResults) {
   const suggestions = [...(scanResults?.cleanupSuggestions || [])];
-  
+
   // Add intelligent suggestions based on calibration
   if (calibrationData.currentPhase === 'production') {
     suggestions.push(
@@ -264,7 +274,7 @@ async function analyzeForCleanup(calibrationData, scanResults) {
       'temp/**'
     );
   }
-  
+
   // Remove duplicates
   return [...new Set(suggestions)];
 }

@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     if (action === 'detect') {
       // Just detect triggers without updating
       const triggers = await updater.detectUpdateTriggers();
-      
+
       return res.status(200).json({
         message: 'Trigger detection completed',
         triggers: {
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
           priority: triggers.priority,
           changes: triggers.changes
         },
-        recommendation: triggers.updateRequired 
+        recommendation: triggers.updateRequired
           ? 'Update recommended - call with action=update to apply'
           : 'No update needed - CLAUDE.md is current'
       });
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
     if (action === 'update') {
       // Detect and apply updates
       const triggers = await updater.detectUpdateTriggers();
-      
+
       if (!triggers.updateRequired && !forceUpdate) {
         return res.status(200).json({
           message: 'No update required',
@@ -65,10 +65,10 @@ export default async function handler(req, res) {
       }
 
       const updateResult = await updater.executeAutomaticUpdate(triggers);
-      
+
       return res.status(200).json({
-        message: updateResult.updated 
-          ? 'CLAUDE.md updated successfully' 
+        message: updateResult.updated
+          ? 'CLAUDE.md updated successfully'
           : 'Update attempted but not applied',
         triggers: triggers,
         update: updateResult,
@@ -84,13 +84,13 @@ export default async function handler(req, res) {
 
     if (action === 'backup') {
       // Create manual backup
-      const claudeMdPath = process.cwd() + '/CLAUDE.md';
+      const claudeMdPath = `${process.cwd()}/CLAUDE.md`;
       const fs = require('fs').promises;
-      
+
       try {
         const content = await fs.readFile(claudeMdPath, 'utf-8');
         await updater.createBackup(content);
-        
+
         return res.status(200).json({
           message: 'Backup created successfully',
           timestamp: new Date().toISOString()
@@ -103,14 +103,14 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: 'Invalid action',
       validActions: ['detect', 'update', 'status', 'backup']
     });
 
   } catch (error) {
     console.error('❌ Error in manual CLAUDE.md update:', error);
-    
+
     return res.status(500).json({
       message: 'Manual update failed',
       error: error.message
@@ -124,7 +124,7 @@ export default async function handler(req, res) {
 async function getAutoUpdaterStatus() {
   const fs = require('fs').promises;
   const path = require('path');
-  
+
   const status = {
     timestamp: new Date().toISOString(),
     autoUpdaterEnabled: !!process.env.CLAUDE_API_KEY,
@@ -136,13 +136,13 @@ async function getAutoUpdaterStatus() {
 
   try {
     const metaDir = path.join(process.cwd(), '.claude');
-    
+
     // Check for update log
     const updateLogPath = path.join(metaDir, 'update-log.json');
     try {
       const logContent = await fs.readFile(updateLogPath, 'utf-8');
       const updateLog = JSON.parse(logContent);
-      
+
       status.updateHistory = updateLog.slice(-10); // Last 10 updates
       status.lastUpdate = updateLog.length > 0 ? updateLog[updateLog.length - 1] : null;
     } catch (error) {
@@ -152,7 +152,7 @@ async function getAutoUpdaterStatus() {
     // Count backups
     try {
       const files = await fs.readdir(metaDir);
-      status.backupCount = files.filter(file => 
+      status.backupCount = files.filter(file =>
         file.startsWith('claude-backup-') && file.endsWith('.md')
       ).length;
     } catch (error) {

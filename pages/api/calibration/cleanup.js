@@ -8,7 +8,7 @@ export default async function handler(req, res) {
 
   try {
     const { files } = req.body;
-    
+
     if (!files || !Array.isArray(files)) {
       return res.status(400).json({ error: 'Files array is required' });
     }
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
         'CLAUDE.md',
         '.claude'
       ];
-      
+
       if (criticalFiles.some(critical => normalizedPath.includes(critical))) {
         results.skipped.push({
           file,
@@ -52,11 +52,11 @@ export default async function handler(req, res) {
       }
 
       const fullPath = path.join(projectRoot, normalizedPath);
-      
+
       try {
         // Check if it's a directory
         const stat = await fs.stat(fullPath);
-        
+
         if (stat.isDirectory()) {
           // Remove directory and all contents
           await fs.rm(fullPath, { recursive: true, force: true });
@@ -93,11 +93,11 @@ export default async function handler(req, res) {
       requestedFiles: files.length,
       results
     };
-    
+
     try {
       const logPath = path.join(projectRoot, '.claude', 'cleanup.log');
       await fs.mkdir(path.dirname(logPath), { recursive: true });
-      
+
       let existingLog = [];
       try {
         const logContent = await fs.readFile(logPath, 'utf-8');
@@ -105,7 +105,7 @@ export default async function handler(req, res) {
       } catch {
         // No existing log
       }
-      
+
       existingLog.push(cleanupLog);
       await fs.writeFile(logPath, JSON.stringify(existingLog, null, 2));
     } catch (error) {

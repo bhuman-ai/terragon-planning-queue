@@ -1,5 +1,5 @@
-import React from 'react'
-import SubmitButton from '../components/ui/SubmitButton'
+import React from 'react';
+import SubmitButton from '../components/ui/SubmitButton';
 
 export default {
   title: 'UI/SubmitButton',
@@ -19,41 +19,41 @@ export default {
     onClick: { action: 'clicked' },
     children: { control: 'text' }
   }
-}
+};
 
-const Template = (args) => <SubmitButton {...args} />
+const Template = (args) => <SubmitButton {...args} />;
 
-export const Primary = Template.bind({})
+export const Primary = Template.bind({});
 Primary.args = {
   children: 'Submit',
   variant: 'primary'
-}
+};
 
-export const Secondary = Template.bind({})
+export const Secondary = Template.bind({});
 Secondary.args = {
   children: 'Cancel',
   variant: 'secondary'
-}
+};
 
-export const Danger = Template.bind({})
+export const Danger = Template.bind({});
 Danger.args = {
   children: 'Delete',
   variant: 'danger'
-}
+};
 
-export const Loading = Template.bind({})
+export const Loading = Template.bind({});
 Loading.args = {
   children: 'Submitting...',
   loading: true,
   variant: 'primary'
-}
+};
 
-export const Disabled = Template.bind({})
+export const Disabled = Template.bind({});
 Disabled.args = {
   children: 'Disabled',
   disabled: true,
   variant: 'primary'
-}
+};
 
 export const AllStates = () => (
   <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -63,4 +63,4 @@ export const AllStates = () => (
     <SubmitButton variant="secondary">Secondary</SubmitButton>
     <SubmitButton variant="danger">Danger</SubmitButton>
   </div>
-)
+);

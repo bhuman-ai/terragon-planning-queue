@@ -3,20 +3,20 @@
  * Objective validation for LLM-generated UI
  */
 
-const DOMValidator = require('../../lib/dom-testing/dom-validator')
-const fs = require('fs').promises
-const path = require('path')
+const DOMValidator = require('../../lib/dom-testing/dom-validator');
+const fs = require('fs').promises;
+const path = require('path');
 
 describe('Collaboration UI DOM Tests', () => {
-  let validator
+  let validator;
 
   beforeEach(() => {
-    validator = new DOMValidator()
-  })
+    validator = new DOMValidator();
+  });
 
   afterEach(() => {
-    validator.cleanup()
-  })
+    validator.cleanup();
+  });
 
   describe('CollaborationHub Component', () => {
     it('should have correct structure and elements', async () => {
@@ -37,9 +37,9 @@ describe('Collaboration UI DOM Tests', () => {
             <button id="save-draft">Save Draft</button>
           </div>
         </div>
-      `
+      `;
 
-      await validator.initialize(html)
+      await validator.initialize(html);
 
       const results = await validator.validate({
         elements: [
@@ -60,11 +60,11 @@ describe('Collaboration UI DOM Tests', () => {
           { selector: '.status-indicator', className: 'active', hasClass: true },
           { selector: '.view-selector button:first-child', className: 'active', hasClass: true }
         ]
-      })
+      });
 
-      expect(results.passed).toBe(true)
-      expect(results.metrics.failedTests).toBe(0)
-    })
+      expect(results.passed).toBe(true);
+      expect(results.metrics.failedTests).toBe(0);
+    });
 
     it('should handle view switching interactions', async () => {
       const html = `
@@ -80,9 +80,9 @@ describe('Collaboration UI DOM Tests', () => {
             <div>Orchestration Content</div>
           </div>
         </div>
-      `
+      `;
 
-      await validator.initialize(html)
+      await validator.initialize(html);
 
       // Add view switching logic
       await validator.window.eval(`
@@ -90,14 +90,14 @@ describe('Collaboration UI DOM Tests', () => {
           btn.addEventListener('click', () => {
             document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'))
             btn.classList.add('active')
-            
+
             document.querySelectorAll('.current-view').forEach(v => v.style.display = 'none')
             const viewId = btn.getAttribute('data-view') + '-view'
             const view = document.getElementById(viewId)
             if (view) view.style.display = 'block'
           })
         })
-      `)
+      `);
 
       const results = await validator.validate({
         interactions: [
@@ -115,11 +115,11 @@ describe('Collaboration UI DOM Tests', () => {
           { selector: '[data-view="orchestration"]', className: 'active', hasClass: true },
           { selector: '[data-view="ideation"]', className: 'active', hasClass: false }
         ]
-      })
+      });
 
-      expect(results.passed).toBe(true)
-    })
-  })
+      expect(results.passed).toBe(true);
+    });
+  });
 
   describe('IdeationView Component', () => {
     it('should validate AI mode controls', async () => {
@@ -142,9 +142,9 @@ describe('Collaboration UI DOM Tests', () => {
           <textarea id="claude-draft" placeholder="Start ideating..."></textarea>
           <div class="ai-status">AI Mode: collaborative</div>
         </div>
-      `
+      `;
 
-      await validator.initialize(html)
+      await validator.initialize(html);
 
       const results = await validator.validate({
         elements: [
@@ -172,11 +172,11 @@ describe('Collaboration UI DOM Tests', () => {
             }
           }
         ]
-      })
+      });
 
-      expect(results.passed).toBe(true)
-    })
-  })
+      expect(results.passed).toBe(true);
+    });
+  });
 
   describe('TaskOrchestrationView Component', () => {
     it('should validate task list rendering', async () => {
@@ -200,9 +200,9 @@ describe('Collaboration UI DOM Tests', () => {
             Total: 2 tasks | Completed: 1 | Time: 45 min
           </div>
         </div>
-      `
+      `;
 
-      await validator.initialize(html)
+      await validator.initialize(html);
 
       const results = await validator.validate({
         elements: [
@@ -218,11 +218,11 @@ describe('Collaboration UI DOM Tests', () => {
         accessibility: [
           { rule: 'labels' }
         ]
-      })
+      });
 
-      expect(results.passed).toBe(true)
-    })
-  })
+      expect(results.passed).toBe(true);
+    });
+  });
 
   describe('ExecutionView Component', () => {
     it('should validate checkpoint display and controls', async () => {
@@ -255,9 +255,9 @@ describe('Collaboration UI DOM Tests', () => {
           <button id="pause-execution" aria-label="Pause execution">Pause</button>
           <button id="rollback" disabled aria-label="Rollback to previous checkpoint">Rollback</button>
         </div>
-      `
+      `;
 
-      await validator.initialize(html)
+      await validator.initialize(html);
 
       const results = await validator.validate({
         elements: [
@@ -281,11 +281,11 @@ describe('Collaboration UI DOM Tests', () => {
           { rule: 'aria-roles', selector: '#pause-execution', expectedRole: null },
           { rule: 'aria-roles', selector: '#rollback', expectedRole: null }
         ]
-      })
+      });
 
-      expect(results.passed).toBe(true)
-    })
-  })
+      expect(results.passed).toBe(true);
+    });
+  });
 
   describe('MergeReviewView Component', () => {
     it('should validate diff viewer and controls', async () => {
@@ -318,9 +318,9 @@ describe('Collaboration UI DOM Tests', () => {
             </div>
           </div>
         </div>
-      `
+      `;
 
-      await validator.initialize(html)
+      await validator.initialize(html);
 
       const results = await validator.validate({
         elements: [
@@ -349,11 +349,11 @@ describe('Collaboration UI DOM Tests', () => {
             errorMessage: 'Should have at least one validation result'
           }
         ]
-      })
+      });
 
-      expect(results.passed).toBe(true)
-    })
-  })
+      expect(results.passed).toBe(true);
+    });
+  });
 
   describe('Accessibility Compliance', () => {
     it('should pass comprehensive accessibility checks', async () => {
@@ -367,17 +367,17 @@ describe('Collaboration UI DOM Tests', () => {
           <form>
             <label for="task-name">Task Name</label>
             <input type="text" id="task-name" required>
-            
+
             <label for="task-desc">Description</label>
             <textarea id="task-desc"></textarea>
-            
+
             <button type="submit">Create Task</button>
           </form>
           <img src="diagram.png" alt="Workflow diagram showing task dependencies">
         </div>
-      `
+      `;
 
-      await validator.initialize(html)
+      await validator.initialize(html);
 
       const results = await validator.validate({
         accessibility: [
@@ -392,10 +392,10 @@ describe('Collaboration UI DOM Tests', () => {
           { selector: 'button[aria-current]', attribute: 'aria-current', value: 'page' },
           { selector: 'input[required]', attribute: 'required', value: '' }
         ]
-      })
+      });
 
-      expect(results.passed).toBe(true)
-      expect(results.errors).toHaveLength(0)
-    })
-  })
-})
+      expect(results.passed).toBe(true);
+      expect(results.errors).toHaveLength(0);
+    });
+  });
+});

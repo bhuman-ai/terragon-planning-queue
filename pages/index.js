@@ -8,6 +8,7 @@ import TaskMonitorDashboard from '../components/TaskMonitorDashboard';
 import CalibrationWizard from '../components/CalibrationWizard';
 import UserSettingsModal from '../components/UserSettingsModal';
 import ClaudeAutoUpdaterPanel from '../components/ClaudeAutoUpdaterPanel';
+import WorkflowHierarchy from '../components/WorkflowHierarchy';
 
 export default function Home() {
   const [state, setState] = useState({
@@ -44,7 +45,8 @@ export default function Home() {
   const [hasClaudeMd, setHasClaudeMd] = useState(null);
   const [showUserSettings, setShowUserSettings] = useState(false);
   const [userSettings, setUserSettings] = useState(null);
-  const [conversation, setConversation] = useState([
+  const [currentView, setCurrentView] = useState('queue'); // 'queue' or 'workflow'
+  const [conversation, setConversation] = useState([;
     { role: 'system', content: 'Ready to help you plan tasks. Connect to Terragon to begin.' }
   ]);
 
@@ -65,7 +67,7 @@ export default function Home() {
         console.error('Failed to load project data:', e);
       }
     }
-    
+
     // Load saved data
     const savedToken = localStorage.getItem('terragonSession');
     if (savedToken) {
@@ -74,12 +76,12 @@ export default function Home() {
       // Auto-connect if we have a saved token
       setTimeout(() => connectToTerragon(savedToken), 100);
     }
-    
+
     const savedGithub = localStorage.getItem('githubConfig');
     if (savedGithub) {
       setState(prev => ({ ...prev, githubConfig: JSON.parse(savedGithub) }));
     }
-    
+
     // Load saved tasks
     const savedTasks = localStorage.getItem('planningQueue');
     if (savedTasks) {
@@ -90,7 +92,7 @@ export default function Home() {
         console.error('Error loading saved tasks:', error);
       }
     }
-    
+
     // Load other saved state
     const savedState = localStorage.getItem('appState');
     if (savedState) {
@@ -113,9 +115,9 @@ export default function Home() {
     try {
       const response = await fetch('/api/calibration/check-claude-md');
       const data = await response.json();
-      
+
       setHasClaudeMd(data.exists);
-      
+
       // If no CLAUDE.md exists and user saves GitHub config, show calibration
       if (!data.exists && state.githubConfig.owner && state.githubConfig.repo) {
         setShowCalibration(true);
@@ -155,14 +157,14 @@ export default function Home() {
   async function connectToTerragon(tokenToUse) {
     // Use provided token or the one from input
     const token = tokenToUse || sessionInput;
-    
+
     if (!token.trim()) {
       showStatus('Please enter a session token', 'error');
       return;
     }
-    
+
     showStatus('Validating session...', 'info');
-    
+
     try {
       const response = await fetch('/api/validate-session', {
         method: 'POST',
@@ -171,9 +173,9 @@ export default function Home() {
         },
         body: JSON.stringify({ session_token: token })
       });
-      
+
       const result = await response.json();
-      
+
       if (result.valid) {
         // Save token first
         localStorage.setItem('terragonSession', token);
@@ -184,12 +186,12 @@ export default function Home() {
           setSessionInput(token);
         }
       } else {
-        showStatus('Invalid session: ' + result.message, 'error');
+        showStatus(`Invalid session: ${result}`.message, 'error');
         // Clear saved token if it's invalid
         localStorage.removeItem('terragonSession');
       }
     } catch (error) {
-      showStatus('Failed to connect: ' + error.message, 'error');
+      showStatus(`Failed to connect: ${error}`.message, 'error');
     }
   }
 
@@ -199,12 +201,12 @@ export default function Home() {
       showStatus('Please connect to Terragon first', 'error');
       return;
     }
-    
+
     if (!taskTitle.trim() || !taskDescription.trim()) {
       showStatus('Please fill in all fields', 'error');
       return;
     }
-    
+
     // Warn if Meta-Agent is disabled
     if (!useMetaAgent) {
       const confirmed = window.confirm(
@@ -214,20 +216,20 @@ export default function Home() {
         '• Research and best practices analysis\n' +
         '• Detailed task decomposition\n' +
         '• Proposal review\n\n' +
-        'Are you sure you want to continue without planning?'
+        'Are you sure you want to continue without planning?';
       );
       if (!confirmed) {
         return;
       }
     }
-    
+
     // Check if we need to run calibration first (no CLAUDE.md)
     if (useMetaAgent && hasClaudeMd === false) {
       alert('⚠️ No CLAUDE.md found! Please run repository calibration first to create your sacred source of truth.');
       setShowCalibration(true);
       return;
     }
-    
+
     const task = {
       id: Date.now(),
       title: taskTitle,
@@ -238,24 +240,24 @@ export default function Home() {
       createdAt: new Date().toISOString(),
       threadId: generateThreadId()
     };
-    
+
     setState(prev => {
       const newQueue = [...prev.planningQueue, task];
       // Save to localStorage
       localStorage.setItem('planningQueue', JSON.stringify(newQueue));
       return { ...prev, planningQueue: newQueue };
     });
-    
+
     // Clear form
     setTaskTitle('');
     setTaskDescription('');
-    
+
     // Send to Terragon for planning
     await sendToTerragon(task);
   }
 
   async function sendToTerragon(task) {
-    let prompt = `I need help planning a task for implementation. Please analyze this request and create a detailed plan.
+    const prompt = `I need help planning a task for implementation. Please analyze this request and create a detailed plan.
 
 Task: ${task.title}
 Description: ${task.description}
@@ -269,29 +271,29 @@ Please provide:
 5. A structured task description ready for Terragon API
 
 Format the response as a structured implementation plan with clear subtasks and deliverables.`;
-    
+
     // If MetaAgent is enabled, start with pre-research questions
     if (useMetaAgent) {
       showStatus('Meta-Agent starting two-phase analysis...', 'info');
-      
+
       // Store the task and show pre-research modal
       setCurrentTask(task);
       setShowPreResearch(true);
-      
+
       // Don't send to Terragon yet - wait for two-phase question flow
       return;
     }
-    
+
     addMessage('user', prompt);
-    
+
     try {
       const payload = [
-        task.threadId,
-        { role: "user", content: prompt },
+        task.threadId,;
+        { role: 'user', content: prompt },
         null,
-        { modelId: "claude-3-5-sonnet-20241022", attachments: [] }
+        { modelId: 'claude-3-5-sonnet-20241022', attachments: [] }
       ];
-      
+
       // Use the new Terragon format
       let response = await fetch('/api/actions/terragon', {
         method: 'POST',
@@ -302,11 +304,11 @@ Format the response as a structured implementation plan with clear subtasks and 
           sessionToken: state.sessionToken,
           message: prompt,
           githubRepoFullName: `${state.githubConfig.owner}/${state.githubConfig.repo}`,
-          repoBaseBranchName: "main",
+          repoBaseBranchName: 'main',
           enrichContext: enrichContext
         })
       });
-      
+
       // Fallback to original endpoint if needed
       if (!response.ok && response.status === 404) {
         response = await fetch('/api/terragon', {
@@ -319,23 +321,23 @@ Format the response as a structured implementation plan with clear subtasks and 
           body: JSON.stringify(payload)
         });
       }
-      
+
       const contentType = response.headers.get('content-type');
       console.log('Response status:', response.status, 'Content-Type:', contentType);
-      
+
       if (response.ok || response.status === 200) {
         let result;
-        
+
         if (contentType && contentType.includes('application/json')) {
           result = await response.json();
           console.log('API Response:', result);
-          
+
           if (result.success === false && result.status === 404) {
-            // This is the "Server action not found" response from Terragon
+            // This is the 'Server action not found' response from Terragon
             // Try a different approach or show a specific error
             throw new Error('Terragon API format may have changed. Please check session token.');
           }
-          
+
           if (result.taskId) {
             task.terragonTaskId = result.taskId;
             task.terragonUrl = result.terragonUrl || `https://www.terragonlabs.com/task/${result.taskId}`;
@@ -343,19 +345,19 @@ Format the response as a structured implementation plan with clear subtasks and 
         } else {
           const text = await response.text();
           console.log('Raw response:', text.substring(0, 200));
-          const idMatch = text.match(/"id":"([a-f0-9-]+)"/);
+          const idMatch = text.match(/'id':'([a-f0-9-]+)'/);
           if (idMatch) {
             task.terragonTaskId = idMatch[1];
             task.terragonUrl = `https://www.terragonlabs.com/task/${task.terragonTaskId}`;
           }
         }
-        
+
         if (task.terragonUrl) {
           console.log('Terragon Task URL:', task.terragonUrl);
           // Update task phase
           task.phase = 'growing';
           updateQueue(task);
-          
+
           // Show success message with link
           addMessage('assistant', `Task created successfully! View on Terragon: ${task.terragonUrl}`);
           showStatus('Task sent to Terragon!', 'success');
@@ -365,7 +367,7 @@ Format the response as a structured implementation plan with clear subtasks and 
           updateQueue(task);
           addMessage('assistant', 'Task is being processed by Terragon AI...');
         }
-        
+
         // Update task status after processing
         setTimeout(() => {
           task.phase = 'ready';
@@ -386,20 +388,19 @@ Format the response as a structured implementation plan with clear subtasks and 
       }
     } catch (error) {
       console.error('Failed to send to Terragon:', error);
-      addMessage('assistant', 'Error: ' + error.message);
-      showStatus('Failed to process task: ' + error.message, 'error');
+      addMessage('assistant', `Error: ${error}`.message);
+      showStatus(`Failed to process task: ${error}`.message, 'error');
     }
   }
 
   function updateQueue(updatedTask) {
     setState(prev => {
-      const newQueue = prev.planningQueue.map(task => 
-        task.id === updatedTask.id ? updatedTask : task
-      );
-      
+      const newQueue = prev.planningQueue.map(task =>
+        task.id === updatedTask.id ? updatedTask : task);
+
       // Save to localStorage
       localStorage.setItem('planningQueue', JSON.stringify(newQueue));
-      
+
       return {
         ...prev,
         planningQueue: newQueue
@@ -419,11 +420,11 @@ Format the response as a structured implementation plan with clear subtasks and 
   // Handle pre-research answers and start research + post-research questions
   async function handlePreResearchSubmit(answers) {
     if (!currentTask) return;
-    
+
     showStatus('Phase 1 complete. Starting research and codebase analysis...', 'info');
     setPreResearchAnswers(answers);
     setShowPreResearch(false);
-    
+
     try {
       // Generate post-research questions with full context
       const postResearchResponse = await fetch('/api/meta-agent/process', {
@@ -433,21 +434,21 @@ Format the response as a structured implementation plan with clear subtasks and 
           action: 'post-research-requirements',
           message: `${currentTask.title}: ${currentTask.description}`,
           preResearchAnswers: answers,
-          context: { 
+          context: {
             priority: currentTask.priority,
             githubRepo: `${state.githubConfig.owner}/${state.githubConfig.repo}`
           }
         })
       });
-      
+
       if (postResearchResponse.ok) {
         const postResult = await postResearchResponse.json();
-        
+
         if (postResult.result && postResult.result.questions && postResult.result.questions.length > 0) {
           // Store post-research requirements
           setPostResearchRequirements(postResult.result);
           setShowPostResearch(true);
-          
+
           showStatus('Research complete! Phase 2 questions ready.', 'success');
           addMessage('assistant', `Research completed with ${postResult.result.questions.length} informed questions based on findings.`);
         } else {
@@ -456,23 +457,23 @@ Format the response as a structured implementation plan with clear subtasks and 
       } else {
         throw new Error(`Post-research API error: ${postResearchResponse.status}`);
       }
-      
+
     } catch (error) {
       console.error('Error in post-research phase:', error);
       showStatus(`Research phase error: ${error.message}`, 'error');
-      
+
       // Fall back to direct proposal creation
       await createProposalFromPreResearch(answers);
     }
   }
-  
+
   // Handle post-research answers and create proposal
   async function handlePostResearchSubmit(answers) {
     if (!currentTask || !preResearchAnswers || !postResearchRequirements) return;
-    
+
     showStatus('Phase 2 complete. Creating comprehensive proposal...', 'info');
     setShowPostResearch(false);
-    
+
     try {
       // Create comprehensive proposal with both sets of answers
       const proposalResponse = await fetch('/api/meta-agent/proposal', {
@@ -497,49 +498,49 @@ Format the response as a structured implementation plan with clear subtasks and 
           }
         })
       });
-      
+
       if (!proposalResponse.ok) {
         throw new Error(`Failed to create proposal: ${proposalResponse.status}`);
       }
-      
+
       const proposalResult = await proposalResponse.json();
-      
+
       if (proposalResult.success && proposalResult.proposal) {
         // Store the proposal with task context
         const proposalWithTask = {
           ...proposalResult.proposal,
           originalTask: currentTask
         };
-        
+
         setCurrentProposal(proposalWithTask);
         setShowProposal(true);
-        
+
         // Clear temporary state
         setCurrentTask(null);
         setPreResearchAnswers(null);
         setPostResearchRequirements(null);
-        
+
         showStatus('✅ Comprehensive proposal ready for review!', 'success');
         addMessage('assistant', `Two-phase analysis complete! Meta-Agent created detailed proposal with ${proposalResult.proposal.decomposition?.microTasks?.length || 0} micro-tasks based on research and codebase analysis.`);
-        
+
       } else {
         throw new Error(proposalResult.error || 'Failed to create proposal');
       }
-      
+
     } catch (error) {
       console.error('Error creating comprehensive proposal:', error);
       showStatus(`Proposal error: ${error.message}`, 'error');
-      
+
       // Fall back to basic proposal
       await createProposalFromPreResearch(preResearchAnswers);
     }
   }
-  
+
   // Fallback: Create proposal from just pre-research answers
   async function createProposalFromPreResearch(preAnswers) {
     try {
       showStatus('Creating basic proposal from initial answers...', 'info');
-      
+
       const proposalResponse = await fetch('/api/meta-agent/proposal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -553,7 +554,7 @@ Format the response as a structured implementation plan with clear subtasks and 
           }
         })
       });
-      
+
       if (proposalResponse.ok) {
         const result = await proposalResponse.json();
         if (result.success) {
@@ -575,11 +576,11 @@ Format the response as a structured implementation plan with clear subtasks and 
   // DEPRECATED: Handle requirements submission from MetaAgent - OLD SINGLE-PHASE WORKFLOW
   async function handleRequirementsSubmit(answers) {
     if (!pendingRequirements) return;
-    
+
     const { original, task, questions, research } = pendingRequirements;
-    
+
     showStatus('Meta-Agent is creating comprehensive proposal...', 'info');
-    
+
     try {
       // Create comprehensive proposal with all analysis
       const proposalResponse = await fetch('/api/meta-agent/proposal', {
@@ -601,48 +602,48 @@ Format the response as a structured implementation plan with clear subtasks and 
           }
         })
       });
-      
+
       if (!proposalResponse.ok) {
         throw new Error(`Failed to create proposal: ${proposalResponse.status}`);
       }
-      
+
       const proposalResult = await proposalResponse.json();
-      
+
       if (proposalResult.success && proposalResult.proposal) {
         // Store the current task context for later execution
         const proposalWithTask = {
           ...proposalResult.proposal,
           originalTask: task
         };
-        
+
         // Close requirements modal and show proposal review modal
         setShowRequirements(false);
         setPendingRequirements(null);
         setCurrentProposal(proposalWithTask);
         setShowProposal(true);
-        
+
         showStatus('✅ Proposal ready for review!', 'success');
         addMessage('assistant', `Meta-Agent created comprehensive proposal with ${proposalResult.proposal.decomposition?.microTasks?.length || 0} micro-tasks. Review and approve to proceed.`);
-        
+
       } else {
         throw new Error(proposalResult.error || 'Failed to create proposal');
       }
-      
+
     } catch (error) {
       console.error('Error creating Meta-Agent proposal:', error);
       showStatus(`Error: ${error.message}`, 'error');
       addMessage('system', `Error: ${error.message}`);
-      
+
       // Fall back to original Terragon-only flow
       showStatus('Falling back to direct Terragon submission...', 'info');
       await sendToTerragonDirect(task, answers);
     }
   }
-  
+
   // Handle proposal approval
   async function handleProposalApprove(proposal) {
     showStatus('Executing approved proposal...', 'info');
-    
+
     try {
       const approveResponse = await fetch('/api/meta-agent/proposal', {
         method: 'POST',
@@ -652,44 +653,44 @@ Format the response as a structured implementation plan with clear subtasks and 
           proposalId: proposal.id
         })
       });
-      
+
       if (!approveResponse.ok) {
         throw new Error(`Failed to approve proposal: ${approveResponse.status}`);
       }
-      
+
       const result = await approveResponse.json();
-      
+
       if (result.success) {
         // Close proposal modal
         setShowProposal(false);
         setCurrentProposal(null);
-        
+
         // Update task in queue
         const task = proposal.originalTask;
         task.phase = 'executing';
         task.metaAgentProposalId = proposal.id;
         updateQueue(task);
-        
+
         showStatus('✅ Proposal approved! Task execution started.', 'success');
         addMessage('assistant', 'Proposal approved! Meta-Agent is now executing the task...');
-        
+
         // Execute the actual Terragon task
         await executeApprovedTask(proposal);
-        
+
       } else {
         throw new Error(result.error || 'Failed to approve proposal');
       }
-      
+
     } catch (error) {
       console.error('Error approving proposal:', error);
       showStatus(`Error: ${error.message}`, 'error');
     }
   }
-  
+
   // Handle proposal rejection
   async function handleProposalReject(proposal) {
     showStatus('Rejecting proposal...', 'info');
-    
+
     try {
       const rejectResponse = await fetch('/api/meta-agent/proposal', {
         method: 'POST',
@@ -699,26 +700,26 @@ Format the response as a structured implementation plan with clear subtasks and 
           proposalId: proposal.id
         })
       });
-      
+
       const result = await rejectResponse.json();
-      
+
       // Close proposal modal
       setShowProposal(false);
       setCurrentProposal(null);
-      
+
       showStatus('❌ Proposal rejected.', 'info');
       addMessage('assistant', 'Proposal rejected. You can create a new task with different requirements.');
-      
+
     } catch (error) {
       console.error('Error rejecting proposal:', error);
       showStatus(`Error: ${error.message}`, 'error');
     }
   }
-  
+
   // Handle proposal modification
   async function handleProposalModify(proposal, modifications) {
     showStatus('Modifying proposal...', 'info');
-    
+
     try {
       const modifyResponse = await fetch('/api/meta-agent/proposal', {
         method: 'POST',
@@ -729,56 +730,56 @@ Format the response as a structured implementation plan with clear subtasks and 
           modifications: modifications
         })
       });
-      
+
       if (!modifyResponse.ok) {
         throw new Error(`Failed to modify proposal: ${modifyResponse.status}`);
       }
-      
+
       const result = await modifyResponse.json();
-      
+
       if (result.success) {
         // Update current proposal with modified version
         setCurrentProposal({
           ...result.proposal,
           originalTask: proposal.originalTask
         });
-        
+
         showStatus('✏️ Proposal modified! Review the changes.', 'success');
         addMessage('assistant', 'Proposal has been modified based on your feedback. Please review the updated plan.');
-        
+
       } else {
         throw new Error(result.error || 'Failed to modify proposal');
       }
-      
+
     } catch (error) {
       console.error('Error modifying proposal:', error);
       showStatus(`Error: ${error.message}`, 'error');
     }
   }
-  
-  
+
+
   // Handle calibration completion
   async function handleCalibrationComplete(calibrationResult) {
     const { claudeMd, cleanup, calibrationData } = calibrationResult;
-    
+
     // Mark calibration as complete
     setHasClaudeMd(true);
     setShowCalibration(false);
-    
+
     // Show success message
     showStatus('🔥 Sacred calibration complete! CLAUDE.md is now your source of truth.', 'success');
-    
+
     // If cleanup was approved, execute it
     if (cleanup && cleanup.length > 0) {
       showStatus(`Cleaning up ${cleanup.length} obsolete files...`, 'info');
-      
+
       try {
         await fetch('/api/calibration/cleanup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ files: cleanup })
         });
-        
+
         showStatus('✨ Cleanup complete! Your repository is now aligned with CLAUDE.md', 'success');
       } catch (error) {
         console.error('Cleanup failed:', error);
@@ -812,15 +813,15 @@ Format the response as a structured implementation plan with clear subtasks and 
           research: proposal.research
         })
       });
-      
+
       if (createResponse.ok) {
         const createResult = await createResponse.json();
-        
+
         if (createResult.success && createResult.task) {
           // Show progress modal
           setCurrentTaskId(createResult.task.taskId);
           setShowTaskProgress(true);
-          
+
           // Update task
           const task = proposal.originalTask;
           task.terragonTaskId = createResult.task.terragon?.taskId;
@@ -829,16 +830,16 @@ Format the response as a structured implementation plan with clear subtasks and 
           task.taskPath = createResult.task.taskPath;
           task.phase = 'ready';
           updateQueue(task);
-          
+
           showStatus('✅ Task executing successfully!', 'success');
           addMessage('assistant', `Task structure created at: ${createResult.task.taskPath}`);
-          
+
           if (createResult.task.terragon?.terragonUrl) {
             addMessage('assistant', `Terragon task: ${createResult.task.terragon.terragonUrl}`);
           }
         }
       }
-      
+
     } catch (error) {
       console.error('Error executing approved task:', error);
       showStatus(`Execution error: ${error.message}`, 'error');
@@ -847,14 +848,14 @@ Format the response as a structured implementation plan with clear subtasks and 
 
   // Fallback function for direct Terragon submission
   async function sendToTerragonDirect(task, answers) {
-    let enhancedPrompt = `Task: ${task.title}\nDescription: ${task.description}\n\n[Requirements:`;
-    
+    const enhancedPrompt = `Task: ${task.title}\nDescription: ${task.description}\n\n[Requirements:`;
+
     Object.entries(answers).forEach(([questionId, answer]) => {
       enhancedPrompt += `\n- ${questionId}: ${Array.isArray(answer) ? answer.join(', ') : answer}`;
     });
-    
+
     enhancedPrompt += ']\n\nPlease create a detailed implementation plan.';
-    
+
     try {
       const response = await fetch('/api/actions/terragon', {
         method: 'POST',
@@ -863,11 +864,11 @@ Format the response as a structured implementation plan with clear subtasks and 
           sessionToken: state.sessionToken,
           message: enhancedPrompt,
           githubRepoFullName: `${state.githubConfig.owner}/${state.githubConfig.repo}`,
-          repoBaseBranchName: "main",
+          repoBaseBranchName: 'main',
           enrichContext: enrichContext
         })
       });
-      
+
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.taskId) {
@@ -898,11 +899,11 @@ Format the response as a structured implementation plan with clear subtasks and 
           padding: 0;
           box-sizing: border-box;
         }
-        
+
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-        
+
         input, textarea, select {
           width: 100%;
           padding: 12px;
@@ -913,7 +914,7 @@ Format the response as a structured implementation plan with clear subtasks and 
           font-family: inherit;
           margin-bottom: 10px;
         }
-        
+
         button {
           padding: 12px 24px;
           background: #00ff88;
@@ -925,12 +926,12 @@ Format the response as a structured implementation plan with clear subtasks and 
           font-weight: bold;
           transition: all 0.3s;
         }
-        
+
         button:hover {
           background: #00cc6a;
           transform: translateY(-1px);
         }
-        
+
         button:disabled {
           background: #333;
           color: #666;
@@ -946,20 +947,20 @@ Format the response as a structured implementation plan with clear subtasks and 
         <p style={{ textAlign: 'center', color: '#888', marginBottom: '30px', fontSize: '1.1em' }}>
           AI-powered task planning with GitHub integration
         </p>
-        
+
         {/* Calibration Status */}
         {hasClaudeMd !== null && (
-          <div style={{ 
-            background: hasClaudeMd ? '#001a00' : '#1a0000', 
-            padding: '15px', 
-            borderRadius: '10px', 
+          <div style={{
+            background: hasClaudeMd ? '#001a00' : '#1a0000',
+            padding: '15px',
+            borderRadius: '10px',
             border: `1px solid ${hasClaudeMd ? '#00ff88' : '#ff6b6b'}`,
-            marginBottom: '20px' 
+            marginBottom: '20px'
           }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h3 style={{ 
-                    color: hasClaudeMd ? '#00ff88' : '#ff6b6b', 
+                  <h3 style={{
+                    color: hasClaudeMd ? '#00ff88' : '#ff6b6b',
                     margin: 0,
                     fontSize: '16px',
                     display: 'flex',
@@ -968,13 +969,13 @@ Format the response as a structured implementation plan with clear subtasks and 
                   }}>
                     {hasClaudeMd ? '🔥 Sacred Document Active' : '📋 Repository Not Calibrated'}
                   </h3>
-                  <p style={{ 
-                    color: '#888', 
-                    fontSize: '12px', 
-                    margin: '5px 0 0 0' 
+                  <p style={{
+                    color: '#888',
+                    fontSize: '12px',
+                    margin: '5px 0 0 0'
                   }}>
-                    {hasClaudeMd 
-                      ? 'CLAUDE.md is your source of truth' 
+                    {hasClaudeMd
+                      ? 'CLAUDE.md is your source of truth'
                       : 'Create CLAUDE.md to enable sacred governance'}
                   </p>
                 </div>
@@ -1017,17 +1018,17 @@ Format the response as a structured implementation plan with clear subtasks and 
         )}
 
         {/* User Settings Section */}
-        <div style={{ 
-          background: '#1a1a1a', 
-          padding: '20px', 
-          borderRadius: '10px', 
+        <div style={{
+          background: '#1a1a1a',
+          padding: '20px',
+          borderRadius: '10px',
           border: '1px solid #333',
           marginBottom: '20px'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h3 style={{ 
-                color: '#0088ff', 
+              <h3 style={{
+                color: '#0088ff',
                 margin: 0,
                 fontSize: '16px',
                 display: 'flex',
@@ -1036,13 +1037,13 @@ Format the response as a structured implementation plan with clear subtasks and 
               }}>
                 ⚙️ Meta-Agent Settings
               </h3>
-              <p style={{ 
-                color: '#888', 
-                fontSize: '12px', 
-                margin: '5px 0 0 0' 
+              <p style={{
+                color: '#888',
+                fontSize: '12px',
+                margin: '5px 0 0 0'
               }}>
-                {userSettings 
-                  ? `Technical Level: ${userSettings.technicalKnowledge}, Style: ${userSettings.questioningStyle}` 
+                {userSettings
+                  ? `Technical Level: ${userSettings.technicalKnowledge}, Style: ${userSettings.questioningStyle}`
                   : 'Configure how Meta-Agent generates questions for you'}
               </p>
             </div>
@@ -1063,10 +1064,10 @@ Format the response as a structured implementation plan with clear subtasks and 
             </button>
           </div>
         </div>
-        
+
         {/* Claude Auto-Updater Panel */}
         {hasClaudeMd && <ClaudeAutoUpdaterPanel />}
-        
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
           <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '10px', border: '1px solid #333' }}>
             <h2 style={{ color: '#00ff88', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1082,10 +1083,10 @@ Format the response as a structured implementation plan with clear subtasks and 
               <details>
                 <summary style={{ cursor: 'pointer', marginBottom: '5px' }}>📖 How to get session token</summary>
                 <ol style={{ marginLeft: '20px', marginTop: '10px', lineHeight: '1.6' }}>
-                  <li>Log in to <a href="https://www.terragonlabs.com" target="_blank" rel="noopener noreferrer" style={{ color: '#00ff88' }}>terragonlabs.com</a></li>
+                  <li>Log in to <a href='https://www.terragonlabs.com' target='_blank' rel='noopener noreferrer' style={{ color: '#00ff88' }}>terragonlabs.com</a></li>
                   <li>Press F12 (Developer Tools)</li>
                   <li>Go to Application → Cookies</li>
-                  <li>Find "__Secure-better-auth.session_token" cookie</li>
+                  <li>Find '__Secure-better-auth.session_token' cookie</li>
                   <li>Copy the value (e.g. JTgr3pSv...)</li>
                 </ol>
                 <p style={{ marginTop: '10px', fontSize: '11px' }}>
@@ -1094,8 +1095,8 @@ Format the response as a structured implementation plan with clear subtasks and 
               </details>
             </div>
             <input
-              type="password"
-              placeholder="Paste your __Secure-better-auth.session_token value here"
+              type='password'
+              placeholder='Paste your __Secure-better-auth.session_token value here'
               value={sessionInput}
               onChange={(e) => setSessionInput(e.target.value)}
               style={{ fontFamily: 'Monaco, Menlo, monospace', fontSize: '11px' }}
@@ -1104,7 +1105,7 @@ Format the response as a structured implementation plan with clear subtasks and 
               {state.connected ? 'Reconnect' : 'Connect to Terragon'}
             </button>
             {state.connected && (
-              <button 
+              <button
                 onClick={() => {
                   setState(prev => ({ ...prev, connected: false, sessionToken: '' }));
                   localStorage.removeItem('terragonSession');
@@ -1128,20 +1129,20 @@ Format the response as a structured implementation plan with clear subtasks and 
               </div>
             )}
           </div>
-          
+
           <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '10px', border: '1px solid #333' }}>
             <h2 style={{ color: '#00ff88', marginBottom: '15px' }}>Configuration</h2>
             <div style={{ marginBottom: '15px' }}>
               <h3 style={{ fontSize: '16px', marginBottom: '10px' }}>GitHub Repository</h3>
               <input
-                type="text"
-                placeholder="Repository owner"
+                type='text'
+                placeholder='Repository owner'
                 value={state.githubConfig.owner}
                 onChange={(e) => setState(prev => ({ ...prev, githubConfig: { ...prev.githubConfig, owner: e.target.value } }))}
               />
               <input
-                type="text"
-                placeholder="Repository name"
+                type='text'
+                placeholder='Repository name'
                 value={state.githubConfig.repo}
                 onChange={(e) => setState(prev => ({ ...prev, githubConfig: { ...prev.githubConfig, repo: e.target.value } }))}
               />
@@ -1151,10 +1152,10 @@ Format the response as a structured implementation plan with clear subtasks and 
             </div>
             <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid #333' }}>
               <h3 style={{ fontSize: '16px', marginBottom: '10px' }}>AI Enhancement Options</h3>
-              
+
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: '15px' }}>
                 <input
-                  type="checkbox"
+                  type='checkbox'
                   checked={enrichContext}
                   onChange={(e) => setEnrichContext(e.target.checked)}
                   style={{ width: 'auto', marginBottom: 0 }}
@@ -1163,10 +1164,10 @@ Format the response as a structured implementation plan with clear subtasks and 
                   Enable smart context injection (detects intent & adds task structure info)
                 </span>
               </label>
-              
+
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
                 <input
-                  type="checkbox"
+                  type='checkbox'
                   checked={useMetaAgent}
                   onChange={(e) => setUseMetaAgent(e.target.checked)}
                   style={{ width: 'auto', marginBottom: 0 }}
@@ -1181,7 +1182,49 @@ Format the response as a structured implementation plan with clear subtasks and 
             </div>
           </div>
         </div>
-        
+
+        {/* Tab Navigation */}
+        <div style={{
+          display: 'flex',
+          gap: '10px',
+          marginBottom: '20px',
+          borderBottom: '2px solid #333',
+          paddingBottom: '10px'
+        }}>
+          <button
+            onClick={() => setCurrentView('queue')}
+            style={{
+              padding: '10px 20px',
+              background: currentView === 'queue' ? '#00ff88' : 'transparent',
+              color: currentView === 'queue' ? '#000' : '#00ff88',
+              border: '2px solid #00ff88',
+              borderRadius: '5px 5px 0 0',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            📋 Planning Queue
+          </button>
+          <button
+            onClick={() => setCurrentView('workflow')}
+            style={{
+              padding: '10px 20px',
+              background: currentView === 'workflow' ? '#00ff88' : 'transparent',
+              color: currentView === 'workflow' ? '#000' : '#00ff88',
+              border: '2px solid #00ff88',
+              borderRadius: '5px 5px 0 0',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            🔗 Workflow Hierarchy
+          </button>
+        </div>
+
+        {/* Content based on current view */}
+        {currentView === 'queue' ? (
         <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '10px', border: '1px solid #333', marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
             <h2 style={{ color: '#00ff88', margin: 0 }}>📋 Planning Queue</h2>
@@ -1228,25 +1271,25 @@ Format the response as a structured implementation plan with clear subtasks and 
           <div style={{ marginBottom: '20px' }}>
             <h3 style={{ marginBottom: '10px' }}>New Task Planning Request</h3>
             <input
-              type="text"
-              placeholder="Task title..."
+              type='text'
+              placeholder='Task title...'
               value={taskTitle}
               onChange={(e) => setTaskTitle(e.target.value)}
             />
             <textarea
-              rows="4"
-              placeholder="Describe what you want to build..."
+              rows='4'
+              placeholder='Describe what you want to build...'
               value={taskDescription}
               onChange={(e) => setTaskDescription(e.target.value)}
             />
             <select value={taskPriority} onChange={(e) => setTaskPriority(e.target.value)}>
-              <option value="low">Low Priority</option>
-              <option value="medium">Medium Priority</option>
-              <option value="high">High Priority</option>
+              <option value='low'>Low Priority</option>
+              <option value='medium'>Medium Priority</option>
+              <option value='high'>High Priority</option>
             </select>
             <button onClick={submitToPlanningQueue}>🌱 Submit to Planning Queue</button>
           </div>
-          
+
           <div>
             {state.planningQueue.length === 0 ? (
               <p style={{ textAlign: 'center', color: '#666', padding: '40px' }}>
@@ -1294,7 +1337,7 @@ Format the response as a structured implementation plan with clear subtasks and 
                           </a>
                         </span>
                         <span>
-                          <a href={task.terragonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#00aaff' }}>
+                          <a href={task.terragonUrl} target='_blank' rel='noopener noreferrer' style={{ color: '#00aaff' }}>
                             View on Terragon
                           </a>
                         </span>
@@ -1309,7 +1352,7 @@ Format the response as a structured implementation plan with clear subtasks and 
             )}
           </div>
         </div>
-        
+
         <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '10px', border: '1px solid #333' }}>
           <h2 style={{ color: '#00ff88', marginBottom: '15px' }}>💬 Terragon Conversation</h2>
           <div style={{
@@ -1339,7 +1382,11 @@ Format the response as a structured implementation plan with clear subtasks and 
           </div>
         </div>
       </div>
-      
+      ) : (
+        /* Workflow Hierarchy View */
+        <WorkflowHierarchy />
+      )}
+
       {/* DEPRECATED Requirements Modal (old single-phase) */}
       <RequirementsModal
         show={showRequirements}
@@ -1347,7 +1394,7 @@ Format the response as a structured implementation plan with clear subtasks and 
         requirements={pendingRequirements}
         onSubmit={handleRequirementsSubmit}
       />
-      
+
       {/* NEW: Pre-Research Modal (Phase 1) */}
       <PreResearchModal
         show={showPreResearch}
@@ -1360,7 +1407,7 @@ Format the response as a structured implementation plan with clear subtasks and 
         githubConfig={state.githubConfig}
         userSettings={userSettings}
       />
-      
+
       {/* NEW: Post-Research Modal (Phase 2) */}
       <PostResearchModal
         show={showPostResearch}
@@ -1371,7 +1418,7 @@ Format the response as a structured implementation plan with clear subtasks and 
         requirements={postResearchRequirements}
         onSubmit={handlePostResearchSubmit}
       />
-      
+
       {/* Proposal Review Modal */}
       <ProposalReviewModal
         isOpen={showProposal}
@@ -1381,8 +1428,8 @@ Format the response as a structured implementation plan with clear subtasks and 
         onReject={handleProposalReject}
         onModify={handleProposalModify}
       />
-      
-      
+
+
       {/* Calibration Wizard */}
       <CalibrationWizard
         show={showCalibration}
@@ -1397,7 +1444,7 @@ Format the response as a structured implementation plan with clear subtasks and 
         onClose={() => setShowUserSettings(false)}
         onSave={handleUserSettingsSave}
       />
-      
+
       {/* Task Creation Progress */}
       <TaskCreationProgress
         show={showTaskProgress}
@@ -1407,7 +1454,7 @@ Format the response as a structured implementation plan with clear subtasks and 
           setCurrentTaskId(null);
         }}
       />
-      
+
       {/* Autonomous Task Monitor Dashboard */}
       <TaskMonitorDashboard
         show={showTaskMonitor}

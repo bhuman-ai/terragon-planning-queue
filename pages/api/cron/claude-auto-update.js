@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     // Step 1: Detect update triggers
     console.log('🔍 Detecting update triggers...');
     const triggers = await updater.detectUpdateTriggers();
-    
+
     const result = {
       timestamp: new Date().toISOString(),
       triggers: {
@@ -55,15 +55,15 @@ export default async function handler(req, res) {
     // Step 2: Execute update if required
     if (triggers.updateRequired) {
       console.log(`🚀 Executing automatic update (Priority: ${triggers.priority})...`);
-      
+
       const updateResult = await updater.executeAutomaticUpdate(triggers);
-      
+
       result.update = updateResult;
       result.execution.success = updateResult.updated;
-      
+
       if (updateResult.updated) {
         console.log('✅ CLAUDE.md successfully updated automatically');
-        
+
         // Notify via Discord if high priority
         if (triggers.priority === 'high') {
           await notifyHighPriorityUpdate(updateResult, triggers);
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
 
     // Return results
     res.status(200).json({
-      message: triggers.updateRequired 
+      message: triggers.updateRequired
         ? (result.update?.updated ? 'CLAUDE.md updated successfully' : 'Update required but not applied')
         : 'No update required',
       ...result
@@ -90,7 +90,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('❌ Error in automated CLAUDE.md update:', error);
-    
+
     const errorResult = {
       timestamp: new Date().toISOString(),
       error: error.message,
@@ -116,9 +116,9 @@ async function notifyHighPriorityUpdate(updateResult, triggers) {
   try {
     const baseUrl = process.env.VERCEL_URL || 'http://localhost:3000';
     const notificationUrl = `${baseUrl}/api/discord-bot/notify`;
-    
+
     const message = `🤖 **CLAUDE.md Auto-Updated** (High Priority)
-    
+
 **Changes Applied**: ${updateResult.changes} changes detected
 **Updates**: ${updateResult.proposal?.updates?.length || 0} sections modified
 **Priority**: ${triggers.priority}

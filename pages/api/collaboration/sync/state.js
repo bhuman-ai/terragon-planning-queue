@@ -28,8 +28,8 @@ async function handleGetState(req, res) {
     const { sessionId, component = 'all', includeHistory = false } = req.query;
 
     if (!sessionId) {
-      return res.status(400).json({ 
-        error: 'Missing required parameter: sessionId' 
+      return res.status(400).json({
+        error: 'Missing required parameter: sessionId'
       });
     }
 
@@ -52,8 +52,8 @@ async function handleGetState(req, res) {
         draftContent: session.sessionData.ideation.draftContent,
         currentVersion: session.sessionData.ideation.versionHistory?.[0]?.version || 0,
         lastModified: session.sessionData.ideation.versionHistory?.[0]?.timestamp,
-        chatHistory: includeHistory === 'true' ? 
-          session.sessionData.ideation.chatHistory : 
+        chatHistory: includeHistory === 'true' ?
+          session.sessionData.ideation.chatHistory :
           session.sessionData.ideation.chatHistory?.slice(-5) || [],
         versionCount: session.sessionData.ideation.versionHistory?.length || 0
       };
@@ -73,8 +73,8 @@ async function handleGetState(req, res) {
         checkpointDocument: session.sessionData.execution.checkpointDocument,
         activeAgents: session.sessionData.execution.activeAgents || [],
         checkpoints: session.sessionData.execution.checkpoints?.slice(0, 10) || [],
-        logs: includeHistory === 'true' ? 
-          session.sessionData.execution.logs : 
+        logs: includeHistory === 'true' ?
+          session.sessionData.execution.logs :
           session.sessionData.execution.logs?.slice(-20) || [],
         metrics: session.sessionData.execution.metrics || {}
       };
@@ -100,9 +100,9 @@ async function handleGetState(req, res) {
 
   } catch (error) {
     console.error('Get state error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to get state',
-      details: error.message 
+      details: error.message
     });
   }
 }
@@ -118,17 +118,17 @@ async function handleUpdateState(req, res) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }
 
-    const { 
-      sessionId, 
-      component, 
-      data, 
+    const {
+      sessionId,
+      component,
+      data,
       broadcast = true,
       conflictResolution = 'overwrite' // 'overwrite', 'merge', 'fail'
     } = req.body;
 
     if (!sessionId || !component || !data) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: sessionId, component, data' 
+      return res.status(400).json({
+        error: 'Missing required fields: sessionId, component, data'
       });
     }
 
@@ -201,9 +201,9 @@ async function handleUpdateState(req, res) {
 
   } catch (error) {
     console.error('Update state error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to update state',
-      details: error.message 
+      details: error.message
     });
   }
 }
@@ -222,8 +222,8 @@ async function handleSyncState(req, res) {
     const { sessionId, clientState, force = false } = req.body;
 
     if (!sessionId || !clientState) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: sessionId, clientState' 
+      return res.status(400).json({
+        error: 'Missing required fields: sessionId, clientState'
       });
     }
 
@@ -235,18 +235,18 @@ async function handleSyncState(req, res) {
 
     const timestamp = new Date().toISOString();
     const serverState = await getCurrentSessionState(session);
-    
+
     // Compare client and server states
     const syncResult = await performStateSynchronization(
-      clientState, 
-      serverState, 
+      clientState,
+      serverState,
       force
     );
 
     // Apply synchronized state if there were changes
     if (syncResult.hasChanges) {
       await applyStateChanges(session, syncResult.mergedState);
-      
+
       // Save updated session
       session.lastAccessed = timestamp;
       await kv.set(`collaboration:session:${sessionId}`, session, {
@@ -270,28 +270,28 @@ async function handleSyncState(req, res) {
 
   } catch (error) {
     console.error('Sync state error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to synchronize state',
-      details: error.message 
+      details: error.message
     });
   }
 }
 
 // Component-specific update functions
-async function updateIdeationState(session, data, conflictResolution) {
+async function updateIdeationState(session, data, _conflictResolution) {
   const conflicts = [];
-  
+
   if (data.draftContent !== undefined) {
     // Check for conflicts if not overwriting
-    if (conflictResolution === 'fail' && 
-        session.sessionData.ideation.draftContent && 
+    if (conflictResolution === 'fail' &&
+        session.sessionData.ideation.draftContent &&
         session.sessionData.ideation.draftContent !== data.expectedPreviousContent) {
       conflicts.push({
         field: 'draftContent',
         reason: 'Content has been modified by another client'
       });
     }
-    
+
     if (conflicts.length === 0 || conflictResolution === 'overwrite') {
       session.sessionData.ideation.draftContent = data.draftContent;
     }
@@ -304,17 +304,17 @@ async function updateIdeationState(session, data, conflictResolution) {
   return { success: conflicts.length === 0, conflicts };
 }
 
-async function updateOrchestrationState(session, data, conflictResolution) {
+async function updateOrchestrationState(session, data, _conflictResolution) {
   const conflicts = [];
-  
+
   if (data.taskDocument !== undefined) {
     session.sessionData.orchestration.taskDocument = data.taskDocument;
   }
-  
+
   if (data.workflowSteps) {
     session.sessionData.orchestration.workflowSteps = data.workflowSteps;
   }
-  
+
   if (data.executionStatus) {
     session.sessionData.orchestration.executionStatus = {
       ...session.sessionData.orchestration.executionStatus,
@@ -325,20 +325,20 @@ async function updateOrchestrationState(session, data, conflictResolution) {
   return { success: true, conflicts };
 }
 
-async function updateExecutionState(session, data, conflictResolution) {
+async function updateExecutionState(session, data, _conflictResolution) {
   const conflicts = [];
-  
+
   if (data.activeAgents) {
     session.sessionData.execution.activeAgents = data.activeAgents;
   }
-  
+
   if (data.logs) {
     session.sessionData.execution.logs = [
       ...data.logs,
       ...(session.sessionData.execution.logs || [])
     ].slice(0, 1000); // Keep last 1000 logs
   }
-  
+
   if (data.metrics) {
     session.sessionData.execution.metrics = {
       ...session.sessionData.execution.metrics,
@@ -349,9 +349,9 @@ async function updateExecutionState(session, data, conflictResolution) {
   return { success: true, conflicts };
 }
 
-async function updateMergeState(session, data, conflictResolution) {
+async function updateMergeState(session, data, _conflictResolution) {
   const conflicts = [];
-  
+
   Object.keys(data).forEach(key => {
     if (['originalContent', 'modifiedContent', 'mergedContent', 'conflicts', 'validationStatus'].includes(key)) {
       session.sessionData.merge[key] = data[key];
@@ -366,7 +366,7 @@ async function updateWorkflowProgress(session, data) {
     ...session.workflowProgress,
     ...data
   };
-  
+
   return { success: true, conflicts: [] };
 }
 
@@ -381,20 +381,20 @@ async function getCurrentSessionState(session) {
   };
 }
 
-async function performStateSynchronization(clientState, serverState, force) {
+async function performStateSynchronization(clientState, serverState, _force) {
   const conflicts = [];
   const changes = [];
   let hasChanges = false;
-  
+
   // Simple implementation - can be enhanced with operational transforms
   const mergedState = { ...serverState };
-  
+
   // Compare timestamps and merge changes
   Object.keys(clientState).forEach(component => {
     if (clientState[component] && serverState[component]) {
       const clientTimestamp = clientState[component].lastModified;
       const serverTimestamp = serverState[component].lastModified;
-      
+
       if (!serverTimestamp || (clientTimestamp && clientTimestamp > serverTimestamp)) {
         mergedState[component] = { ...serverState[component], ...clientState[component] };
         changes.push({ component, action: 'updated_from_client' });
@@ -402,7 +402,7 @@ async function performStateSynchronization(clientState, serverState, force) {
       }
     }
   });
-  
+
   return {
     hasChanges,
     conflicts,
@@ -418,6 +418,6 @@ async function applyStateChanges(session, mergedState) {
     execution: mergedState.execution || session.sessionData.execution,
     merge: mergedState.merge || session.sessionData.merge
   };
-  
+
   session.workflowProgress = mergedState.workflowProgress || session.workflowProgress;
 }

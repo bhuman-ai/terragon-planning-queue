@@ -46,20 +46,20 @@ export default function TaskDetail() {
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        
+
         if (data.type === 'messages' && data.messages) {
           // Merge new messages with existing ones, avoiding duplicates
           setMessages(prevMessages => {
             const newMessages = [...prevMessages];
             const existingIds = new Set(prevMessages.map(m => m.id || m.timestamp));
-            
+
             data.messages.forEach(newMsg => {
               const msgId = newMsg.id || newMsg.timestamp || Date.now() + Math.random();
               if (!existingIds.has(msgId)) {
                 newMessages.push({ ...newMsg, id: msgId });
               }
             });
-            
+
             // Save merged messages to localStorage
             localStorage.setItem(`task_messages_${taskId}`, JSON.stringify(newMessages));
             return newMessages;
@@ -85,14 +85,14 @@ export default function TaskDetail() {
     eventSource.onerror = (error) => {
       console.error('EventSource error:', error);
       setIsConnected(false);
-      
+
       // Try to reconnect after a delay
       setTimeout(() => {
         if (!eventSourceRef.current || eventSourceRef.current.readyState === EventSource.CLOSED) {
           // Reconnect if not already connected
           const newEventSource = new EventSource(`/api/stream/${taskId}?token=${encodeURIComponent(sessionToken)}`);
           eventSourceRef.current = newEventSource;
-          
+
           // Re-attach event handlers (recursive call to this useEffect would be cleaner but this works)
           newEventSource.onopen = () => setIsConnected(true);
           newEventSource.onmessage = eventSource.onmessage;
@@ -119,7 +119,7 @@ export default function TaskDetail() {
     const messageText = inputMessage.trim();
     setIsLoading(true);
     setInputMessage('');
-    
+
     // Immediately add user message to UI
     const userMessage = {
       id: Date.now() + Math.random(),
@@ -127,7 +127,7 @@ export default function TaskDetail() {
       content: messageText,
       timestamp: new Date().toISOString()
     };
-    
+
     setMessages(prevMessages => {
       const updatedMessages = [...prevMessages, userMessage];
       localStorage.setItem(`task_messages_${taskId}`, JSON.stringify(updatedMessages));
@@ -151,8 +151,8 @@ export default function TaskDetail() {
       if (!response.ok) {
         const error = await response.json();
         console.error('Failed to send message:', error);
-        alert('Failed to send message: ' + error.error);
-        
+        alert(`Failed to send message: ${error}`.error);
+
         // Remove the user message if sending failed
         setMessages(prevMessages => {
           const filteredMessages = prevMessages.filter(m => m.id !== userMessage.id);
@@ -164,7 +164,7 @@ export default function TaskDetail() {
     } catch (error) {
       console.error('Error sending message:', error);
       alert('Error sending message');
-      
+
       // Remove the user message if sending failed
       setMessages(prevMessages => {
         const filteredMessages = prevMessages.filter(m => m.id !== userMessage.id);
@@ -184,7 +184,7 @@ export default function TaskDetail() {
           padding: 0;
           box-sizing: border-box;
         }
-        
+
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
@@ -192,7 +192,7 @@ export default function TaskDetail() {
 
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px' }}>
-          <button 
+          <button
             onClick={() => router.push('/')}
             style={{
               padding: '8px 16px',
@@ -250,10 +250,10 @@ export default function TaskDetail() {
         </div>
 
         <div style={{ marginBottom: '10px', textAlign: 'center' }}>
-          <a 
-            href={`https://www.terragonlabs.com/task/${taskId}`} 
-            target="_blank" 
-            rel="noopener noreferrer"
+          <a
+            href={`https://www.terragonlabs.com/task/${taskId}`}
+            target='_blank'
+            rel='noopener noreferrer'
             style={{ color: '#00ff88', fontSize: '14px' }}
           >
             View on Terragon →
@@ -287,8 +287,8 @@ export default function TaskDetail() {
                   borderLeft: `3px solid ${msg.type === 'user' ? '#00ff88' : '#00aaff'}`,
                   borderRadius: '5px'
                 }}>
-                  <div style={{ 
-                    fontWeight: 'bold', 
+                  <div style={{
+                    fontWeight: 'bold',
                     marginBottom: '5px',
                     color: msg.type === 'user' ? '#00ff88' : '#00aaff',
                     textTransform: 'uppercase',
@@ -312,11 +312,11 @@ export default function TaskDetail() {
             gap: '10px'
           }}>
             <input
-              type="text"
+              type='text'
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-              placeholder="Type a message..."
+              placeholder='Type a message...'
               disabled={isLoading}
               style={{
                 flex: 1,

@@ -13,8 +13,39 @@ export default async function handler(req, res) {
   try {
     const { taskId, taskTitle, message, channels = ['webhook'], urgency = 'normal' } = req.body;
 
+    // Input validation
     if (!taskId || !message) {
       return res.status(400).json({ error: 'taskId and message are required' });
+    }
+
+    // Validate taskId format
+    if (typeof taskId !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(taskId)) {
+      return res.status(400).json({ error: 'Invalid taskId format' });
+    }
+
+    // Validate and sanitize message
+    if (typeof message !== 'string' || message.length > 1000) {
+      return res.status(400).json({ error: 'Message must be a string under 1000 characters' });
+    }
+
+    // Validate taskTitle if provided
+    if (taskTitle && (typeof taskTitle !== 'string' || taskTitle.length > 200)) {
+      return res.status(400).json({ error: 'Task title must be a string under 200 characters' });
+    }
+
+    // Validate channels array
+    if (!Array.isArray(channels) || channels.length === 0) {
+      return res.status(400).json({ error: 'Channels must be a non-empty array' });
+    }
+
+    const validChannels = ['webhook', 'whatsapp', 'discord', 'sms', 'email'];
+    if (!channels.every(ch => validChannels.includes(ch))) {
+      return res.status(400).json({ error: 'Invalid channel specified' });
+    }
+
+    // Validate urgency
+    if (!['low', 'normal', 'high', 'critical'].includes(urgency)) {
+      return res.status(400).json({ error: 'Invalid urgency level' });
     }
 
     const results = [];
@@ -23,12 +54,12 @@ export default async function handler(req, res) {
     if (channels.includes('whatsapp') || channels.includes('all')) {
       try {
         // Option 1: WhatsApp Business API (if configured)
-        if (process.env.WHATSAPP_API_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
+        if (process.env.WHATSAPP_API_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_USER_NUMBER) {
           await axios.post(
             `https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
             {
               messaging_product: 'whatsapp',
-              to: process.env.WHATSAPP_USER_NUMBER || '19292762732',
+              to: process.env.WHATSAPP_USER_NUMBER,
               type: 'template',
               template: {
                 name: 'task_needs_input',
@@ -52,9 +83,9 @@ export default async function handler(req, res) {
           results.push({ channel: 'whatsapp', status: 'sent', method: 'business-api' });
         }
         // Option 2: WhatsApp webhook service (simpler setup)
-        else if (process.env.WHATSAPP_WEBHOOK_URL) {
+        else if (process.env.WHATSAPP_WEBHOOK_URL && process.env.WHATSAPP_USER_NUMBER) {
           await axios.post(process.env.WHATSAPP_WEBHOOK_URL, {
-            to: process.env.WHATSAPP_USER_NUMBER || '+19292762732',
+            to: process.env.WHATSAPP_USER_NUMBER,
             message: `🤖 *Meta-Agent Alert*\n\n*Task:* ${taskTitle}\n*Needs Input:* ${message}\n\n*Resume at:* ${process.env.VERCEL_URL}/task/${taskId}/resume`,
             taskId: taskId,
             urgency: urgency
@@ -62,13 +93,13 @@ export default async function handler(req, res) {
           results.push({ channel: 'whatsapp', status: 'sent', method: 'webhook' });
         }
         // Option 3: Use Twilio WhatsApp if configured
-        else if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_WHATSAPP_NUMBER) {
+        else if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_WHATSAPP_NUMBER && process.env.WHATSAPP_USER_NUMBER) {
           const twilioAuth = Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64');
-          
+
           await axios.post(
             `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`,
             new URLSearchParams({
-              To: `whatsapp:${process.env.WHATSAPP_USER_NUMBER || '+19292762732'}`,
+              To: `whatsapp:${process.env.WHATSAPP_USER_NUMBER}`,
               From: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
               Body: `🤖 *Meta-Agent Alert*\n\n*Task:* ${taskTitle}\n*Needs Input:* ${message}\n\nResume at: ${process.env.VERCEL_URL}/task/${taskId}/resume`
             }),
@@ -101,7 +132,7 @@ export default async function handler(req, res) {
           timestamp: new Date().toISOString(),
           action_url: `${process.env.VERCEL_URL || 'http://localhost:3000'}/task/${taskId}/resume`
         });
-        
+
         results.push({ channel: 'webhook', status: 'sent' });
       } catch (error) {
         results.push({ channel: 'webhook', status: 'failed', error: error.message });
@@ -115,7 +146,7 @@ export default async function handler(req, res) {
         await axios.post('https://api.sendgrid.v3/mail/send', {
           personalizations: [{
             to: [{ email: process.env.USER_EMAIL }],
-            subject: `🤖 Task "${taskTitle}" needs your input`
+            subject: `🤖 Task '${taskTitle}' needs your input`
           }],
           from: { email: process.env.FROM_EMAIL || 'noreply@terragon.ai' },
           content: [{
@@ -124,7 +155,7 @@ export default async function handler(req, res) {
               <h2>Autonomous Task Paused</h2>
               <p><strong>Task:</strong> ${taskTitle}</p>
               <p><strong>Reason:</strong> ${message}</p>
-              <p><a href="${process.env.VERCEL_URL}/task/${taskId}/resume" style="background: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Resume Task</a></p>
+              <p><a href='${process.env.VERCEL_URL}/task/${taskId}/resume' style='background: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Resume Task</a></p>
               <p><small>Task ID: ${taskId}</small></p>
             `
           }]
@@ -134,7 +165,7 @@ export default async function handler(req, res) {
             'Content-Type': 'application/json'
           }
         });
-        
+
         results.push({ channel: 'email', status: 'sent' });
       } catch (error) {
         results.push({ channel: 'email', status: 'failed', error: error.message });
@@ -145,19 +176,19 @@ export default async function handler(req, res) {
     if (channels.includes('sms') && urgency === 'urgent' && process.env.TWILIO_ACCOUNT_SID) {
       try {
         const twilioAuth = Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64');
-        
-        await axios.post(`https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`, 
+
+        await axios.post(`https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`,
           new URLSearchParams({
             To: process.env.USER_PHONE,
             From: process.env.TWILIO_PHONE,
-            Body: `🤖 Task "${taskTitle}" needs input: ${message.substring(0, 100)}... View: ${process.env.VERCEL_URL}/task/${taskId}`
+            Body: `🤖 Task '${taskTitle}' needs input: ${message.substring(0, 100)}... View: ${process.env.VERCEL_URL}/task/${taskId}`
           }), {
           headers: {
             'Authorization': `Basic ${twilioAuth}`,
             'Content-Type': 'application/x-www-form-urlencoded'
           }
         });
-        
+
         results.push({ channel: 'sms', status: 'sent' });
       } catch (error) {
         results.push({ channel: 'sms', status: 'failed', error: error.message });

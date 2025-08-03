@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
     // Create version ID
     const versionId = `v_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-    
+
     // Calculate changes from previous version
     const previousContent = session.sessionData.ideation.draftContent || '';
     const changes = calculateChanges(previousContent, content);
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
       },
       metadata: {
         timestamp,
-        agentAuth: agentAuth.substr(0, 10) + '...' // Truncated for security
+        agentAuth: `${agentAuth.substr(0, 10)}...` // Truncated for security
       }
     });
 
@@ -80,9 +80,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Save draft error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to save draft',
-      details: error.message 
+      details: error.message
     });
   }
 }
@@ -91,17 +91,17 @@ function calculateChanges(oldContent, newContent) {
   // Simple diff calculation
   const oldLines = oldContent.split('\n');
   const newLines = newContent.split('\n');
-  
-  let added = 0;
-  let removed = 0;
-  let modified = 0;
+
+  const added = 0;
+  const removed = 0;
+  const modified = 0;
 
   const maxLines = Math.max(oldLines.length, newLines.length);
-  
+
   for (let i = 0; i < maxLines; i++) {
     const oldLine = oldLines[i];
     const newLine = newLines[i];
-    
+
     if (oldLine === undefined) {
       added++;
     } else if (newLine === undefined) {

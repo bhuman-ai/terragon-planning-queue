@@ -21,6 +21,16 @@ AI-powered autonomous task planning and execution with GitHub integration.
 - **Autonomous Execution**: Continues working even when you're offline
 - **Discord Bot Integration**: Interactive Q&A during task execution - bot asks questions and uses your replies to guide Terragon
 
+### 🔗 Workflow Hierarchy System (NEW)
+- **Sacred Document Hierarchy**: CLAUDE.md → project.md → task.md → checkpoint.md
+- **Enforced Parent Linkage**: All tasks must link to CLAUDE.md sections
+- **Nested Task Structure**: Tasks contain checkpoints as atomic work units
+- **Merge Proposal System**: Completed tasks generate reviewable merge proposals
+- **Validation Gates**: ESLint, tests, accessibility, and sacred principles compliance
+- **Visual Hierarchy View**: See the complete workflow tree in the UI
+
+See [WORKFLOW.md](./WORKFLOW.md) for detailed workflow documentation.
+
 ## 📦 Quick Deploy to Vercel
 
 ### 1. Prerequisites

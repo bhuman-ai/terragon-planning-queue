@@ -16,10 +16,10 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }
 
-    const { 
-      sessionId, 
-      originalContent, 
-      modifiedContent, 
+    const {
+      sessionId,
+      originalContent,
+      modifiedContent,
       conflicts = [],
       resolutionStrategy = 'manual', // 'manual', 'auto', 'ai-assisted'
       userResolutions = {},
@@ -27,8 +27,8 @@ export default async function handler(req, res) {
     } = req.body;
 
     if (!sessionId || !originalContent || !modifiedContent) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: sessionId, originalContent, modifiedContent' 
+      return res.status(400).json({
+        error: 'Missing required fields: sessionId, originalContent, modifiedContent'
       });
     }
 
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
       },
       metadata: {
         timestamp,
-        agentAuth: agentAuth.substr(0, 10) + '...'
+        agentAuth: `${agentAuth.substr(0, 10)}...`
       }
     });
 
@@ -120,7 +120,7 @@ export default async function handler(req, res) {
       lastMergeId: mergeId,
       lastMergeTimestamp: timestamp
     };
-    
+
     session.lastAccessed = timestamp;
     await kv.set(`collaboration:session:${sessionId}`, session, {
       ex: 3600 * 24
@@ -164,9 +164,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Merge resolution error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to resolve merge conflicts',
-      details: error.message 
+      details: error.message
     });
   }
 }
@@ -176,16 +176,16 @@ export default async function handler(req, res) {
  */
 async function detectConflicts(originalContent, modifiedContent) {
   const conflicts = [];
-  
+
   const originalLines = originalContent.split('\n');
   const modifiedLines = modifiedContent.split('\n');
-  
+
   const maxLines = Math.max(originalLines.length, modifiedLines.length);
-  
+
   for (let i = 0; i < maxLines; i++) {
     const originalLine = originalLines[i];
     const modifiedLine = modifiedLines[i];
-    
+
     // Check for line modifications
     if (originalLine !== modifiedLine) {
       // Detect different types of conflicts
@@ -206,7 +206,7 @@ async function detectConflicts(originalContent, modifiedContent) {
       } else {
         // Check if this is a sacred section
         const isSacred = isSacredSection(originalLine) || isSacredSection(modifiedLine);
-        
+
         conflicts.push({
           type: 'modification',
           line: i + 1,
@@ -218,7 +218,7 @@ async function detectConflicts(originalContent, modifiedContent) {
       }
     }
   }
-  
+
   return conflicts;
 }
 
@@ -235,7 +235,7 @@ function isSacredSection(line) {
     /deployment target/i,
     /team account/i
   ];
-  
+
   return sacredPatterns.some(pattern => pattern.test(line));
 }
 
@@ -244,16 +244,15 @@ function isSacredSection(line) {
  */
 async function manualResolution(originalContent, modifiedContent, conflicts, userResolutions) {
   const originalLines = originalContent.split('\n');
-  const modifiedLines = modifiedContent.split('\n');
   const mergedLines = [...originalLines];
-  
+
   const resolvedConflicts = [];
   const unresolvedConflicts = [];
-  
+
   for (const conflict of conflicts) {
     const conflictKey = `${conflict.type}_${conflict.line}`;
     const resolution = userResolutions[conflictKey];
-    
+
     if (resolution) {
       // Apply user resolution
       switch (resolution.action) {
@@ -276,7 +275,7 @@ async function manualResolution(originalContent, modifiedContent, conflicts, use
       unresolvedConflicts.push(conflict);
     }
   }
-  
+
   return {
     mergedContent: mergedLines.join('\n'),
     resolvedConflicts,
@@ -289,19 +288,18 @@ async function manualResolution(originalContent, modifiedContent, conflicts, use
  */
 async function automaticResolution(originalContent, modifiedContent, conflicts, preserveSacredSections) {
   const originalLines = originalContent.split('\n');
-  const modifiedLines = modifiedContent.split('\n');
   const mergedLines = [...originalLines];
-  
+
   const resolvedConflicts = [];
   const unresolvedConflicts = [];
-  
+
   for (const conflict of conflicts) {
     if (preserveSacredSections && conflict.sacred) {
       // Never auto-resolve sacred section conflicts
       unresolvedConflicts.push(conflict);
       continue;
     }
-    
+
     // Apply automatic resolution rules
     switch (conflict.type) {
       case 'addition':
@@ -317,7 +315,7 @@ async function automaticResolution(originalContent, modifiedContent, conflicts, 
           unresolvedConflicts.push(conflict);
         }
         break;
-        
+
       case 'deletion':
         // Be conservative with deletions
         if (conflict.severity === 'low') {
@@ -327,7 +325,7 @@ async function automaticResolution(originalContent, modifiedContent, conflicts, 
           unresolvedConflicts.push(conflict);
         }
         break;
-        
+
       case 'modification':
         // Only auto-resolve low-severity modifications
         if (conflict.severity === 'low') {
@@ -337,12 +335,12 @@ async function automaticResolution(originalContent, modifiedContent, conflicts, 
           unresolvedConflicts.push(conflict);
         }
         break;
-        
+
       default:
         unresolvedConflicts.push(conflict);
     }
   }
-  
+
   return {
     mergedContent: mergedLines.join('\n'),
     resolvedConflicts,

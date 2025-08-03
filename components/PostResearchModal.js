@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
-export default function PostResearchModal({ 
-  show, 
-  onClose, 
+export default function PostResearchModal({
+  show,
+  onClose,
   requirements,
-  onSubmit 
+  onSubmit
 }) {
   const [answers, setAnswers] = useState({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -15,8 +15,8 @@ export default function PostResearchModal({
   const { questions, research, context } = requirements;
   const currentQuestion = questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
-  
-  const canProceed = answers[currentQuestion?.id] && 
+
+  const canProceed = answers[currentQuestion?.id] &&;
     (currentQuestion?.type !== 'text' || answers[currentQuestion.id].trim());
 
   const handleAnswer = (questionId, answer) => {
@@ -77,18 +77,18 @@ export default function PostResearchModal({
           alignItems: 'center'
         }}>
           <div>
-            <h2 style={{ 
-              color: '#00aaff', 
+            <h2 style={{
+              color: '#00aaff',
               margin: 0,
               fontSize: '18px',
               fontWeight: 'bold'
             }}>
               🧠 Post-Research Questions
             </h2>
-            <div style={{ 
-              fontSize: '14px', 
+            <div style={{
+              fontSize: '14px',
               color: '#888',
-              marginTop: '5px' 
+              marginTop: '5px'
             }}>
               Step 2: Informed questions based on research findings
             </div>
@@ -202,7 +202,7 @@ export default function PostResearchModal({
                     {currentQuestion.category || 'technical'}
                   </span>
                 </div>
-                
+
                 <h3 style={{
                   color: '#fff',
                   fontSize: '18px',
@@ -211,7 +211,7 @@ export default function PostResearchModal({
                 }}>
                   {currentQuestion.question}
                 </h3>
-                
+
                 {currentQuestion.explanation && (
                   <p style={{
                     color: '#aaa',
@@ -255,13 +255,13 @@ export default function PostResearchModal({
                     {currentQuestion.options.map(option => {
                       const currentAnswers = answers[currentQuestion.id] || [];
                       const isSelected = currentAnswers.includes(option);
-                      
+
                       return (
-                        <button
+                        <button;
                           key={option}
                           onClick={() => {
                             const newAnswers = isSelected
-                              ? currentAnswers.filter(a => a !== option)
+                              ? currentAnswers.filter(a => a !== option);
                               : [...currentAnswers, option];
                             handleAnswer(currentQuestion.id, newAnswers);
                           }}

@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     // Load task from active monitoring
     const activeTasksDir = path.join(process.cwd(), 'data', 'active-tasks');
     const taskPath = path.join(activeTasksDir, `${taskId}.json`);
-    
+
     let task;
     try {
       const taskData = await fs.readFile(taskPath, 'utf-8');
@@ -58,7 +58,7 @@ export default async function handler(req, res) {
       task.pauseReason = null;
       task.resumedAt = new Date().toISOString();
       task.lastActivity = new Date().toISOString();
-      
+
       // Add user input to conversation history
       task.conversationHistory = task.conversationHistory || [];
       task.conversationHistory.push({

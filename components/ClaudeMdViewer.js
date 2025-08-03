@@ -5,7 +5,7 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [chatMessages, setChatMessages] = useState([
+  const [chatMessages, setChatMessages] = useState([;
     {
       role: 'assistant',
       content: 'Hello! I\'m your Meta-Agent assistant. I can help you understand, update, and maintain your CLAUDE.md sacred document. What would you like to know?',
@@ -57,10 +57,10 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
 
   const loadClaudeMd = async () => {
     if (!selectedRepo) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch('/api/calibration/get-claude-md', {
         method: 'POST',
@@ -76,7 +76,7 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
         const data = await response.json();
         setClaudeMdContent(data.content || '# CLAUDE.md not found\n\nThis repository has not been calibrated yet.');
         setLastUpdated(data.lastModified || null);
-        
+
         // Update chat context
         addChatMessage('system', `Loaded CLAUDE.md from ${selectedRepo.name}`);
       } else {
@@ -106,12 +106,12 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
 
     const userMessage = currentMessage.trim();
     setCurrentMessage('');
-    
+
     // Add user message
     addChatMessage('user', userMessage);
-    
+
     setIsChatLoading(true);
-    
+
     try {
       const response = await fetch('/api/meta-agent/claude-md-chat', {
         method: 'POST',
@@ -165,14 +165,14 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
 
   const triggerDocumentUpdate = async () => {
     addChatMessage('assistant', '🔄 Triggering automatic document update...');
-    
+
     try {
       const response = await fetch('/api/claude-md/auto-update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update' })
       });
-      
+
       if (response.ok) {
         const result = await response.json();
         if (result.updated) {
@@ -189,14 +189,14 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
 
   const createBackup = async () => {
     addChatMessage('assistant', '💾 Creating backup...');
-    
+
     try {
       const response = await fetch('/api/claude-md/auto-update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'backup' })
       });
-      
+
       if (response.ok) {
         addChatMessage('assistant', '✅ Backup created successfully!');
       }
@@ -207,14 +207,14 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
 
   const renderMarkdown = (content) => {
     // Simple markdown rendering - in production you'd use a proper markdown parser
-    return content
-      .replace(/^# (.*$)/gm, '<h1 style="color: #00ff88; border-bottom: 2px solid #333; padding-bottom: 10px; margin: 20px 0 15px 0;">$1</h1>')
-      .replace(/^## (.*$)/gm, '<h2 style="color: #66bbff; margin: 20px 0 10px 0;">$1</h2>')
-      .replace(/^### (.*$)/gm, '<h3 style="color: #ffaa66; margin: 15px 0 8px 0;">$1</h3>')
-      .replace(/^\*\*(.*?)\*\*/gm, '<strong style="color: #fff;">$1</strong>')
-      .replace(/^\* (.*$)/gm, '<li style="margin: 5px 0;">$1</li>')
-      .replace(/^- (.*$)/gm, '<li style="margin: 5px 0;">$1</li>')
-      .replace(/`([^`]+)`/g, '<code style="background: #333; color: #ffaa66; padding: 2px 4px; border-radius: 3px;">$1</code>')
+    return content;
+      .replace(/^# (.*$)/gm, '<h1 style='color: #00ff88; border-bottom: 2px solid #333; padding-bottom: 10px; margin: 20px 0 15px 0;'>$1</h1>')
+      .replace(/^## (.*$)/gm, '<h2 style='color: #66bbff; margin: 20px 0 10px 0;'>$1</h2>')
+      .replace(/^### (.*$)/gm, '<h3 style='color: #ffaa66; margin: 15px 0 8px 0;'>$1</h3>')
+      .replace(/^\*\*(.*?)\*\*/gm, '<strong style='color: #fff;'>$1</strong>')
+      .replace(/^\* (.*$)/gm, '<li style='margin: 5px 0;'>$1</li>')
+      .replace(/^- (.*$)/gm, '<li style='margin: 5px 0;'>$1</li>')
+      .replace(/`([^`]+)`/g, '<code style='background: #333; color: #ffaa66; padding: 2px 4px; border-radius: 3px;'>$1</code>')
       .replace(/\n/g, '<br/>');
   };
 
@@ -326,17 +326,17 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
           padding: '20px'
         }}>
           {isLoading ? (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               height: '200px',
               flexDirection: 'column',
               gap: '15px'
             }}>
-              <div style={{ 
-                width: '40px', 
-                height: '40px', 
+              <div style={{
+                width: '40px',
+                height: '40px',
                 border: '3px solid #333',
                 borderTop: '3px solid #00ff88',
                 borderRadius: '50%',
@@ -356,8 +356,8 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
               {error}
             </div>
           ) : viewMode === 'rendered' ? (
-            <div 
-              style={{ 
+            <div
+              style={{
                 lineHeight: '1.6',
                 fontSize: '14px',
                 color: '#e0e0e0'
@@ -436,7 +436,7 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
                 maxWidth: '85%'
               }}>
                 <div style={{
-                  backgroundColor: message.role === 'user' ? '#003366' : 
+                  backgroundColor: message.role === 'user' ? '#003366' :
                                    message.role === 'system' ? '#333' : '#0f0f0f',
                   border: '1px solid #333',
                   borderRadius: '12px',
@@ -484,7 +484,7 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
               </div>
             </div>
           ))}
-          
+
           {isChatLoading && (
             <div style={{
               display: 'flex',
@@ -517,7 +517,7 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
               </div>
             </div>
           )}
-          
+
           <div ref={chatEndRef} />
         </div>
 
@@ -531,7 +531,7 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
               value={currentMessage}
               onChange={(e) => setCurrentMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask about CLAUDE.md, request updates, or get guidance..."
+              placeholder='Ask about CLAUDE.md, request updates, or get guidance...'
               disabled={isChatLoading}
               style={{
                 flex: 1,
@@ -580,7 +580,7 @@ export default function ClaudeMdViewer({ githubConfig, userSettings }) {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
-        
+
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }

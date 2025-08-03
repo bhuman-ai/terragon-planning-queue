@@ -51,16 +51,16 @@ async function handleProposal(req, res) {
   switch (action) {
     case 'create':
       return await createProposal(req, res, message, context);
-    
+
     case 'approve':
       return await approveProposal(req, res, proposalId);
-    
+
     case 'reject':
       return await rejectProposal(req, res, proposalId);
-    
+
     case 'modify':
       return await modifyProposal(req, res, proposalId, modifications);
-    
+
     default:
       return res.status(400).json({ error: 'Invalid action' });
   }
@@ -113,14 +113,14 @@ async function createProposal(req, res, message, context = {}) {
   // Step 6: Decompose into micro-tasks with codebase context
   console.log('🔧 Decomposing into micro-tasks...');
   const decomposition = await metaAgent.decomposeTask(
-    taskSpec, 
-    requirements, 
+    taskSpec,
+    requirements,
     codebaseContext.context || {}
   );
 
   // Step 7: Create comprehensive proposal
   const proposalId = `proposal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
+
   const proposal = {
     id: proposalId,
     taskTitle: taskSpec.title,
@@ -244,7 +244,7 @@ async function modifyProposal(req, res, proposalId, modifications) {
   try {
     // Re-analyze with modifications
     const modifiedMessage = `${proposal.originalMessage}\n\nUser Modifications: ${modifications}`;
-    
+
     // Re-decompose with modifications
     const newDecomposition = await metaAgent.decomposeTask(
       {
@@ -337,7 +337,7 @@ async function deleteProposal(req, res) {
   }
 
   const deleted = proposals.delete(proposalId);
-  
+
   if (!deleted) {
     return res.status(404).json({ error: 'Proposal not found' });
   }

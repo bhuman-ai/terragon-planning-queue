@@ -1,12 +1,12 @@
 import { useState } from 'react';
 
-export default function ProposalReviewModal({ 
-  isOpen, 
-  onClose, 
-  proposal, 
-  onApprove, 
-  onReject, 
-  onModify 
+export default function ProposalReviewModal({
+  isOpen,
+  onClose,
+  proposal,
+  onApprove,
+  onReject,
+  onModify
 }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [modifications, setModifications] = useState('');
@@ -14,13 +14,13 @@ export default function ProposalReviewModal({
 
   if (!isOpen || !proposal) return null;
 
-  const { 
-    taskTitle, 
-    requirements, 
-    research, 
-    decomposition, 
-    totalTime, 
-    criticalPath 
+  const {
+    taskTitle,
+    requirements,
+    research,
+    decomposition,
+    totalTime,
+    criticalPath
   } = proposal;
 
   const handleApprove = async () => {
@@ -43,7 +43,7 @@ export default function ProposalReviewModal({
 
   const handleModify = async () => {
     if (!modifications.trim()) return;
-    
+
     setIsSubmitting(true);
     try {
       await onModify(proposal, modifications);
@@ -84,8 +84,8 @@ export default function ProposalReviewModal({
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <h2 style={{ 
-            color: '#00ff88', 
+          <h2 style={{
+            color: '#00ff88',
             margin: 0,
             fontSize: '20px',
             fontWeight: 'bold'
@@ -113,7 +113,7 @@ export default function ProposalReviewModal({
           borderBottom: '1px solid #333',
           backgroundColor: '#0f0f0f'
         }}>
-          <h3 style={{ 
+          <h3 style={{
             color: '#00aaff',
             margin: 0,
             fontSize: '18px'
@@ -281,10 +281,10 @@ export default function ProposalReviewModal({
                     marginBottom: '10px',
                     borderLeft: `3px solid ${
                       task.type === 'setup' ? '#ffaa00' :
-                      task.type === 'implementation' ? '#00ff88' :
-                      task.type === 'testing' ? '#00aaff' :
-                      task.type === 'integration' ? '#ff8800' :
-                      task.type === 'deployment' ? '#ff4444' : '#888'
+                        task.type === 'implementation' ? '#00ff88' :
+                          task.type === 'testing' ? '#00aaff' :
+                            task.type === 'integration' ? '#ff8800' :
+                              task.type === 'deployment' ? '#ff4444' : '#888'
                     }`
                   }}>
                     <div style={{
@@ -318,16 +318,16 @@ export default function ProposalReviewModal({
                         </span>
                       </div>
                     </div>
-                    
+
                     {task.dependencies && task.dependencies.length > 0 && (
                       <div style={{ marginBottom: '8px', fontSize: '14px' }}>
                         <span style={{ color: '#ffaa00' }}>Depends on: </span>
                         {task.dependencies.join(', ')}
                       </div>
                     )}
-                    
-                    <div style={{ 
-                      marginBottom: '8px', 
+
+                    <div style={{
+                      marginBottom: '8px',
                       fontSize: '14px',
                       color: '#ccc'
                     }}>
@@ -336,7 +336,7 @@ export default function ProposalReviewModal({
                     </div>
 
                     {task.technicalDetails && (
-                      <div style={{ 
+                      <div style={{
                         fontSize: '12px',
                         color: '#888',
                         fontStyle: 'italic'
@@ -434,7 +434,7 @@ export default function ProposalReviewModal({
           >
             ❌ Reject
           </button>
-          
+
           <button
             onClick={() => {
               const mod = prompt('What modifications would you like to make?');
@@ -456,7 +456,7 @@ export default function ProposalReviewModal({
           >
             ✏️ Request Changes
           </button>
-          
+
           <button
             onClick={handleApprove}
             disabled={isSubmitting}

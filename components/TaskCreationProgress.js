@@ -11,16 +11,16 @@ export default function TaskCreationProgress({ show, taskId, onClose }) {
     if (!show || !taskId) return;
 
     const eventSource = new EventSource(`/api/meta-agent/status/${taskId}`);
-    
+
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      
+
       setLogs(prev => [...prev, {
         timestamp: new Date().toLocaleTimeString(),
         message: data.message,
         type: data.type
       }]);
-      
+
       if (data.type === 'progress') {
         setProgress(data.progress);
         setCurrentStep(data.step);
@@ -75,9 +75,9 @@ export default function TaskCreationProgress({ show, taskId, onClose }) {
         display: 'flex',
         flexDirection: 'column'
       }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '20px'
         }}>
@@ -85,7 +85,7 @@ export default function TaskCreationProgress({ show, taskId, onClose }) {
             🚀 Creating Task Structure
           </h2>
           {isComplete && (
-            <button 
+            <button
               onClick={onClose}
               style={{
                 background: 'none',
@@ -127,8 +127,8 @@ export default function TaskCreationProgress({ show, taskId, onClose }) {
           borderRadius: '5px',
           border: '1px solid #444'
         }}>
-          <div style={{ 
-            fontSize: '18px', 
+          <div style={{
+            fontSize: '18px',
             color: isComplete ? '#00ff88' : '#fff',
             marginBottom: '5px',
             fontWeight: 'bold'
@@ -157,8 +157,8 @@ export default function TaskCreationProgress({ show, taskId, onClose }) {
           {logs.map((log, idx) => (
             <div key={idx} style={{
               marginBottom: '5px',
-              color: log.type === 'complete' ? '#00ff88' : 
-                     log.type === 'error' ? '#ff3300' : '#aaa'
+              color: log.type === 'complete' ? '#00ff88' :
+                log.type === 'error' ? '#ff3300' : '#aaa'
             }}>
               <span style={{ color: '#666', marginRight: '10px' }}>
                 [{log.timestamp}]

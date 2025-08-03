@@ -1,0 +1,13 @@
+{
+  "taskId": "task-20250804",
+  "taskDirName": "task-20250804-test-task-1",
+  "status": "pending",
+  "claudeMdLink": {
+    "sectionId": "16b41037",
+    "sectionPath": "Terragon Planning Queue - Sacred Master Document (CLAUDE.md) → 2. Project Structure → Technology Stack",
+    "lineNumber": 13
+  },
+  "checkpoints": [],
+  "createdAt": "2025-08-03T03:59:08.063Z",
+  "updatedAt": "2025-08-03T03:59:08.063Z"
+}

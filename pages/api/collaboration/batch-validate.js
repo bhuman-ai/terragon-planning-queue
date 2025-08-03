@@ -43,7 +43,7 @@ async function handler(req, res) {
   // Validate each item in the batch
   for (let i = 0; i < validations.length; i++) {
     const validation = validations[i];
-    
+
     if (!validation.content || typeof validation.content !== 'string') {
       return res.status(400).json({
         error: {
@@ -74,7 +74,7 @@ async function handler(req, res) {
 
   try {
     const startTime = Date.now();
-    
+
     const results = await batchValidate(validations, {
       concurrency: options.concurrency || 5,
       failFast: options.failFast || false,
@@ -98,7 +98,7 @@ async function handler(req, res) {
 
   } catch (error) {
     console.error('Batch validation error:', error);
-    
+
     return res.status(500).json({
       error: {
         code: 'BATCH_VALIDATION_ERROR',

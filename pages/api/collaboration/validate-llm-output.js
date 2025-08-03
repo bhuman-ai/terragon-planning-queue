@@ -3,13 +3,11 @@
  * Provides binary validation with real-time feedback
  */
 
-import { withLLMValidation, validateLLMOutput, binaryValidate } from '../../../lib/collaboration/validation.js';
-import { validateBySchema, binaryValidateBySchema, getAvailableSchemas } from '../../../lib/collaboration/llm-schemas.js';
+import { validateLLMOutput, binaryValidate } from '../../../lib/collaboration/validation.js';
+import { validateBySchema, getAvailableSchemas } from '../../../lib/collaboration/llm-schemas.js';
 import { withErrorHandler } from '../../../lib/collaboration/error-handler.js';
 
 async function handler(req, res) {
-  const startTime = Date.now();
-
   switch (req.method) {
     case 'POST':
       return await handleValidation(req, res);
@@ -117,9 +115,9 @@ async function handleValidation(req, res) {
       error: null
     };
 
-    // Add warning if performance target exceeded
+    // Check if performance target exceeded
     if (totalProcessingTime > performanceThreshold) {
-      response.data.metadata.performanceWarning = 
+      response.data.metadata.performanceWarning =
         `Validation took ${totalProcessingTime}ms, exceeding target of ${performanceThreshold}ms`;
     }
 
@@ -127,7 +125,7 @@ async function handleValidation(req, res) {
 
   } catch (error) {
     console.error('LLM validation error:', error);
-    
+
     return res.status(500).json({
       error: {
         code: 'VALIDATION_PROCESSING_ERROR',
@@ -163,7 +161,7 @@ async function handleGetInfo(req, res) {
         // Get performance stats from validation system
         const { validationFeedback } = await import('../../../lib/collaboration/validation.js');
         const stats = validationFeedback.getPerformanceStats();
-        
+
         return res.status(200).json({
           data: {
             performance: stats,
@@ -197,7 +195,7 @@ async function handleGetInfo(req, res) {
     }
   } catch (error) {
     console.error('Info request error:', error);
-    
+
     return res.status(500).json({
       error: {
         code: 'INFO_REQUEST_ERROR',
@@ -258,7 +256,7 @@ export async function batchValidationHandler(req, res) {
 
   } catch (error) {
     console.error('Batch validation error:', error);
-    
+
     return res.status(500).json({
       error: {
         code: 'BATCH_VALIDATION_ERROR',

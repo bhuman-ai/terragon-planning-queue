@@ -3,7 +3,7 @@ import { kv } from '@vercel/kv';
 import { verifyAgentAuth } from '../../../../lib/security/agent-auth';
 
 const anthropic = new Anthropic({
-  apiKey: process.env.CLAUDE_API_KEY,
+  apiKey: process.env.CLAUDE_API_KEY
 });
 
 export default async function handler(req, res) {
@@ -18,13 +18,13 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }
 
-    const { 
-      sessionId, 
-      message, 
-      draftContent, 
-      selectedText, 
-      aiMode, 
-      chatHistory 
+    const {
+      sessionId,
+      message,
+      draftContent,
+      selectedText,
+      aiMode,
+      chatHistory
     } = req.body;
 
     // Get session data
@@ -113,9 +113,9 @@ Please provide helpful assistance based on the current AI mode (${aiMode}). If s
 
   } catch (error) {
     console.error('Ideation chat error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to process ideation chat',
-      details: error.message 
+      details: error.message
     });
   }
 }

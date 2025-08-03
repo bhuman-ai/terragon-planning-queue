@@ -16,8 +16,8 @@ export default async function handler(req, res) {
     const { sessionId, status, limit = 50, offset = 0 } = req.query;
 
     if (!sessionId) {
-      return res.status(400).json({ 
-        error: 'Missing required parameter: sessionId' 
+      return res.status(400).json({
+        error: 'Missing required parameter: sessionId'
       });
     }
 
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
 
     // Get all draft IDs from session
     const sessionDrafts = session.sessionData.ideation.drafts || [];
-    
+
     // Fetch draft details
     const drafts = [];
     for (const sessionDraft of sessionDrafts) {
@@ -92,9 +92,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Draft list error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to list drafts',
-      details: error.message 
+      details: error.message
     });
   }
 }

@@ -25,7 +25,7 @@ export default async function handler(req, res) {
       if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
         const { kv } = await import('@vercel/kv');
         const task = await kv.get(`task:${taskId}`);
-        
+
         if (task) {
           // Send task update
           res.write(`data: ${JSON.stringify({
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
               completedAt: task.completedAt
             }
           })}\n\n`);
-          
+
           // If task is completed, close the connection
           if (task.status === 'completed' || task.status === 'failed') {
             clearInterval(interval);
@@ -67,6 +67,6 @@ export default async function handler(req, res) {
 
 export const config = {
   api: {
-    bodyParser: false,
-  },
+    bodyParser: false
+  }
 };

@@ -9,12 +9,12 @@ export default async function handler(req, res) {
 
   try {
     const tasks = [];
-    
+
     // Get tasks from KV storage if available
     if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
       const { kv } = await import('@vercel/kv');
       const taskIds = await kv.lrange('active-tasks', 0, -1);
-      
+
       // Get each task's details
       for (const taskId of taskIds) {
         try {
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
       const TaskMonitor = await import('../../../lib/task-monitor');
       const monitor = new TaskMonitor.default();
       const activeTasks = await monitor.getActiveTasks();
-      
+
       for (const task of activeTasks) {
         tasks.push({
           taskId: task.id || task.taskId,
@@ -52,14 +52,14 @@ export default async function handler(req, res) {
         });
       }
     }
-    
+
     return res.status(200).json({
       success: true,
       tasks,
       lastUpdated: new Date().toISOString(),
       count: tasks.length
     });
-    
+
   } catch (error) {
     console.error('Error fetching active tasks:', error);
     return res.status(500).json({

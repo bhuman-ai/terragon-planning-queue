@@ -15,18 +15,18 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }
 
-    const { 
-      draftId, 
-      content, 
-      title, 
-      description, 
+    const {
+      draftId,
+      content,
+      title,
+      description,
       metadata = {},
       conflictResolution = 'overwrite' // 'overwrite', 'merge', 'fail'
     } = req.body;
 
     if (!draftId || !content) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: draftId, content' 
+      return res.status(400).json({
+        error: 'Missing required fields: draftId, content'
       });
     }
 
@@ -50,11 +50,11 @@ export default async function handler(req, res) {
 
     // Calculate changes from previous version
     const changes = calculateDetailedChanges(existingDraft.content, content);
-    
+
     // Check for conflicts (concurrent edits)
     const contentHash = await hashContent(content);
     const lastHash = existingDraft.metadata.contentHash;
-    
+
     if (conflictResolution === 'fail' && changes.total > 0) {
       // Check if content has been modified since last save
       const expectedHash = await hashContent(existingDraft.content);
@@ -87,7 +87,7 @@ export default async function handler(req, res) {
       },
       metadata: {
         timestamp,
-        agentAuth: agentAuth.substr(0, 10) + '...'
+        agentAuth: `${agentAuth.substr(0, 10)}...`
       }
     });
 
@@ -160,9 +160,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Draft update error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to update draft',
-      details: error.message 
+      details: error.message
     });
   }
 }
@@ -171,20 +171,20 @@ export default async function handler(req, res) {
 function calculateDetailedChanges(oldContent, newContent) {
   const oldLines = oldContent.split('\n');
   const newLines = newContent.split('\n');
-  
-  let added = 0;
-  let removed = 0;
-  let modified = 0;
+
+  const added = 0;
+  const removed = 0;
+  const modified = 0;
   const addedLines = [];
   const removedLines = [];
   const modifiedLines = [];
 
   const maxLines = Math.max(oldLines.length, newLines.length);
-  
+
   for (let i = 0; i < maxLines; i++) {
     const oldLine = oldLines[i];
     const newLine = newLines[i];
-    
+
     if (oldLine === undefined) {
       added++;
       addedLines.push({ line: i + 1, content: newLine });
@@ -193,10 +193,10 @@ function calculateDetailedChanges(oldContent, newContent) {
       removedLines.push({ line: i + 1, content: oldLine });
     } else if (oldLine !== newLine) {
       modified++;
-      modifiedLines.push({ 
-        line: i + 1, 
-        old: oldLine, 
-        new: newLine 
+      modifiedLines.push({
+        line: i + 1,
+        old: oldLine,
+        new: newLine
       });
     }
   }

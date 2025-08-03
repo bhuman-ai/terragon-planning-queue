@@ -23,17 +23,17 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }
 
-    const { 
-      sessionId, 
-      operation, 
-      message, 
+    const {
+      sessionId,
+      operation,
+      message,
       context = {},
-      options = {} 
+      options = {}
     } = req.body;
 
     if (!sessionId || !operation) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: sessionId, operation' 
+      return res.status(400).json({
+        error: 'Missing required fields: sessionId, operation'
       });
     }
 
@@ -87,9 +87,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('MetaAgent integration error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to execute MetaAgent operation',
-      details: error.message 
+      details: error.message
     });
   }
 }
@@ -192,8 +192,8 @@ async function decomposeTask(sessionId, taskSpec, context) {
     };
 
     const decomposition = await metaAgent.decomposeTask(
-      taskSpec, 
-      context.requirements || {}, 
+      taskSpec,
+      context.requirements || {},
       enhancedContext
     );
 
@@ -279,15 +279,15 @@ async function updateSessionActivity(sessionId, operation, result, timestamp) {
     };
 
     session.sessionData.metaAgent.activities.unshift(activity);
-    session.sessionData.metaAgent.activities = 
+    session.sessionData.metaAgent.activities =
       session.sessionData.metaAgent.activities.slice(0, 50); // Keep last 50
-    
+
     session.sessionData.metaAgent.lastOperation = {
       operation,
       timestamp,
       success: result.success
     };
-    
+
     session.sessionData.metaAgent.totalOperations++;
     session.lastAccessed = timestamp;
 

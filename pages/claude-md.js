@@ -92,11 +92,11 @@ export default function ClaudeMdPage() {
           <h1 style={{ color: '#ff6666', marginBottom: '20px', fontSize: '24px' }}>
             ⚠️ Configuration Required
           </h1>
-          
+
           <p style={{ color: '#ccc', marginBottom: '30px', lineHeight: '1.6' }}>
             To view CLAUDE.md documents, you need to configure your GitHub repository settings first.
           </p>
-          
+
           <div style={{
             backgroundColor: '#0f0f0f',
             border: '1px solid #333',
@@ -114,7 +114,7 @@ export default function ClaudeMdPage() {
               <li>Valid repository access</li>
             </ul>
           </div>
-          
+
           <button
             onClick={handleGoBack}
             style={{

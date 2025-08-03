@@ -7,15 +7,15 @@ export default async function handler(req, res) {
 
   try {
     const { scanResults, existingAnswers } = req.body;
-    
+
     // Try to use Claude to generate intelligent questions
     if (process.env.CLAUDE_API_KEY && process.env.CLAUDE_API_KEY !== 'your-claude-api-key-here') {
       const claude = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY });
-      
+
       try {
         const prompt = `You are conducting a sacred calibration interview for a software project. Based on the repository scan results, generate 10-15 highly specific questions to create a comprehensive CLAUDE.md document.
 
-Repository scan shows:
+Repository scan shows:;
 - Project name: ${scanResults.projectName || 'Unknown'}
 - Tech stack: ${scanResults.detectedTechStack?.join(', ') || 'Unknown'}
 - Current phase: ${scanResults.suggestedPhase || 'Unknown'}
@@ -36,15 +36,15 @@ Generate questions that cover:
 
 Return JSON array of questions with this structure:
 {
-  "questions": [
+  'questions': [
     {
-      "id": "unique_id",
-      "category": "Category Name",
-      "question": "Specific question text",
-      "type": "text|single-choice|multi-choice",
-      "options": ["option1", "option2"], // only for choice types
-      "required": true/false,
-      "context": "Why this matters"
+      'id': 'unique_id',
+      'category': 'Category Name',
+      'question': 'Specific question text',
+      'type': 'text|single-choice|multi-choice',
+      'options': ['option1', 'option2'], // only for choice types
+      'required': true/false,
+      'context': 'Why this matters'
     }
   ]
 }`;
@@ -58,7 +58,7 @@ Return JSON array of questions with this structure:
 
         const content = response.content[0].text;
         const jsonMatch = content.match(/\{[\s\S]*\}/);
-        
+
         if (jsonMatch) {
           const questions = JSON.parse(jsonMatch[0]);
           return res.status(200).json(questions);
@@ -70,7 +70,7 @@ Return JSON array of questions with this structure:
 
     // Fallback to intelligent static questions based on scan results
     const questions = generateStaticQuestions(scanResults, existingAnswers);
-    
+
     res.status(200).json({ questions });
 
   } catch (error) {
@@ -82,9 +82,9 @@ Return JSON array of questions with this structure:
   }
 }
 
-function generateStaticQuestions(scanResults, existingAnswers) {
+function generateStaticQuestions(scanResults, _existingAnswers) {
   const questions = [];
-  
+
   // Always start with vision
   questions.push({
     id: 'vision',

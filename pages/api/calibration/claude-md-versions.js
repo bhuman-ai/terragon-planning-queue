@@ -22,32 +22,32 @@ export default async function handler(req, res) {
 async function getVersionHistory(req, res) {
   try {
     const { repo } = req.query;
-    
+
     if (!repo) {
       return res.status(400).json({ error: 'Repository parameter required' });
     }
-    
+
     const versionsPath = path.join(process.cwd(), '.claude-versions', repo.replace('/', '_'));
-    
+
     try {
       const versions = await fs.readdir(versionsPath);
       const versionDetails = [];
-      
+
       for (const versionFile of versions.filter(f => f.endsWith('.json'))) {
         const versionPath = path.join(versionsPath, versionFile);
         const versionData = JSON.parse(await fs.readFile(versionPath, 'utf-8'));
         versionDetails.push(versionData);
       }
-      
+
       // Sort by timestamp, newest first
       versionDetails.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      
+
       res.status(200).json({
         repository: repo,
         totalVersions: versionDetails.length,
         versions: versionDetails
       });
-      
+
     } catch (error) {
       if (error.code === 'ENOENT') {
         // No versions yet
@@ -60,7 +60,7 @@ async function getVersionHistory(req, res) {
         throw error;
       }
     }
-    
+
   } catch (error) {
     console.error('Get version history error:', error);
     res.status(500).json({
@@ -73,37 +73,37 @@ async function getVersionHistory(req, res) {
 // Save a new version of CLAUDE.md
 async function saveVersion(req, res) {
   try {
-    const { 
-      repo, 
-      content, 
-      changelog, 
-      author, 
+    const {
+      repo,
+      content,
+      changelog,
+      author,
       reviewNotes,
       confidence,
       interviewData,
-      previousVersionId 
+      previousVersionId
     } = req.body;
-    
+
     if (!repo || !content) {
       return res.status(400).json({ error: 'Repository and content required' });
     }
-    
+
     const versionsDir = path.join(process.cwd(), '.claude-versions', repo.replace('/', '_'));
     await fs.mkdir(versionsDir, { recursive: true });
-    
+
     // Generate version ID
     const timestamp = new Date().toISOString();
     const versionId = `v${Date.now()}`;
-    
+
     // Calculate content hash for integrity
     const contentHash = await generateContentHash(content);
-    
+
     // Detect changes from previous version
     let changesDetected = [];
     if (previousVersionId) {
       changesDetected = await detectChanges(versionsDir, previousVersionId, content);
     }
-    
+
     const versionData = {
       id: versionId,
       timestamp,
@@ -129,11 +129,11 @@ async function saveVersion(req, res) {
         completedItems: (content.match(/- \[x\]/g) || []).length
       }
     };
-    
+
     // Save version file
     const versionFile = path.join(versionsDir, `${versionId}.json`);
     await fs.writeFile(versionFile, JSON.stringify(versionData, null, 2));
-    
+
     // Update latest version pointer
     const latestFile = path.join(versionsDir, 'latest.json');
     await fs.writeFile(latestFile, JSON.stringify({
@@ -141,7 +141,7 @@ async function saveVersion(req, res) {
       timestamp,
       repository: repo
     }, null, 2));
-    
+
     res.status(200).json({
       success: true,
       versionId,
@@ -150,7 +150,7 @@ async function saveVersion(req, res) {
       changesDetected: changesDetected.length,
       message: 'Version saved successfully'
     });
-    
+
   } catch (error) {
     console.error('Save version error:', error);
     res.status(500).json({
@@ -164,19 +164,19 @@ async function saveVersion(req, res) {
 async function compareVersions(req, res) {
   try {
     const { repo, versionA, versionB } = req.body;
-    
+
     if (!repo || !versionA || !versionB) {
       return res.status(400).json({ error: 'Repository and both version IDs required' });
     }
-    
+
     const versionsDir = path.join(process.cwd(), '.claude-versions', repo.replace('/', '_'));
-    
+
     const versionAPath = path.join(versionsDir, `${versionA}.json`);
     const versionBPath = path.join(versionsDir, `${versionB}.json`);
-    
+
     const versionAData = JSON.parse(await fs.readFile(versionAPath, 'utf-8'));
     const versionBData = JSON.parse(await fs.readFile(versionBPath, 'utf-8'));
-    
+
     const comparison = {
       versionA: {
         id: versionAData.id,
@@ -194,9 +194,9 @@ async function compareVersions(req, res) {
       confidenceChanges: compareConfidence(versionAData.confidence, versionBData.confidence),
       statsComparison: compareStats(versionAData.stats, versionBData.stats)
     };
-    
+
     res.status(200).json(comparison);
-    
+
   } catch (error) {
     console.error('Compare versions error:', error);
     res.status(500).json({
@@ -218,17 +218,17 @@ async function detectChanges(versionsDir, previousVersionId, newContent) {
     const previousPath = path.join(versionsDir, `${previousVersionId}.json`);
     const previousData = JSON.parse(await fs.readFile(previousPath, 'utf-8'));
     const previousContent = previousData.content;
-    
+
     const changes = [];
-    
+
     // Simple change detection
     const oldLines = previousContent.split('\n');
     const newLines = newContent.split('\n');
-    
+
     // Check for section additions/removals
     const oldSections = oldLines.filter(line => line.startsWith('##'));
     const newSections = newLines.filter(line => line.startsWith('##'));
-    
+
     for (const section of newSections) {
       if (!oldSections.includes(section)) {
         changes.push({
@@ -238,7 +238,7 @@ async function detectChanges(versionsDir, previousVersionId, newContent) {
         });
       }
     }
-    
+
     for (const section of oldSections) {
       if (!newSections.includes(section)) {
         changes.push({
@@ -248,7 +248,7 @@ async function detectChanges(versionsDir, previousVersionId, newContent) {
         });
       }
     }
-    
+
     // Check for significant content changes
     const contentLengthDiff = Math.abs(newContent.length - previousContent.length);
     if (contentLengthDiff > 100) {
@@ -258,9 +258,9 @@ async function detectChanges(versionsDir, previousVersionId, newContent) {
         description: `Content length changed by ${contentLengthDiff} characters`
       });
     }
-    
+
     return changes;
-    
+
   } catch (error) {
     console.error('Error detecting changes:', error);
     return [{
@@ -275,31 +275,31 @@ async function detectChanges(versionsDir, previousVersionId, newContent) {
 async function generateDiff(textA, textB) {
   const linesA = textA.split('\n');
   const linesB = textB.split('\n');
-  
+
   const additions = [];
   const deletions = [];
   const modifications = [];
-  
+
   // Simple line-by-line comparison
   const maxLines = Math.max(linesA.length, linesB.length);
-  
+
   for (let i = 0; i < maxLines; i++) {
     const lineA = linesA[i] || '';
     const lineB = linesB[i] || '';
-    
+
     if (lineA && !lineB) {
       deletions.push({ line: i + 1, content: lineA });
     } else if (!lineA && lineB) {
       additions.push({ line: i + 1, content: lineB });
     } else if (lineA !== lineB && lineA && lineB) {
-      modifications.push({ 
-        line: i + 1, 
-        old: lineA, 
-        new: lineB 
+      modifications.push({
+        line: i + 1,
+        old: lineA,
+        new: lineB
       });
     }
   }
-  
+
   return {
     additions: additions.slice(0, 10), // Limit output
     deletions: deletions.slice(0, 10),
@@ -315,7 +315,7 @@ async function generateDiff(textA, textB) {
 // Compare confidence levels between versions
 function compareConfidence(oldConf, newConf) {
   const changes = {};
-  
+
   for (const key in newConf) {
     if (oldConf[key] !== newConf[key]) {
       changes[key] = {
@@ -324,14 +324,14 @@ function compareConfidence(oldConf, newConf) {
       };
     }
   }
-  
+
   return changes;
 }
 
 // Compare stats between versions
 function compareStats(oldStats, newStats) {
   const changes = {};
-  
+
   for (const key in newStats) {
     if (oldStats[key] !== newStats[key]) {
       changes[key] = {
@@ -341,6 +341,6 @@ function compareStats(oldStats, newStats) {
       };
     }
   }
-  
+
   return changes;
 }

@@ -16,18 +16,18 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }
 
-    const { 
-      sessionId, 
-      type, 
-      description, 
-      data, 
+    const {
+      sessionId,
+      type,
+      description,
+      data,
       filePaths = [],
-      metadata = {} 
+      metadata = {}
     } = req.body;
 
     if (!sessionId || !type || !description) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: sessionId, type, description' 
+      return res.status(400).json({
+        error: 'Missing required fields: sessionId, type, description'
       });
     }
 
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
       filePaths
     );
 
-    const checkpointId = checkpointResult.checkpointId;
+    const { checkpointId } = checkpointResult;
     const timestamp = new Date().toISOString();
 
     // Create collaboration checkpoint metadata
@@ -60,7 +60,7 @@ export default async function handler(req, res) {
       metadata: {
         ...metadata,
         timestamp,
-        agentAuth: agentAuth.substr(0, 10) + '...',
+        agentAuth: `${agentAuth.substr(0, 10)}...`,
         filesBackedUp: checkpointResult.filesBackedUp
       },
       status: 'created',
@@ -83,13 +83,13 @@ export default async function handler(req, res) {
       timestamp,
       status: 'created'
     });
-    
+
     // Keep only last 50 checkpoints in session
-    session.sessionData.execution.checkpoints = 
+    session.sessionData.execution.checkpoints =
       session.sessionData.execution.checkpoints.slice(0, 50);
-      
+
     session.lastAccessed = timestamp;
-    
+
     await kv.set(`collaboration:session:${sessionId}`, session, {
       ex: 3600 * 24
     });
@@ -109,9 +109,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Checkpoint creation error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to create checkpoint',
-      details: error.message 
+      details: error.message
     });
   }
 }

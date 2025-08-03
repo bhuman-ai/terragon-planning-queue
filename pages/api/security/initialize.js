@@ -1,7 +1,7 @@
 /**
  * Security System Initialization API
  * POST /api/security/initialize
- * 
+ *
  * Initializes the Phase 2A security controls:
  * - Agent authentication system
  * - Dual-hash integrity verification

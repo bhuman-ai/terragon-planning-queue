@@ -1,7 +1,7 @@
 /**
  * Security System Status API
  * GET /api/security/status
- * 
+ *
  * Returns comprehensive security status including:
  * - Component status
  * - Integrity verification results
@@ -32,11 +32,11 @@ export default async function handler(req, res) {
     const status = await securitySystem.getStatus();
 
     // Get additional component details
-    const components = securitySystem.components;
-    
+    const { components } = securitySystem;
+
     const integrityReport = await components.hashIntegrity.getIntegrityReport();
     const checkpointStatus = await components.atomicCheckpoints.getStatus();
-    
+
     // Get active sessions (if available)
     let activeSessions = [];
     try {
@@ -105,7 +105,7 @@ export default async function handler(req, res) {
  * Calculate overall security level
  */
 function calculateSecurityLevel(status, integrityReport, checkpointStatus) {
-  let score = 100;
+  const score = 100;
 
   // Deduct points for integrity issues
   if (integrityReport.files?.invalid > 0) {

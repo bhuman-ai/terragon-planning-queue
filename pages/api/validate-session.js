@@ -31,15 +31,15 @@ export default async function handler(req, res) {
       return res.json({ valid: true, message: 'Session is valid' });
     }
 
-    return res.json({ 
-      valid: false, 
-      message: `Unexpected status: ${response.status}` 
+    return res.json({
+      valid: false,
+      message: `Unexpected status: ${response.status}`
     });
   } catch (error) {
     console.error('Session validation error:', error);
-    res.status(500).json({ 
-      valid: false, 
-      message: 'Error validating session' 
+    res.status(500).json({
+      valid: false,
+      message: 'Error validating session'
     });
   }
 }

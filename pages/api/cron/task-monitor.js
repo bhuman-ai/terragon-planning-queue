@@ -22,9 +22,9 @@ export default async function handler(req, res) {
 
   try {
     const results = await monitor.processActiveTasks();
-    
+
     console.log(`✅ Task Monitor completed. Processed ${results.processed} tasks, ${results.continued} continued, ${results.paused} paused`);
-    
+
     res.status(200).json({
       success: true,
       timestamp: new Date().toISOString(),
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('❌ Task Monitor failed:', error);
-    
+
     res.status(500).json({
       success: false,
       error: error.message,

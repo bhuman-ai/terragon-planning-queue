@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     // Load task data
     const tasksDir = path.join(process.cwd(), 'data', 'active-tasks');
     const taskPath = path.join(tasksDir, `${taskId}.json`);
-    
+
     let taskData;
     try {
       const taskContent = await fs.readFile(taskPath, 'utf-8');
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
 
     // Generate instruction for Terragon based on user response
     const instruction = await generateTerragonInstruction(taskData, response);
-    
+
     // Add instruction to task queue
     taskData.pendingInstructions = taskData.pendingInstructions || [];
     taskData.pendingInstructions.push({
@@ -80,14 +80,14 @@ export default async function handler(req, res) {
  * Generate instruction for Terragon based on user's response
  */
 async function generateTerragonInstruction(taskData, userResponse) {
-  // If user said "I don't know", provide a default instruction
-  if (userResponse.toLowerCase() === "i don't know") {
-    return `Continue with the task using your best judgment. The user is unsure about: "${taskData.pauseReason}". Proceed with standard implementation patterns.`;
+  // If user said 'I don't know', provide a default instruction
+  if (userResponse.toLowerCase() === 'i don't know') {
+    return `Continue with the task using your best judgment. The user is unsure about: '${taskData.pauseReason}'. Proceed with standard implementation patterns.`;
   }
 
   // Otherwise, incorporate the user's response into the instruction
   const context = taskData.pauseReason || 'the current decision point';
-  
-  return `Based on user input regarding ${context}: "${userResponse}". 
+
+  return `Based on user input regarding ${context}: '${userResponse}'.
 Please incorporate this guidance into your implementation approach and continue with the task.`;
 }

@@ -1,6 +1,6 @@
 /**
  * WebSocket-based real-time state synchronization for Claude.md collaboration
- * 
+ *
  * This endpoint handles WebSocket connections for real-time collaboration features.
  * Note: Vercel doesn't support WebSocket directly, so this uses Server-Sent Events
  * as a fallback for real-time communication.
@@ -30,8 +30,8 @@ async function handleSSEConnection(req, res) {
     const { sessionId, agentAuth } = req.query;
 
     if (!sessionId || !agentAuth) {
-      return res.status(400).json({ 
-        error: 'Missing required parameters: sessionId, agentAuth' 
+      return res.status(400).json({
+        error: 'Missing required parameters: sessionId, agentAuth'
       });
     }
 
@@ -59,7 +59,7 @@ async function handleSSEConnection(req, res) {
     const clientInfo = {
       id: connectionId,
       sessionId,
-      agentAuth: agentAuth.substr(0, 10) + '...',
+      agentAuth: `${agentAuth.substr(0, 10)}...`,
       connectedAt: new Date().toISOString(),
       lastHeartbeat: new Date().toISOString(),
       response: res
@@ -92,7 +92,7 @@ async function handleSSEConnection(req, res) {
           timestamp: new Date().toISOString(),
           connectionId
         });
-        
+
         clientInfo.lastHeartbeat = new Date().toISOString();
       } catch (error) {
         console.error('Heartbeat failed:', error);
@@ -116,9 +116,9 @@ async function handleSSEConnection(req, res) {
 
   } catch (error) {
     console.error('SSE connection setup error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to establish real-time connection',
-      details: error.message 
+      details: error.message
     });
   }
 }
@@ -134,17 +134,17 @@ async function handleStateUpdate(req, res) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }
 
-    const { 
-      sessionId, 
-      eventType, 
-      data, 
+    const {
+      sessionId,
+      eventType,
+      data,
       targetConnectionId = null,
       excludeConnectionId = null
     } = req.body;
 
     if (!sessionId || !eventType || !data) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: sessionId, eventType, data' 
+      return res.status(400).json({
+        error: 'Missing required fields: sessionId, eventType, data'
       });
     }
 
@@ -172,9 +172,9 @@ async function handleStateUpdate(req, res) {
 
   } catch (error) {
     console.error('State update error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to update state',
-      details: error.message 
+      details: error.message
     });
   }
 }
@@ -243,25 +243,25 @@ async function updateSessionState(sessionId, eventType, data) {
       session.sessionData.ideation.draftContent = data.content;
       session.sessionData.ideation.lastModified = timestamp;
       break;
-      
+
     case 'workflow-progress':
       session.workflowProgress = { ...session.workflowProgress, ...data.progress };
       break;
-      
+
     case 'task-created':
       if (!session.sessionData.orchestration.workflowSteps) {
         session.sessionData.orchestration.workflowSteps = [];
       }
       session.sessionData.orchestration.workflowSteps.push(data.task);
       break;
-      
+
     case 'checkpoint-created':
       if (!session.sessionData.execution.checkpoints) {
         session.sessionData.execution.checkpoints = [];
       }
       session.sessionData.execution.checkpoints.unshift(data.checkpoint);
       break;
-      
+
     case 'agent-status':
       session.sessionData.execution.activeAgents = data.agents;
       break;
@@ -278,9 +278,9 @@ async function updateSessionState(sessionId, eventType, data) {
  */
 async function broadcastToSession(sessionId, eventType, data, options = {}) {
   const { targetConnectionId, excludeConnectionId } = options;
-  
-  let successCount = 0;
-  let errorCount = 0;
+
+  const successCount = 0;
+  const errorCount = 0;
   const errors = [];
 
   for (const [connectionId, clientInfo] of activeConnections.entries()) {

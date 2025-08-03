@@ -16,17 +16,17 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }
 
-    const { 
-      checkpointId, 
-      operation, 
+    const {
+      checkpointId,
+      operation,
       operationData = {},
       timeout = 30000,
       retries = 3
     } = req.body;
 
     if (!checkpointId || !operation) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: checkpointId, operation' 
+      return res.status(400).json({
+        error: 'Missing required fields: checkpointId, operation'
       });
     }
 
@@ -96,7 +96,7 @@ export default async function handler(req, res) {
       timestamp,
       result: result.result
     };
-    
+
     await kv.set(`collaboration:checkpoint:${checkpointId}`, checkpoint, {
       ex: 3600 * 24 * 7
     });
@@ -123,7 +123,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Checkpoint execution error:', error);
-    
+
     // Create failed execution record
     try {
       const failedExecutionId = `exec_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
@@ -135,23 +135,23 @@ export default async function handler(req, res) {
         error: error.message,
         timestamp: new Date().toISOString()
       };
-      
+
       await kv.set(`collaboration:execution:${failedExecutionId}`, failedRecord, {
         ex: 3600 * 24
       });
     } catch (recordError) {
       console.error('Failed to record execution failure:', recordError);
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: 'Failed to execute checkpoint operation',
-      details: error.message 
+      details: error.message
     });
   }
 }
 
 // Operation implementations
-async function executeRollback(checkpoint, operationData) {
+async function executeRollback(checkpoint, _operationData) {
   // Rollback to checkpoint state
   return {
     operation: 'rollback',
@@ -161,10 +161,10 @@ async function executeRollback(checkpoint, operationData) {
   };
 }
 
-async function executeValidation(checkpoint, operationData) {
+async function executeValidation(checkpoint, _operationData) {
   // Validate checkpoint integrity
   const isValid = true; // Implement actual validation logic
-  
+
   return {
     operation: 'validation',
     checkpointId: checkpoint.id,
@@ -176,7 +176,7 @@ async function executeValidation(checkpoint, operationData) {
 async function executeMerge(checkpoint, operationData) {
   // Merge checkpoint data with current state
   const { mergeStrategy = 'auto', conflictResolution = 'manual' } = operationData;
-  
+
   return {
     operation: 'merge',
     checkpointId: checkpoint.id,
@@ -187,7 +187,7 @@ async function executeMerge(checkpoint, operationData) {
   };
 }
 
-async function executeCommit(checkpoint, operationData) {
+async function executeCommit(checkpoint, _operationData) {
   // Commit checkpoint changes permanently
   return {
     operation: 'commit',

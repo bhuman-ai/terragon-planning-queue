@@ -1,5 +1,6 @@
-import fs from 'fs/promises';
-import path from 'path';
+// Imports removed - not used directly
+// import fs from 'fs/promises';
+// import path from 'path';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -7,12 +8,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { repo, includePatterns = ['*.md', 'README*', 'docs/**', 'package.json'] } = req.body;
-    
+    const { repo } = req.body;
+
     if (!repo || !repo.includes('/')) {
       return res.status(400).json({ error: 'Invalid repository format. Expected: owner/repo' });
     }
-    
+
     const [owner, repoName] = repo.split('/');
     const scanResults = {
       projectName: repoName,
@@ -31,64 +32,64 @@ export default async function handler(req, res) {
       'Accept': 'application/vnd.github.v3+json',
       'User-Agent': 'Terragon-Planning-Queue'
     };
-    
+
     if (process.env.GITHUB_TOKEN && process.env.GITHUB_TOKEN !== 'YOUR_GITHUB_TOKEN_HERE') {
       headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
     }
-    
+
     // Function to recursively scan GitHub repository
     async function scanGitHubDirectory(path = '') {
       const results = [];
-      
+
       try {
         const url = `https://api.github.com/repos/${owner}/${repoName}/contents/${path}`;
         const response = await fetch(url, { headers });
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`Failed to scan ${path}: ${response.status} - ${errorText}`);
-          
+
           // If it's a 401, the token is invalid or missing
           if (response.status === 401) {
-            throw new Error(`GitHub authentication failed. Please check your GITHUB_TOKEN in .env.local`);
+            throw new Error('GitHub authentication failed. Please check your GITHUB_TOKEN in .env.local');
           }
-          
+
           // If it's a 404, the repo might not exist or be private
           if (response.status === 404) {
             throw new Error(`Repository ${owner}/${repoName} not found or is private. You may need a GitHub token.`);
           }
-          
+
           // If it's a 403, we might have hit rate limits
           if (response.status === 403) {
             const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
             const rateLimitReset = response.headers.get('x-ratelimit-reset');
             throw new Error(`GitHub API rate limit exceeded. Remaining: ${rateLimitRemaining}, Reset: ${rateLimitReset}`);
           }
-          
+
           return results;
         }
-        
+
         const responseData = await response.json();
-        
+
         // Handle both array and object responses
         const items = Array.isArray(responseData) ? responseData : [];
-        
+
         // Process items in parallel but limit concurrency
         const BATCH_SIZE = 5;
         for (let i = 0; i < items.length; i += BATCH_SIZE) {
           const batch = items.slice(i, i + BATCH_SIZE);
-          
+
           await Promise.all(batch.map(async (item) => {
             // Skip common ignore patterns
             if (['.git', 'node_modules', '.next', 'dist', 'build', '__pycache__', '.pytest_cache'].includes(item.name)) {
               return;
             }
-            
+
             if (item.type === 'file') {
               // Include various documentation and config files
               const fileName = item.name.toLowerCase();
               const filePath = item.path;
-              
+
               // Always include markdown files
               if (fileName.endsWith('.md')) {
                 results.push(filePath);
@@ -115,7 +116,7 @@ export default async function handler(req, res) {
                 results.push(filePath);
               }
               // Include YAML/YML files in .github or root
-              else if ((fileName.endsWith('.yml') || fileName.endsWith('.yaml')) && 
+              else if ((fileName.endsWith('.yml') || fileName.endsWith('.yaml')) &&
                        (filePath.startsWith('.github/') || !filePath.includes('/'))) {
                 results.push(filePath);
               }
@@ -125,7 +126,7 @@ export default async function handler(req, res) {
               // Scan important directories regardless of depth
               const importantDirs = ['docs', 'documentation', '.github'];
               const dirName = item.name.toLowerCase();
-              
+
               if (depth < 2 || importantDirs.includes(dirName)) {
                 const subResults = await scanGitHubDirectory(item.path);
                 results.push(...subResults);
@@ -136,10 +137,10 @@ export default async function handler(req, res) {
       } catch (error) {
         console.error(`Error scanning directory ${path}:`, error);
       }
-      
+
       return results;
     }
-    
+
     // Start scanning from root
     try {
       scanResults.existingDocs = await scanGitHubDirectory();
@@ -158,10 +159,10 @@ export default async function handler(req, res) {
           'Accept': 'application/vnd.github.v3.raw'
         }
       });
-      
+
       if (packageResponse.ok) {
         const packageJson = JSON.parse(await packageResponse.text());
-        
+
         scanResults.projectName = packageJson.name || repoName;
         scanResults.packageInfo = {
           version: packageJson.version,
@@ -173,7 +174,7 @@ export default async function handler(req, res) {
 
         // Detect tech stack
         const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
-        
+
         if (deps.next) scanResults.detectedTechStack.push('Next.js');
         if (deps.react) scanResults.detectedTechStack.push('React');
         if (deps.vue) scanResults.detectedTechStack.push('Vue.js');
@@ -192,7 +193,7 @@ export default async function handler(req, res) {
       }
     } catch (error) {
       console.error('Failed to fetch package.json:', error);
-      
+
       // Try other tech stack indicators
       if (scanResults.existingDocs.some(f => f === 'requirements.txt' || f === 'setup.py')) {
         scanResults.detectedTechStack.push('Python');
@@ -227,16 +228,16 @@ export default async function handler(req, res) {
             'Accept': 'application/vnd.github.v3.raw'
           }
         });
-        
+
         if (fileResponse.ok) {
           const content = await fileResponse.text();
-          const firstLine = content.split('\n')[0];
-          
+          const [firstLine] = content.split('\n');
+
           if (docFile.toLowerCase().includes('readme')) {
             scanResults.insights.readmeFirstLine = firstLine;
           }
-          
-          // Look for TODO, FIXME, etc.
+
+          // Look for action items
           const todoMatches = content.match(/TODO|FIXME|HACK|XXX/gi);
           if (todoMatches) {
             scanResults.insights.todosFound = (scanResults.insights.todosFound || 0) + todoMatches.length;
@@ -263,13 +264,13 @@ export default async function handler(req, res) {
         scanResults.cleanupSuggestions.push(file);
       }
     }
-    
+
     // Check for backup/temp directories
     const cleanupDirs = ['backup', 'temp', 'old', '_backup', 'archive', 'deprecated'];
     for (const dir of cleanupDirs) {
       // Check if any file path starts with these directory names
-      if (scanResults.existingDocs.some(doc => doc.startsWith(dir + '/'))) {
-        scanResults.cleanupSuggestions.push(dir + '/');
+      if (scanResults.existingDocs.some(doc => doc.startsWith(`${dir}/`))) {
+        scanResults.cleanupSuggestions.push(`${dir}/`);
       }
     }
 

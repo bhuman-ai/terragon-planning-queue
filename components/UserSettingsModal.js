@@ -23,7 +23,7 @@ export default function UserSettingsModal({ show, onClose, onSave }) {
   const handleSave = () => {
     // Save to localStorage
     localStorage.setItem('meta-agent-user-settings', JSON.stringify(settings));
-    
+
     // Notify parent component
     onSave(settings);
     onClose();
@@ -76,18 +76,18 @@ export default function UserSettingsModal({ show, onClose, onSave }) {
           alignItems: 'center'
         }}>
           <div>
-            <h2 style={{ 
-              color: '#fff', 
+            <h2 style={{
+              color: '#fff',
               margin: 0,
               fontSize: '20px',
               fontWeight: 'bold'
             }}>
               ⚙️ Meta-Agent Settings
             </h2>
-            <div style={{ 
-              fontSize: '14px', 
+            <div style={{
+              fontSize: '14px',
               color: '#888',
-              marginTop: '5px' 
+              marginTop: '5px'
             }}>
               Customize how Meta-Agent generates questions for you
             </div>
@@ -114,12 +114,12 @@ export default function UserSettingsModal({ show, onClose, onSave }) {
           padding: '20px'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-            
+
             {/* Technical Knowledge Level */}
             <div>
-              <label style={{ 
-                color: '#fff', 
-                fontSize: '16px', 
+              <label style={{
+                color: '#fff',
+                fontSize: '16px',
                 fontWeight: 'bold',
                 display: 'block',
                 marginBottom: '8px'
@@ -136,9 +136,9 @@ export default function UserSettingsModal({ show, onClose, onSave }) {
                   { value: 'advanced', label: 'Advanced', desc: 'Experienced developer, focus on architecture' },
                   { value: 'expert', label: 'Expert', desc: 'Senior level, skip basic questions entirely' }
                 ].map(option => (
-                  <label key={option.value} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  <label key={option.value} style={{
+                    display: 'flex',
+                    alignItems: 'center',
                     cursor: 'pointer',
                     padding: '10px',
                     backgroundColor: settings.technicalKnowledge === option.value ? '#00ff8820' : '#0f0f0f',
@@ -147,8 +147,8 @@ export default function UserSettingsModal({ show, onClose, onSave }) {
                     transition: 'all 0.2s ease'
                   }}>
                     <input
-                      type="radio"
-                      name="technicalKnowledge"
+                      type='radio'
+                      name='technicalKnowledge'
                       value={option.value}
                       checked={settings.technicalKnowledge === option.value}
                       onChange={(e) => setSettings(prev => ({ ...prev, technicalKnowledge: e.target.value }))}
@@ -165,9 +165,9 @@ export default function UserSettingsModal({ show, onClose, onSave }) {
 
             {/* Project Experience */}
             <div>
-              <label style={{ 
-                color: '#fff', 
-                fontSize: '16px', 
+              <label style={{
+                color: '#fff',
+                fontSize: '16px',
                 fontWeight: 'bold',
                 display: 'block',
                 marginBottom: '8px'
@@ -190,18 +190,18 @@ export default function UserSettingsModal({ show, onClose, onSave }) {
                   fontSize: '14px'
                 }}
               >
-                <option value="first-time">First time with this type of project</option>
-                <option value="some">Some experience with similar projects</option>
-                <option value="intermediate">Regular experience with these projects</option>
-                <option value="expert">Deep expertise in this domain</option>
+                <option value='first-time'>First time with this type of project</option>
+                <option value='some'>Some experience with similar projects</option>
+                <option value='intermediate'>Regular experience with these projects</option>
+                <option value='expert'>Deep expertise in this domain</option>
               </select>
             </div>
 
             {/* Questioning Style */}
             <div>
-              <label style={{ 
-                color: '#fff', 
-                fontSize: '16px', 
+              <label style={{
+                color: '#fff',
+                fontSize: '16px',
                 fontWeight: 'bold',
                 display: 'block',
                 marginBottom: '8px'
@@ -241,9 +241,9 @@ export default function UserSettingsModal({ show, onClose, onSave }) {
 
             {/* Communication Style */}
             <div>
-              <label style={{ 
-                color: '#fff', 
-                fontSize: '16px', 
+              <label style={{
+                color: '#fff',
+                fontSize: '16px',
                 fontWeight: 'bold',
                 display: 'block',
                 marginBottom: '8px'
@@ -263,18 +263,18 @@ export default function UserSettingsModal({ show, onClose, onSave }) {
                   fontSize: '14px'
                 }}
               >
-                <option value="casual">Casual - everyday language</option>
-                <option value="technical">Technical - use proper terminology</option>
-                <option value="business">Business - focus on outcomes</option>
-                <option value="academic">Academic - detailed and precise</option>
+                <option value='casual'>Casual - everyday language</option>
+                <option value='technical'>Technical - use proper terminology</option>
+                <option value='business'>Business - focus on outcomes</option>
+                <option value='academic'>Academic - detailed and precise</option>
               </select>
             </div>
 
             {/* Decision Speed */}
             <div>
-              <label style={{ 
-                color: '#fff', 
-                fontSize: '16px', 
+              <label style={{
+                color: '#fff',
+                fontSize: '16px',
                 fontWeight: 'bold',
                 display: 'block',
                 marginBottom: '8px'
@@ -349,7 +349,7 @@ export default function UserSettingsModal({ show, onClose, onSave }) {
             >
               Cancel
             </button>
-            
+
             <button
               onClick={handleSave}
               style={{

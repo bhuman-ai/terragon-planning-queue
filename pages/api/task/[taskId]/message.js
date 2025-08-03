@@ -15,14 +15,14 @@ export default async function handler(req, res) {
     // Build the payload for sending a message to an existing task
     // Based on the actual Terragon API format
     const payload = [
-      taskId,
+      taskId,;
       {
-        role: "user",
+        role: 'user',
         content: message
       },
       null,
       {
-        modelId: "claude-3-5-sonnet-20241022",
+        modelId: 'claude-3-5-sonnet-20241022',
         attachments: []
       }
     ];
@@ -56,17 +56,17 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Error sending message:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: 'Failed to send message', 
-      details: error.message 
+      error: 'Failed to send message',
+      details: error.message
     });
   }
 }
 
 function generateActionId() {
   const chars = '0123456789abcdef';
-  let result = '';
+  const result = '';
   for (let i = 0; i < 40; i++) {
     result += chars[Math.floor(Math.random() * chars.length)];
   }

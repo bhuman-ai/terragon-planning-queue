@@ -6,7 +6,7 @@ import MergeReviewView from './MergeReviewView';
 
 /**
  * CollaborationHub - Unified orchestration for all 4 specialized views
- * 
+ *
  * Features:
  * - Seamless view switching with state preservation
  * - Cross-view data sharing and synchronization
@@ -84,13 +84,13 @@ export default function CollaborationHub({
 
       if (response.ok) {
         const data = await response.json();
-        
+
         setSessionId(data.sessionId);
         setAgentAuth(data.agentAuth);
         setSessionData(prev => ({ ...prev, ...data.sessionData }));
         setWorkflowProgress(data.workflowProgress || workflowProgress);
         setConnectionStatus('connected');
-        
+
         addNotification('Collaboration session initialized', 'success');
         onSessionUpdate?.(data);
       } else {
@@ -125,9 +125,9 @@ export default function CollaborationHub({
     }
 
     // Execution phase completion check
-    const executionComplete = Object.values(sessionData.orchestration.executionStatus)
+    const executionComplete = Object.values(sessionData.orchestration.executionStatus);
       .filter(status => status === 'completed').length > 0;
-    
+
     if (executionComplete) {
       newProgress.execution = 'completed';
       if (newProgress.merge === 'locked') {
@@ -147,13 +147,13 @@ export default function CollaborationHub({
     try {
       // Save current view state
       await saveViewState(currentView);
-      
+
       // Switch to new view
       setCurrentView(newView);
-      
+
       // Load new view state
       await loadViewState(newView);
-      
+
       addNotification(`Switched to ${newView} view`, 'info');
     } catch (error) {
       console.error('Failed to switch view:', error);
@@ -165,7 +165,7 @@ export default function CollaborationHub({
     try {
       const response = await fetch('/api/collaboration/session/save-state', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -188,7 +188,7 @@ export default function CollaborationHub({
     try {
       const response = await fetch('/api/collaboration/session/load-state', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -406,7 +406,7 @@ export default function CollaborationHub({
               disabled={workflowProgress[view] === 'locked'}
               style={{
                 padding: '10px 15px',
-                backgroundColor: currentView === view ? '#003366' : 
+                backgroundColor: currentView === view ? '#003366' :
                                 workflowProgress[view] === 'locked' ? '#1a1a1a' : '#333',
                 border: `2px solid ${getProgressColor(
                   currentView === view ? 'current' : workflowProgress[view]

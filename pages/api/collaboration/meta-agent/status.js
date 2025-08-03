@@ -16,8 +16,8 @@ export default async function handler(req, res) {
     const { sessionId, includeActivities = false, limit = 20 } = req.query;
 
     if (!sessionId) {
-      return res.status(400).json({ 
-        error: 'Missing required parameter: sessionId' 
+      return res.status(400).json({
+        error: 'Missing required parameter: sessionId'
       });
     }
 
@@ -59,16 +59,16 @@ export default async function handler(req, res) {
     }
 
     // Calculate operational metrics
-    const recentActivities = metaAgentData.activities.filter(a => 
+    const recentActivities = metaAgentData.activities.filter(a =>
       new Date(a.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000)
     );
-    
+
     const successfulOperations = metaAgentData.activities.filter(a => a.success).length;
     const failedOperations = metaAgentData.activities.filter(a => !a.success).length;
-    
+
     status.metrics = {
       last24Hours: recentActivities.length,
-      successRate: metaAgentData.totalOperations > 0 ? 
+      successRate: metaAgentData.totalOperations > 0 ?
         (successfulOperations / metaAgentData.totalOperations) * 100 : 0,
       operationBreakdown: {
         successful: successfulOperations,
@@ -88,9 +88,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('MetaAgent status error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to get MetaAgent status',
-      details: error.message 
+      details: error.message
     });
   }
 }
@@ -100,9 +100,9 @@ export default async function handler(req, res) {
  */
 function getOperationTypeBreakdown(activities) {
   const breakdown = {};
-  
+
   activities.forEach(activity => {
-    const operation = activity.operation;
+    const { operation } = activity;
     if (!breakdown[operation]) {
       breakdown[operation] = {
         count: 0,
@@ -110,7 +110,7 @@ function getOperationTypeBreakdown(activities) {
         failed: 0
       };
     }
-    
+
     breakdown[operation].count++;
     if (activity.success) {
       breakdown[operation].successful++;
@@ -118,6 +118,6 @@ function getOperationTypeBreakdown(activities) {
       breakdown[operation].failed++;
     }
   });
-  
+
   return breakdown;
 }

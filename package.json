@@ -32,7 +32,8 @@
     "lint:llm:api": "node scripts/validate-llm-code.js --target api --output compact",
     "validate:binary": "node scripts/validate-llm-code.js --output compact",
     "validate:strict": "node scripts/validate-llm-code.js --strict --output detailed",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "workflow": "node scripts/workflow-cli.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.3",
@@ -44,7 +45,11 @@
     "next": "^14.2.31",
     "node-fetch": "^2.7.0",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "gray-matter": "^4.0.3",
+    "commander": "^11.1.0",
+    "chalk": "^4.1.2",
+    "lucide-react": "^0.344.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.5",

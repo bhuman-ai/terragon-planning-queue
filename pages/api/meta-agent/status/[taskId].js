@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   const { taskId } = req.query;
-  
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -14,10 +14,10 @@ export default async function handler(req, res) {
   });
 
   // Send initial connection
-  res.write(`data: ${JSON.stringify({ 
-    type: 'connected', 
+  res.write(`data: ${JSON.stringify({
+    type: 'connected',
     taskId,
-    message: 'Connected to task status stream' 
+    message: 'Connected to task status stream'
   })}\n\n`);
 
   // Simulate task progress updates
@@ -31,8 +31,8 @@ export default async function handler(req, res) {
     { type: 'complete', message: 'Task creation complete!', progress: 100 }
   ];
 
-  let currentStep = 0;
-  
+  const currentStep = 0;
+
   const interval = setInterval(() => {
     if (currentStep < steps.length) {
       res.write(`data: ${JSON.stringify({
@@ -40,14 +40,14 @@ export default async function handler(req, res) {
         taskId,
         timestamp: new Date().toISOString()
       })}\n\n`);
-      
+
       currentStep++;
     } else {
       clearInterval(interval);
-      res.write(`data: ${JSON.stringify({ 
-        type: 'done', 
+      res.write(`data: ${JSON.stringify({
+        type: 'done',
         taskId,
-        message: 'Stream complete' 
+        message: 'Stream complete'
       })}\n\n`);
       res.end();
     }

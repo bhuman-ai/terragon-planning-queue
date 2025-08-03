@@ -11,18 +11,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { 
-      markdown, 
-      content, 
-      reviewNotes, 
-      interviewData, 
+    const {
+      markdown,
+      content,
+      reviewNotes,
+      interviewData,
       repository,
-      author 
+      author
     } = req.body;
-    
+
     // Support both markdown and content parameters
     const claudeContent = markdown || content;
-    
+
     if (!claudeContent) {
       return res.status(400).json({ error: 'Content is required' });
     }
@@ -30,10 +30,10 @@ export default async function handler(req, res) {
     const projectRoot = process.cwd();
     const claudeMdPath = path.join(projectRoot, 'CLAUDE.md');
     const historyDir = path.join(projectRoot, '.claude', 'history');
-    
+
     // Create history directory if it doesn't exist
     await fs.mkdir(historyDir, { recursive: true });
-    
+
     // Check if CLAUDE.md already exists (for versioning)
     let existingContent = null;
     try {
@@ -41,17 +41,17 @@ export default async function handler(req, res) {
     } catch (error) {
       // File doesn't exist yet, which is fine
     }
-    
+
     // If file exists, create a backup
     if (existingContent) {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const backupPath = path.join(historyDir, `CLAUDE-${timestamp}.md`);
       await fs.writeFile(backupPath, existingContent);
     }
-    
+
     // Write the new CLAUDE.md
     await fs.writeFile(claudeMdPath, claudeContent);
-    
+
     // Save version to version control system if repository is provided
     let versionInfo = null;
     if (repository) {
@@ -75,7 +75,7 @@ export default async function handler(req, res) {
             previousVersionId: existingContent ? 'previous' : null
           })
         });
-        
+
         if (versionResponse.ok) {
           versionInfo = await versionResponse.json();
         }
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
         // Continue with regular save even if versioning fails
       }
     }
-    
+
     // Create or update .claude/meta.json
     const metaPath = path.join(projectRoot, '.claude', 'meta.json');
     const meta = {
@@ -96,7 +96,7 @@ export default async function handler(req, res) {
       checksum: Buffer.from(claudeContent).toString('base64').substring(0, 16),
       versionInfo
     };
-    
+
     // Preserve creation date if updating
     try {
       const existingMeta = JSON.parse(await fs.readFile(metaPath, 'utf-8'));
@@ -106,9 +106,9 @@ export default async function handler(req, res) {
       meta.created = meta.lastUpdated;
       meta.version = 'v1';
     }
-    
+
     await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));
-    
+
     // Create integrity check file
     const integrityPath = path.join(projectRoot, '.claude', 'integrity.json');
     const integrity = {
@@ -119,7 +119,7 @@ export default async function handler(req, res) {
       protectionLevel: 'HIGH'
     };
     await fs.writeFile(integrityPath, JSON.stringify(integrity, null, 2));
-    
+
     // Try to commit to git (optional, may fail if not in git repo)
     try {
       await execAsync('git add CLAUDE.md .claude/');
@@ -133,16 +133,16 @@ Co-Authored-By: Calibration Wizard <calibration@sacred.bot>"`);
     } catch (gitError) {
       console.log('Git commit skipped:', gitError.message);
     }
-    
+
     res.status(200).json({
       success: true,
       path: claudeMdPath,
       meta,
       versionInfo,
-      message: existingContent 
+      message: existingContent
         ? 'CLAUDE.md updated successfully. Previous version backed up.'
         : 'CLAUDE.md created successfully. This is now your sacred source of truth.',
-      versionControlMessage: versionInfo 
+      versionControlMessage: versionInfo
         ? `Version ${versionInfo.versionId} saved to version control`
         : 'Version control not available'
     });

@@ -14,7 +14,7 @@ async function getBot() {
       channelId: process.env.DISCORD_CHANNEL_ID,
       baseUrl: process.env.VERCEL_URL || 'https://terragon-vercel.vercel.app'
     });
-    
+
     // Start the bot if not already running
     try {
       await bot.start();

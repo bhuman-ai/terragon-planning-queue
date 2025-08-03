@@ -1,7 +1,7 @@
 /**
  * Sacred Document Verification API
  * POST /api/security/verify-sacred
- * 
+ *
  * Verifies the integrity of sacred documents (especially CLAUDE.md)
  * Returns detailed verification results and security status
  */
@@ -80,13 +80,13 @@ export default async function handler(req, res) {
         action: 'EMERGENCY_LOCKDOWN',
         message: 'Sacred document has been tampered with - consider emergency lockdown'
       });
-      
+
       response.recommendations.push({
         priority: 'CRITICAL',
         action: 'RESTORE_FROM_BACKUP',
         message: 'Restore sacred document from last known good checkpoint'
       });
-      
+
       response.recommendations.push({
         priority: 'HIGH',
         action: 'INVESTIGATE_BREACH',

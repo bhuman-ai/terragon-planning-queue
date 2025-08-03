@@ -19,7 +19,7 @@ export default function SecurityTest() {
         headers: { 'Content-Type': 'application/json' }
       });
       const data = await response.json();
-      
+
       if (data.success) {
         setStatus('Initialized successfully');
         setResults(data);
@@ -66,31 +66,31 @@ export default function SecurityTest() {
     <div style={{ padding: '20px', fontFamily: 'monospace' }}>
       <h1>🔐 Terragon Security System Test</h1>
       <p><strong>Phase 2A Critical Security Controls</strong></p>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <h2>Status: {status}</h2>
         {loading && <p>🔄 Loading...</p>}
       </div>
 
       <div style={{ marginBottom: '20px' }}>
-        <button 
-          onClick={initializeSecurity} 
+        <button
+          onClick={initializeSecurity}
           disabled={loading}
           style={{ marginRight: '10px', padding: '10px', backgroundColor: '#007acc', color: 'white', border: 'none', borderRadius: '4px' }}
         >
           🚀 Initialize Security System
         </button>
-        
-        <button 
-          onClick={checkSecurityStatus} 
+
+        <button
+          onClick={checkSecurityStatus}
           disabled={loading}
           style={{ marginRight: '10px', padding: '10px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px' }}
         >
           📊 Check Security Status
         </button>
-        
-        <button 
-          onClick={verifySacredDocument} 
+
+        <button
+          onClick={verifySacredDocument}
           disabled={loading}
           style={{ padding: '10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px' }}
         >
@@ -101,10 +101,10 @@ export default function SecurityTest() {
       {results && (
         <div>
           <h3>Security Status Results</h3>
-          <pre style={{ 
-            backgroundColor: '#f8f9fa', 
-            padding: '15px', 
-            borderRadius: '4px', 
+          <pre style={{
+            backgroundColor: '#f8f9fa',
+            padding: '15px',
+            borderRadius: '4px',
             overflow: 'auto',
             fontSize: '12px'
           }}>
@@ -116,7 +116,7 @@ export default function SecurityTest() {
       {verification && (
         <div style={{ marginTop: '20px' }}>
           <h3>Sacred Document Verification</h3>
-          <div style={{ 
+          <div style={{
             backgroundColor: verification.verification?.verified ? '#d4edda' : '#f8d7da',
             border: `1px solid ${verification.verification?.verified ? '#c3e6cb' : '#f5c6cb'}`,
             padding: '15px',
@@ -128,12 +128,12 @@ export default function SecurityTest() {
             <strong>Action Required:</strong> {verification.actionRequired ? 'YES' : 'No'}<br/>
             <strong>Response Level:</strong> {verification.responseLevel}
           </div>
-          
+
           {verification.recommendations && verification.recommendations.length > 0 && (
             <div>
               <h4>Recommendations:</h4>
               {verification.recommendations.map((rec, index) => (
-                <div key={index} style={{ 
+                <div key={index} style={{
                   backgroundColor: rec.priority === 'CRITICAL' ? '#f8d7da' : '#fff3cd',
                   padding: '10px',
                   margin: '5px 0',
@@ -146,10 +146,10 @@ export default function SecurityTest() {
             </div>
           )}
 
-          <pre style={{ 
-            backgroundColor: '#f8f9fa', 
-            padding: '15px', 
-            borderRadius: '4px', 
+          <pre style={{
+            backgroundColor: '#f8f9fa',
+            padding: '15px',
+            borderRadius: '4px',
             overflow: 'auto',
             fontSize: '12px',
             marginTop: '10px'
@@ -167,7 +167,7 @@ export default function SecurityTest() {
           <li>✅ <strong>Atomic Checkpoints:</strong> Race condition prevention</li>
           <li>✅ <strong>Sacred Document Protection:</strong> CLAUDE.md protection middleware</li>
         </ul>
-        
+
         <p><strong>Security Level:</strong> Phase 2A Critical Controls Active</p>
         <p><small>These controls address the 3 critical vulnerabilities found in the security audit:
         agent authentication bypass, hash collision attacks, and timing attacks.</small></p>

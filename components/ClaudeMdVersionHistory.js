@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 
-export default function ClaudeMdVersionHistory({ 
-  repository, 
-  show, 
+export default function ClaudeMdVersionHistory({
+  repository,
+  show,
   onClose,
-  onRestoreVersion 
+  onRestoreVersion
 }) {
   const [versions, setVersions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,15 +21,15 @@ export default function ClaudeMdVersionHistory({
 
   const fetchVersionHistory = async () => {
     setIsLoading(true);
-    
+
     try {
       const response = await fetch(`/api/calibration/claude-md-versions?repo=${encodeURIComponent(repository)}`);
-      
+
       if (!response.ok) throw new Error('Failed to fetch version history');
-      
+
       const data = await response.json();
       setVersions(data.versions || []);
-      
+
     } catch (error) {
       console.error('Failed to fetch version history:', error);
       alert('Failed to load version history');
@@ -45,7 +45,7 @@ export default function ClaudeMdVersionHistory({
     }
 
     setIsComparing(true);
-    
+
     try {
       const response = await fetch('/api/calibration/claude-md-versions', {
         method: 'PUT',
@@ -58,10 +58,10 @@ export default function ClaudeMdVersionHistory({
       });
 
       if (!response.ok) throw new Error('Failed to compare versions');
-      
+
       const data = await response.json();
       setComparisonData(data);
-      
+
     } catch (error) {
       console.error('Failed to compare versions:', error);
       alert('Failed to compare versions');
@@ -118,18 +118,18 @@ export default function ClaudeMdVersionHistory({
           alignItems: 'center'
         }}>
           <div>
-            <h2 style={{ 
-              color: '#fff', 
+            <h2 style={{
+              color: '#fff',
               margin: 0,
               fontSize: '20px',
               fontWeight: 'bold'
             }}>
               📜 CLAUDE.md Version History
             </h2>
-            <div style={{ 
-              fontSize: '14px', 
+            <div style={{
+              fontSize: '14px',
               color: '#888',
-              marginTop: '5px' 
+              marginTop: '5px'
             }}>
               Repository: {repository}
             </div>
@@ -196,7 +196,7 @@ export default function ClaudeMdVersionHistory({
                         fontSize: '13px'
                       }}
                     >
-                      <option value="">Select version...</option>
+                      <option value=''>Select version...</option>
                       {versions.map(version => (
                         <option key={version.id} value={version.id}>
                           {version.id} - {formatTimestamp(version.timestamp)}
@@ -204,7 +204,7 @@ export default function ClaudeMdVersionHistory({
                       ))}
                     </select>
                   </div>
-                  
+
                   <div>
                     <label style={{ color: '#ccc', fontSize: '14px', marginBottom: '5px', display: 'block' }}>
                       Version B:
@@ -221,7 +221,7 @@ export default function ClaudeMdVersionHistory({
                         fontSize: '13px'
                       }}
                     >
-                      <option value="">Select version...</option>
+                      <option value=''>Select version...</option>
                       {versions.map(version => (
                         <option key={version.id} value={version.id}>
                           {version.id} - {formatTimestamp(version.timestamp)}
@@ -229,7 +229,7 @@ export default function ClaudeMdVersionHistory({
                       ))}
                     </select>
                   </div>
-                  
+
                   <button
                     onClick={handleCompareVersions}
                     disabled={!compareVersions.a || !compareVersions.b || isComparing}
@@ -258,7 +258,7 @@ export default function ClaudeMdVersionHistory({
                     marginTop: '15px'
                   }}>
                     <h4 style={{ color: '#fff', marginBottom: '10px' }}>Comparison Results</h4>
-                    
+
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
                       <div>
                         <h5 style={{ color: '#00ff88', margin: '0 0 5px 0' }}>
@@ -268,7 +268,7 @@ export default function ClaudeMdVersionHistory({
                           {formatTimestamp(comparisonData.versionA.timestamp)}
                         </p>
                       </div>
-                      
+
                       <div>
                         <h5 style={{ color: '#ff6b6b', margin: '0 0 5px 0' }}>
                           {comparisonData.versionB.id}
@@ -295,7 +295,7 @@ export default function ClaudeMdVersionHistory({
                 <h3 style={{ color: '#fff', marginBottom: '15px', fontSize: '16px' }}>
                   📚 Version History ({versions.length} versions)
                 </h3>
-                
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {versions.map((version, index) => (
                     <div
@@ -318,8 +318,8 @@ export default function ClaudeMdVersionHistory({
                       }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <h4 style={{ 
-                              color: index === 0 ? '#00ff88' : '#fff', 
+                            <h4 style={{
+                              color: index === 0 ? '#00ff88' : '#fff',
                               margin: 0,
                               fontSize: '14px'
                             }}>
@@ -335,19 +335,19 @@ export default function ClaudeMdVersionHistory({
                               {version.contentHash}
                             </span>
                           </div>
-                          
-                          <p style={{ 
-                            color: '#888', 
-                            fontSize: '12px', 
-                            margin: '5px 0' 
+
+                          <p style={{
+                            color: '#888',
+                            fontSize: '12px',
+                            margin: '5px 0'
                           }}>
                             {formatTimestamp(version.timestamp)} by {version.author}
                           </p>
-                          
-                          <p style={{ 
-                            color: '#ccc', 
-                            fontSize: '13px', 
-                            margin: '5px 0' 
+
+                          <p style={{
+                            color: '#ccc',
+                            fontSize: '13px',
+                            margin: '5px 0'
                           }}>
                             {version.changelog}
                           </p>
@@ -359,13 +359,13 @@ export default function ClaudeMdVersionHistory({
                           gap: '5px',
                           alignItems: 'flex-end'
                         }}>
-                          <div style={{ 
+                          <div style={{
                             fontSize: '11px',
                             color: '#888'
                           }}>
                             {version.stats.contentLength} chars, {version.stats.sectionsCount} sections
                           </div>
-                          
+
                           {index > 0 && onRestoreVersion && (
                             <button
                               onClick={(e) => {

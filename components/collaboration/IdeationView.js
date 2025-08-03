@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 
 /**
  * IdeationView - Brainstorming interface with Claude-draft.md
- * 
+ *
  * Features:
  * - Real-time collaborative editing with Claude
  * - Claude-draft.md document workspace
@@ -10,17 +10,17 @@ import { useState, useEffect, useRef } from 'react';
  * - Version history and branching
  * - Secure agent authentication
  */
-export default function IdeationView({ 
-  sessionId, 
-  agentAuth, 
+export default function IdeationView({
+  sessionId,
+  agentAuth,
   onDocumentChange,
   initialDraft = '',
-  readonly = false 
+  readonly = false
 }) {
   const [draftContent, setDraftContent] = useState(initialDraft);
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
-  const [chatMessages, setChatMessages] = useState([
+  const [chatMessages, setChatMessages] = useState([;
     {
       id: 'welcome',
       role: 'assistant',
@@ -35,7 +35,7 @@ export default function IdeationView({
   const [versionHistory, setVersionHistory] = useState([]);
   const [showVersions, setShowVersions] = useState(false);
   const [aiMode, setAiMode] = useState('collaborative'); // 'collaborative', 'research', 'critique'
-  
+
   const textareaRef = useRef(null);
   const chatEndRef = useRef(null);
 
@@ -59,10 +59,10 @@ export default function IdeationView({
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       const selected = textarea.value.substring(start, end);
-      
+
       setSelectedText(selected);
       setCursorPosition(start);
-      
+
       // Generate contextual suggestions for selected text
       if (selected.length > 0) {
         generateContextualSuggestions(selected, start, end);
@@ -76,7 +76,7 @@ export default function IdeationView({
     try {
       const response = await fetch('/api/collaboration/ideation/suggestions', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -102,7 +102,7 @@ export default function IdeationView({
     try {
       const response = await fetch('/api/collaboration/ideation/save-draft', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -115,7 +115,7 @@ export default function IdeationView({
 
       if (response.ok) {
         const result = await response.json();
-        
+
         // Update version history
         setVersionHistory(prev => [
           {
@@ -153,7 +153,7 @@ export default function IdeationView({
     try {
       const response = await fetch('/api/collaboration/ideation/chat', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -169,7 +169,7 @@ export default function IdeationView({
 
       if (response.ok) {
         const data = await response.json();
-        
+
         const assistantMessage = {
           id: Date.now().toString() + '-ai',
           role: 'assistant',
@@ -203,22 +203,22 @@ export default function IdeationView({
 
   const applyProposedChanges = (changes) => {
     let newContent = draftContent;
-    
+
     // Apply changes in reverse order to maintain positions
     changes.slice().reverse().forEach(change => {
       switch (change.type) {
         case 'insert':
-          newContent = newContent.slice(0, change.position) + 
-                     change.text + 
+          newContent = newContent.slice(0, change.position) +
+                     change.text +
                      newContent.slice(change.position);
           break;
         case 'replace':
-          newContent = newContent.slice(0, change.start) + 
-                     change.text + 
+          newContent = newContent.slice(0, change.start) +
+                     change.text +
                      newContent.slice(change.end);
           break;
         case 'delete':
-          newContent = newContent.slice(0, change.start) + 
+          newContent = newContent.slice(0, change.start) +
                      newContent.slice(change.end);
           break;
       }
@@ -288,9 +288,9 @@ export default function IdeationView({
           borderBottom: '1px solid #333',
           backgroundColor: '#1a1a1a'
         }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '15px'
           }}>
@@ -302,7 +302,7 @@ export default function IdeationView({
                 Claude-draft.md • Collaborative Brainstorming
               </p>
             </div>
-            
+
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               {/* AI Mode Selector */}
               <select
@@ -317,9 +317,9 @@ export default function IdeationView({
                   fontSize: '12px'
                 }}
               >
-                <option value="collaborative">🤝 Collaborative</option>
-                <option value="research">🔍 Research</option>
-                <option value="critique">🎯 Critique</option>
+                <option value='collaborative'>🤝 Collaborative</option>
+                <option value='research'>🔍 Research</option>
+                <option value='critique'>🎯 Critique</option>
               </select>
 
               <button
@@ -355,10 +355,10 @@ export default function IdeationView({
           </div>
 
           {/* Document Stats */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '20px', 
-            fontSize: '12px', 
+          <div style={{
+            display: 'flex',
+            gap: '20px',
+            fontSize: '12px',
             color: '#666'
           }}>
             <span>Words: {draftContent.split(/\s+/).filter(w => w.length > 0).length}</span>
@@ -379,7 +379,7 @@ export default function IdeationView({
             onSelect={handleTextSelection}
             onMouseUp={handleTextSelection}
             onKeyUp={handleTextSelection}
-            placeholder="Start brainstorming your CLAUDE.md document here..."
+            placeholder='Start brainstorming your CLAUDE.md document here...'
             readOnly={readonly}
             style={{
               flex: 1,
@@ -429,9 +429,9 @@ export default function IdeationView({
                   >
                     {suggestion.label}
                   </button>
-                  <p style={{ 
-                    fontSize: '11px', 
-                    color: '#888', 
+                  <p style={{
+                    fontSize: '11px',
+                    color: '#888',
                     margin: '5px 0 0 0',
                     fontStyle: 'italic'
                   }}>
@@ -484,8 +484,8 @@ export default function IdeationView({
                     marginBottom: '8px',
                     cursor: 'pointer'
                   }} onClick={() => restoreVersion(version)}>
-                    <div style={{ 
-                      fontSize: '12px', 
+                    <div style={{
+                      fontSize: '12px',
                       color: '#ffaa66',
                       marginBottom: '5px'
                     }}>
@@ -542,8 +542,8 @@ export default function IdeationView({
                 width: '32px',
                 height: '32px',
                 borderRadius: '50%',
-                backgroundColor: 
-                  message.role === 'user' ? '#0066cc' : 
+                backgroundColor:
+                  message.role === 'user' ? '#0066cc' :
                   message.role === 'system' ? '#666' : '#00aa44',
                 display: 'flex',
                 alignItems: 'center',
@@ -551,14 +551,14 @@ export default function IdeationView({
                 fontSize: '16px',
                 flexShrink: 0
               }}>
-                {message.role === 'user' ? '👤' : 
+                {message.role === 'user' ? '👤' :
                  message.role === 'system' ? '⚙️' : '🤖'}
               </div>
 
               <div style={{ flex: 1, maxWidth: '85%' }}>
                 <div style={{
-                  backgroundColor: 
-                    message.role === 'user' ? '#003366' : 
+                  backgroundColor:
+                    message.role === 'user' ? '#003366' :
                     message.role === 'system' ? '#333' : '#0f0f0f',
                   border: '1px solid #333',
                   borderRadius: '12px',
@@ -605,7 +605,7 @@ export default function IdeationView({
               </div>
             </div>
           ))}
-          
+
           {isLoading && (
             <div style={{
               display: 'flex',
@@ -638,7 +638,7 @@ export default function IdeationView({
               </div>
             </div>
           )}
-          
+
           <div ref={chatEndRef} />
         </div>
 
@@ -652,7 +652,7 @@ export default function IdeationView({
               value={currentMessage}
               onChange={(e) => setCurrentMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Describe your ideas, ask for feedback, or request suggestions..."
+              placeholder='Describe your ideas, ask for feedback, or request suggestions...'
               disabled={isLoading}
               style={{
                 flex: 1,

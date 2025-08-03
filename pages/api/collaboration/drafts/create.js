@@ -15,17 +15,17 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }
 
-    const { 
-      sessionId, 
-      content, 
-      title, 
-      description, 
-      metadata = {} 
+    const {
+      sessionId,
+      content,
+      title,
+      description,
+      metadata = {}
     } = req.body;
 
     if (!sessionId || !content || !title) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: sessionId, content, title' 
+      return res.status(400).json({
+        error: 'Missing required fields: sessionId, content, title'
       });
     }
 
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
       },
       metadata: {
         timestamp,
-        agentAuth: agentAuth.substr(0, 10) + '...'
+        agentAuth: `${agentAuth.substr(0, 10)}...`
       }
     });
 
@@ -110,7 +110,7 @@ export default async function handler(req, res) {
         status: 'draft'
       });
       session.lastAccessed = timestamp;
-      
+
       await kv.set(`collaboration:session:${sessionId}`, session, {
         ex: 3600 * 24
       });
@@ -137,9 +137,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Draft creation error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to create draft',
-      details: error.message 
+      details: error.message
     });
   }
 }

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 
 /**
  * ExecutionView - Real-time monitoring with Checkpoint.md
- * 
+ *
  * Features:
  * - Live execution monitoring and logs
  * - Checkpoint.md document tracking
@@ -34,7 +34,7 @@ export default function ExecutionView({
     memoryUsage: 0,
     cpuUsage: 0
   });
-  
+
   const logsEndRef = useRef(null);
   const wsRef = useRef(null);
   const metricsIntervalRef = useRef(null);
@@ -60,16 +60,16 @@ export default function ExecutionView({
     try {
       // Load initial checkpoint data
       await loadCheckpointData();
-      
+
       // Start WebSocket connection for real-time updates
       startWebSocketConnection();
-      
+
       // Start metrics collection
       startMetricsCollection();
-      
+
       setIsMonitoring(true);
       addSystemLog('Monitoring initialized', 'info');
-      
+
     } catch (error) {
       console.error('Failed to initialize monitoring:', error);
       addSystemLog(`Initialization failed: ${error.message}`, 'error');
@@ -80,7 +80,7 @@ export default function ExecutionView({
     try {
       const response = await fetch('/api/collaboration/execution/checkpoint', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -110,7 +110,7 @@ export default function ExecutionView({
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/api/collaboration/execution/stream?sessionId=${sessionId}&auth=${agentAuth}`;
-    
+
     wsRef.current = new WebSocket(wsUrl);
 
     wsRef.current.onopen = () => {
@@ -146,7 +146,7 @@ export default function ExecutionView({
       try {
         const response = await fetch('/api/collaboration/execution/metrics', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'X-Agent-Auth': agentAuth
           },
@@ -206,7 +206,7 @@ export default function ExecutionView({
     };
 
     setExecutionLogs(prev => [...prev, logEntry].slice(-1000)); // Keep last 1000 logs
-    
+
     if (log.level === 'error') {
       addErrorLog(log);
     }
@@ -238,17 +238,17 @@ export default function ExecutionView({
 
   const updateAgentStatus = (agentUpdate) => {
     setActiveAgents(prev => {
-      const updated = prev.map(agent => 
-        agent.id === agentUpdate.id 
+      const updated = prev.map(agent =>
+        agent.id === agentUpdate.id;
           ? { ...agent, ...agentUpdate }
           : agent
       );
-      
+
       // Add new agent if not exists
       if (!updated.find(a => a.id === agentUpdate.id)) {
         updated.push(agentUpdate);
       }
-      
+
       return updated;
     });
   };
@@ -258,7 +258,7 @@ export default function ExecutionView({
       // Update checkpoint document
       const response = await fetch('/api/collaboration/execution/checkpoint', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -286,7 +286,7 @@ export default function ExecutionView({
     try {
       const response = await fetch('/api/collaboration/execution/control', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -308,7 +308,7 @@ export default function ExecutionView({
     try {
       const response = await fetch('/api/collaboration/execution/control', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Agent-Auth': agentAuth
         },
@@ -348,21 +348,21 @@ export default function ExecutionView({
       wsRef.current.close();
       wsRef.current = null;
     }
-    
+
     if (metricsIntervalRef.current) {
       clearInterval(metricsIntervalRef.current);
       metricsIntervalRef.current = null;
     }
-    
+
     setIsMonitoring(false);
   };
 
   const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour12: false, 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      second: '2-digit' 
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
     });
   };
 
@@ -370,7 +370,7 @@ export default function ExecutionView({
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
-    
+
     if (hours > 0) return `${hours}h ${minutes % 60}m`;
     if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
     return `${seconds}s`;
@@ -422,9 +422,9 @@ export default function ExecutionView({
           borderBottom: '1px solid #333',
           backgroundColor: '#1a1a1a'
         }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '15px'
           }}>
@@ -436,7 +436,7 @@ export default function ExecutionView({
                 Checkpoint.md • Real-time Agent Monitoring
               </p>
             </div>
-            
+
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <div style={{
                 padding: '4px 8px',
@@ -460,10 +460,10 @@ export default function ExecutionView({
                   fontSize: '12px'
                 }}
               >
-                <option value="all">All Logs</option>
-                <option value="info">Info</option>
-                <option value="warn">Warnings</option>
-                <option value="error">Errors</option>
+                <option value='all'>All Logs</option>
+                <option value='info'>Info</option>
+                <option value='warn'>Warnings</option>
+                <option value='error'>Errors</option>
               </select>
 
               <button
@@ -500,10 +500,10 @@ export default function ExecutionView({
           </div>
 
           {/* Real-time Metrics */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '20px', 
-            fontSize: '12px', 
+          <div style={{
+            display: 'flex',
+            gap: '20px',
+            fontSize: '12px',
             color: '#666'
           }}>
             <span>Logs: {filteredLogs.length}</span>
@@ -543,18 +543,18 @@ export default function ExecutionView({
                 display: 'flex',
                 gap: '15px',
                 alignItems: 'flex-start',
-                backgroundColor: log.level === 'error' ? '#1a0000' : 
+                backgroundColor: log.level === 'error' ? '#1a0000' :
                                 log.level === 'warn' ? '#1a1200' : 'transparent'
               }}>
-                <span style={{ 
-                  color: '#666', 
+                <span style={{
+                  color: '#666',
                   fontSize: '11px',
                   minWidth: '60px',
                   flexShrink: 0
                 }}>
                   {formatTimestamp(log.timestamp)}
                 </span>
-                
+
                 <span style={{
                   color: getLogLevelColor(log.level),
                   fontSize: '11px',
@@ -564,7 +564,7 @@ export default function ExecutionView({
                 }}>
                   {log.level}
                 </span>
-                
+
                 {log.agentId && (
                   <span style={{
                     color: '#888',
@@ -575,7 +575,7 @@ export default function ExecutionView({
                     {log.agentId.substr(0, 10)}...
                   </span>
                 )}
-                
+
                 <span style={{
                   color: '#e0e0e0',
                   flex: 1,
@@ -613,7 +613,7 @@ export default function ExecutionView({
             >
               ⏸️ Pause
             </button>
-            
+
             <button
               onClick={resumeExecution}
               style={{
@@ -681,9 +681,9 @@ export default function ExecutionView({
                     alignItems: 'center',
                     marginBottom: '8px'
                   }}>
-                    <h4 style={{ 
-                      color: '#66bbff', 
-                      margin: 0, 
+                    <h4 style={{
+                      color: '#66bbff',
+                      margin: 0,
                       fontSize: '14px',
                       maxWidth: '200px',
                       overflow: 'hidden',
@@ -698,7 +698,7 @@ export default function ExecutionView({
                       backgroundColor: getAgentStatusColor(agent.status)
                     }} />
                   </div>
-                  
+
                   <div style={{ fontSize: '12px', color: '#888' }}>
                     <div>Status: {agent.status}</div>
                     <div>Type: {agent.type || 'Unknown'}</div>
@@ -758,8 +758,8 @@ export default function ExecutionView({
                     alignItems: 'center',
                     marginBottom: '5px'
                   }}>
-                    <span style={{ 
-                      color: '#ffaa66', 
+                    <span style={{
+                      color: '#ffaa66',
                       fontSize: '12px',
                       fontWeight: 'bold'
                     }}>
@@ -769,11 +769,11 @@ export default function ExecutionView({
                       {checkpoint.type === 'manual' ? '👤' : '🤖'}
                     </span>
                   </div>
-                  
+
                   <div style={{ fontSize: '12px', color: '#ccc', marginBottom: '5px' }}>
                     {checkpoint.description || 'Auto-checkpoint'}
                   </div>
-                  
+
                   <div style={{ fontSize: '11px', color: '#888' }}>
                     {formatTimestamp(checkpoint.timestamp)}
                   </div>

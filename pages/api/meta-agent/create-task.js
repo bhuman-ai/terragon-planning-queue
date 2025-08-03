@@ -8,16 +8,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { 
+    const {
       proposalId,
-      title, 
-      description, 
-      requirements = {}, 
+      title,
+      description,
+      requirements = {},
       research = null,
       decomposition = null,
       sessionToken,
-      githubRepoFullName,
-      originalTask
+      githubRepoFullName
     } = req.body;
 
     if (!title || !description) {
@@ -79,8 +78,8 @@ export default async function handler(req, res) {
     if (sessionToken) {
       try {
         // Prepare context documents
-        let contextParts = [];
-        
+        const contextParts = [];
+
         // 1. Always include dev.md (static development principles)
         try {
           const devMdPath = path.join(process.cwd(), 'public', 'dev.md');
@@ -90,29 +89,29 @@ export default async function handler(req, res) {
         } catch (error) {
           console.log('Error reading dev.md:', error.message);
         }
-        
+
         // 2. Fetch project documents from repository
         if (githubRepoFullName) {
           try {
             const [owner, repo] = githubRepoFullName.split('/');
             const branch = 'main'; // Could be passed in request if needed
-            
+
             const headers = {
               'Accept': 'application/vnd.github.v3.raw',
               'User-Agent': 'Terragon-Planning-Queue'
             };
-            
+
             // Add GitHub token if available for private repos
             if (process.env.GITHUB_TOKEN) {
               headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
             }
-            
+
             // Fetch CLAUDE.md
             const claudeUrl = `https://api.github.com/repos/${owner}/${repo}/contents/CLAUDE.md?ref=${branch}`;
             console.log(`Fetching CLAUDE.md from: ${claudeUrl}`);
-            
+
             const claudeResponse = await fetch(claudeUrl, { headers });
-            
+
             if (claudeResponse.ok) {
               const claudeMdContent = await claudeResponse.text();
               contextParts.push(`# PROJECT-SPECIFIC CONTEXT (CLAUDE.md from ${githubRepoFullName})\n\n${claudeMdContent}`);
@@ -120,13 +119,13 @@ export default async function handler(req, res) {
             } else {
               console.log(`CLAUDE.md not found in ${githubRepoFullName}`);
             }
-            
+
             // Try to fetch task.md
             const taskUrl = `https://api.github.com/repos/${owner}/${repo}/contents/task.md?ref=${branch}`;
             console.log(`Checking for task.md from: ${taskUrl}`);
-            
+
             const taskResponse = await fetch(taskUrl, { headers });
-            
+
             if (taskResponse.ok) {
               const taskMdContent = await taskResponse.text();
               contextParts.push(`# CURRENT TASK CONTEXT (task.md from ${githubRepoFullName})\n\n${taskMdContent}`);
@@ -138,15 +137,15 @@ export default async function handler(req, res) {
             console.log(`Error fetching project documents from ${githubRepoFullName}:`, error.message);
           }
         }
-        
+
         // Build enhanced message for Terragon with complete decomposition
         let terragonMessage = '';
-        
+
         // Include all context documents
         if (contextParts.length > 0) {
-          terragonMessage += contextParts.join('\n\n---\n\n') + '\n\n---\n\n';
+          terragonMessage += `${contextParts.join('\n\n---\n\n')}\n\n---\n\n`;
         }
-        
+
         terragonMessage += formatDecompositionForTerragon(decomposition || taskSpec.decomposition, title, description);
         terragonMessage += `\n\nMeta-Agent Task ID: ${result.taskId}\nTask Path: ${result.taskPath}`;
 
@@ -164,7 +163,7 @@ export default async function handler(req, res) {
 
         if (terragonResponse.ok) {
           terragonResult = await terragonResponse.json();
-          
+
           // Update task status in KV
           if (process.env.KV_REST_API_URL) {
             const { kv } = await import('@vercel/kv');
@@ -207,8 +206,8 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Task creation error:', error);
-    res.status(500).json({ 
-      error: error.message || 'Failed to create task' 
+    res.status(500).json({
+      error: error.message || 'Failed to create task'
     });
   }
 }
@@ -217,9 +216,9 @@ export default async function handler(req, res) {
  * Format decomposition into Terragon-friendly prompt
  */
 function formatDecompositionForTerragon(decomposition, title, description) {
-  let prompt = `# Task: ${title}\n\n${description}\n\n`;
-  prompt += `## Implementation Plan\n\n`;
-  
+  const prompt = `# Task: ${title}\n\n${description}\n\n`;
+  prompt += '## Implementation Plan\n\n';
+
   const microTasks = decomposition?.microTasks || decomposition || [];
   prompt += `This task has been decomposed into ${microTasks.length} micro-tasks:\n\n`;
 
@@ -235,15 +234,15 @@ function formatDecompositionForTerragon(decomposition, title, description) {
       if (task.technicalDetails) {
         prompt += `- Technical Details: ${task.technicalDetails}\n`;
       }
-      prompt += `\n`;
+      prompt += '\n';
     });
   }
 
-  prompt += `\n## Execution Instructions\n`;
-  prompt += `1. Complete each micro-task in order, respecting dependencies\n`;
-  prompt += `2. Ensure all success criteria are met before moving to next task\n`;
-  prompt += `3. Ask for clarification if any task requirements are unclear\n`;
-  prompt += `4. Update progress after each task completion\n`;
+  prompt += '\n## Execution Instructions\n';
+  prompt += '1. Complete each micro-task in order, respecting dependencies\n';
+  prompt += '2. Ensure all success criteria are met before moving to next task\n';
+  prompt += '3. Ask for clarification if any task requirements are unclear\n';
+  prompt += '4. Update progress after each task completion\n';
 
   return prompt;
 }

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 
-export default function ProjectInterviewModal({ 
-  show, 
-  onClose, 
-  onComplete 
+export default function ProjectInterviewModal({
+  show,
+  onClose,
+  onComplete
 }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -18,7 +18,7 @@ export default function ProjectInterviewModal({
 
   const generateInterviewQuestions = async () => {
     setIsGeneratingQuestions(true);
-    
+
     try {
       // Generate dynamic questions using AI
       const response = await fetch('/api/meta-agent/process', {
@@ -36,7 +36,7 @@ export default function ProjectInterviewModal({
       }
 
       const data = await response.json();
-      
+
       // API returns { success, action, result: { questions, phase } }
       if (data.success && data.result?.questions && data.result.questions.length > 0) {
         setInterviewQuestions(data.result.questions);
@@ -45,21 +45,14 @@ export default function ProjectInterviewModal({
       }
     } catch (error) {
       console.error('Failed to generate dynamic project questions:', error);
-      
-      // Emergency fallback only
-      const fallbackQuestions = [
-        {
-          id: 'project_description',
-          question: 'Describe your project in your own words',
-          type: 'text',
-          placeholder: 'Tell me what you want to build...',
-          required: true
-        }
-      ];
 
-      setInterviewQuestions(fallbackQuestions);
+      // Handle error properly - investigate root cause
+      alert('Failed to generate interview questions. Please check your AI configuration and try again.');
+      setIsGeneratingQuestions(false);
+      onClose(); // Close modal on error
+      return; // Exit early
     }
-    
+
     setIsGeneratingQuestions(false);
   };
 
@@ -163,18 +156,18 @@ export default function ProjectInterviewModal({
           alignItems: 'center'
         }}>
           <div>
-            <h2 style={{ 
-              color: '#00ff88', 
+            <h2 style={{
+              color: '#00ff88',
               margin: 0,
               fontSize: '20px',
               fontWeight: 'bold'
             }}>
               🎯 Project Setup Interview
             </h2>
-            <div style={{ 
-              fontSize: '14px', 
+            <div style={{
+              fontSize: '14px',
               color: '#888',
-              marginTop: '5px' 
+              marginTop: '5px'
             }}>
               Let's understand what you're building
             </div>
@@ -278,13 +271,13 @@ export default function ProjectInterviewModal({
               {currentQuestion.options.map(option => {
                 const currentAnswers = answers[currentQuestion.id] || [];
                 const isSelected = currentAnswers.includes(option);
-                
+
                 return (
-                  <button
+                  <button;
                     key={option}
                     onClick={() => {
                       const newAnswers = isSelected
-                        ? currentAnswers.filter(a => a !== option)
+                        ? currentAnswers.filter(a => a !== option);
                         : [...currentAnswers, option];
                       handleAnswer(currentQuestion.id, newAnswers);
                     }}
@@ -347,7 +340,7 @@ export default function ProjectInterviewModal({
           >
             ← Previous
           </button>
-          
+
           {currentStep < interviewQuestions.length - 1 ? (
             <button
               onClick={handleNext}

@@ -16,11 +16,11 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid agent authentication' });
     }
 
-    const { 
-      sessionId, 
-      checkpointId, 
-      status, 
-      limit = 20, 
+    const {
+      sessionId,
+      checkpointId,
+      status,
+      limit = 20,
       offset = 0,
       includeSystemStatus = false
     } = req.query;
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       }
 
       const sessionCheckpoints = session.sessionData.execution.checkpoints || [];
-      
+
       // Fetch full checkpoint data
       for (const cp of sessionCheckpoints) {
         const fullCheckpoint = await kv.get(`collaboration:checkpoint:${cp.id}`);
@@ -51,8 +51,8 @@ export default async function handler(req, res) {
         }
       }
     } else {
-      return res.status(400).json({ 
-        error: 'Either sessionId or checkpointId must be provided' 
+      return res.status(400).json({
+        error: 'Either sessionId or checkpointId must be provided'
       });
     }
 
@@ -76,7 +76,7 @@ export default async function handler(req, res) {
       },
       lastExecution: cp.lastExecution || null,
       // Don't include full data to keep response manageable
-      dataPreview: cp.data ? JSON.stringify(cp.data).substring(0, 200) + '...' : null
+      dataPreview: cp.data ? `${JSON.stringify(cp.data).substring(0, 200)}...` : null
     }));
 
     // Get system status if requested
@@ -95,7 +95,7 @@ export default async function handler(req, res) {
     if (checkpointId) {
       // Find executions for this specific checkpoint
       try {
-        const checkpoint = checkpoints[0];
+        const [checkpoint] = checkpoints;
         if (checkpoint && checkpoint.lastExecution) {
           const execution = await kv.get(`collaboration:execution:${checkpoint.lastExecution.id}`);
           if (execution) {
@@ -124,10 +124,10 @@ export default async function handler(req, res) {
         failed: checkpoints.filter(cp => cp.status === 'failed').length
       },
       recentActivity: {
-        last24Hours: checkpoints.filter(cp => 
+        last24Hours: checkpoints.filter(cp =>
           new Date(cp.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)
         ).length,
-        lastHour: checkpoints.filter(cp => 
+        lastHour: checkpoints.filter(cp =>
           new Date(cp.createdAt) > new Date(Date.now() - 60 * 60 * 1000)
         ).length
       }
@@ -154,9 +154,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Checkpoint monitoring error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to monitor checkpoints',
-      details: error.message 
+      details: error.message
     });
   }
 }

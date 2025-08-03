@@ -5,10 +5,10 @@
  * Provides instant pass/fail validation for UI elements
  */
 
-const DOMValidator = require('../lib/dom-testing/dom-validator')
-const fs = require('fs').promises
-const path = require('path')
-const glob = require('glob')
+const DOMValidator = require('../lib/dom-testing/dom-validator');
+const fs = require('fs').promises;
+const path = require('path');
+const glob = require('glob');
 
 class DOMValidationRunner {
   constructor() {
@@ -18,7 +18,7 @@ class DOMValidationRunner {
       failedFiles: 0,
       errors: [],
       executionTime: 0
-    }
+    };
   }
 
   /**
@@ -32,35 +32,35 @@ class DOMValidationRunner {
       configFile = null,
       output = 'json',
       verbose = false
-    } = options
+    } = options;
 
-    const startTime = Date.now()
-    console.log('🔍 Starting DOM Validation...')
+    const startTime = Date.now();
+    console.log('🔍 Starting DOM Validation...');
 
     try {
       // Load test configurations
-      const testConfigs = await this.loadTestConfigs(configFile, pattern)
-      
+      const testConfigs = await this.loadTestConfigs(configFile, pattern);
+
       if (testConfigs.length === 0) {
-        console.error('No test configurations found')
-        return this.generateOutput(output)
+        console.error('No test configurations found');
+        return this.generateOutput(output);
       }
 
       // Run validation for each configuration
       for (const config of testConfigs) {
-        await this.validateComponent(config, verbose)
+        await this.validateComponent(config, verbose);
       }
 
-      this.results.executionTime = Date.now() - startTime
-      return this.generateOutput(output)
+      this.results.executionTime = Date.now() - startTime;
+      return this.generateOutput(output);
 
     } catch (error) {
-      console.error('Validation error:', error.message)
+      console.error('Validation error:', error.message);
       this.results.errors.push({
         type: 'runner-error',
         message: error.message
-      })
-      return this.generateOutput(output)
+      });
+      return this.generateOutput(output);
     }
   }
 
@@ -68,29 +68,29 @@ class DOMValidationRunner {
    * Load test configurations
    */
   async loadTestConfigs(configFile, pattern) {
-    const configs = []
+    const configs = [];
 
     if (configFile) {
       // Load from config file
       try {
-        const configPath = path.resolve(configFile)
-        const configContent = await fs.readFile(configPath, 'utf8')
-        const config = JSON.parse(configContent)
-        
+        const configPath = path.resolve(configFile);
+        const configContent = await fs.readFile(configPath, 'utf8');
+        const config = JSON.parse(configContent);
+
         if (Array.isArray(config)) {
-          configs.push(...config)
+          configs.push(...config);
         } else {
-          configs.push(config)
+          configs.push(config);
         }
       } catch (error) {
-        throw new Error(`Failed to load config file: ${error.message}`)
+        throw new Error(`Failed to load config file: ${error.message}`);
       }
     } else {
       // Load default test configurations for collaboration components
-      configs.push(...this.getDefaultConfigs())
+      configs.push(...this.getDefaultConfigs());
     }
 
-    return configs
+    return configs;
   }
 
   /**
@@ -199,58 +199,58 @@ class DOMValidationRunner {
           ]
         }
       }
-    ]
+    ];
   }
 
   /**
    * Validate a component
    */
   async validateComponent(config, verbose) {
-    const validator = new DOMValidator({ verbose })
-    
+    const validator = new DOMValidator({ verbose });
+
     try {
-      console.log(`\nValidating ${config.name}...`)
-      this.results.totalFiles++
+      console.log(`\nValidating ${config.name}...`);
+      this.results.totalFiles++;
 
       // Initialize DOM with component HTML
-      await validator.initialize(config.html)
+      await validator.initialize(config.html);
 
       // Run validation tests
-      const results = await validator.validate(config.tests)
+      const results = await validator.validate(config.tests);
 
       if (results.passed) {
-        console.log(`✅ ${config.name} - PASSED`)
-        this.results.passedFiles++
+        console.log(`✅ ${config.name} - PASSED`);
+        this.results.passedFiles++;
       } else {
-        console.log(`❌ ${config.name} - FAILED`)
-        this.results.failedFiles++
-        
+        console.log(`❌ ${config.name} - FAILED`);
+        this.results.failedFiles++;
+
         // Log errors
         results.errors.forEach(error => {
-          console.log(`   - ${error.name}: ${error.error}`)
+          console.log(`   - ${error.name}: ${error.error}`);
           this.results.errors.push({
             component: config.name,
             test: error.name,
             error: error.error
-          })
-        })
+          });
+        });
       }
 
       // Show metrics if verbose
       if (verbose) {
-        console.log(`   Tests: ${results.metrics.totalTests} | Passed: ${results.metrics.passedTests} | Failed: ${results.metrics.failedTests}`)
+        console.log(`   Tests: ${results.metrics.totalTests} | Passed: ${results.metrics.passedTests} | Failed: ${results.metrics.failedTests}`);
       }
 
     } catch (error) {
-      console.log(`❌ ${config.name} - ERROR: ${error.message}`)
-      this.results.failedFiles++
+      console.log(`❌ ${config.name} - ERROR: ${error.message}`);
+      this.results.failedFiles++;
       this.results.errors.push({
         component: config.name,
         type: 'validation-error',
         error: error.message
-      })
+      });
     } finally {
-      validator.cleanup()
+      validator.cleanup();
     }
   }
 
@@ -269,58 +269,58 @@ class DOMValidationRunner {
         errors: this.results.errors.length
       },
       errors: this.results.errors
-    }
+    };
 
     switch (format) {
       case 'json':
-        console.log('\n' + JSON.stringify(output, null, 2))
-        break
+        console.log(`\n${JSON.stringify(output, null, 2)}`);
+        break;
 
       case 'compact':
-        console.log(`\n${output.passed ? '✅ PASS' : '❌ FAIL'} | Files: ${output.summary.passedFiles}/${output.summary.totalFiles} | Errors: ${output.summary.errors} | ${output.executionTime}ms`)
-        break
+        console.log(`\n${output.passed ? '✅ PASS' : '❌ FAIL'} | Files: ${output.summary.passedFiles}/${output.summary.totalFiles} | Errors: ${output.summary.errors} | ${output.executionTime}ms`);
+        break;
 
       case 'detailed':
-        console.log('\n📊 DOM Validation Results')
-        console.log('═'.repeat(50))
-        console.log(`Status: ${output.passed ? '✅ PASSED' : '❌ FAILED'}`)
-        console.log(`Files: ${output.summary.passedFiles}/${output.summary.totalFiles} passed`)
-        console.log(`Errors: ${output.summary.errors}`)
-        console.log(`Execution Time: ${output.executionTime}ms`)
-        
+        console.log('\n📊 DOM Validation Results');
+        console.log('═'.repeat(50));
+        console.log(`Status: ${output.passed ? '✅ PASSED' : '❌ FAILED'}`);
+        console.log(`Files: ${output.summary.passedFiles}/${output.summary.totalFiles} passed`);
+        console.log(`Errors: ${output.summary.errors}`);
+        console.log(`Execution Time: ${output.executionTime}ms`);
+
         if (output.errors.length > 0) {
-          console.log('\n❌ Validation Errors:')
+          console.log('\n❌ Validation Errors:');
           output.errors.forEach(error => {
-            console.log(`  ${error.component} - ${error.test || error.type}: ${error.error}`)
-          })
+            console.log(`  ${error.component} - ${error.test || error.type}: ${error.error}`);
+          });
         }
-        break
+        break;
     }
 
-    return output
+    return output;
   }
 }
 
 // CLI Interface
 async function main() {
-  const args = process.argv.slice(2)
-  const options = {}
+  const args = process.argv.slice(2);
+  const options = {};
 
   // Parse command line arguments
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
       case '--pattern':
-        options.pattern = args[++i]
-        break
+        options.pattern = args[++i];
+        break;
       case '--config':
-        options.configFile = args[++i]
-        break
+        options.configFile = args[++i];
+        break;
       case '--output':
-        options.output = args[++i]
-        break
+        options.output = args[++i];
+        break;
       case '--verbose':
-        options.verbose = true
-        break
+        options.verbose = true;
+        break;
       case '--help':
         console.log(`
 DOM Validation Tool
@@ -338,24 +338,24 @@ Examples:
   node scripts/validate-dom.js --output detailed
   node scripts/validate-dom.js --config dom-tests.json --verbose
   node scripts/validate-dom.js --pattern "src/**/*.jsx" --output compact
-        `)
-        return
+        `);
+        return;
     }
   }
 
-  const runner = new DOMValidationRunner()
-  const result = await runner.run(options)
-  
+  const runner = new DOMValidationRunner();
+  const result = await runner.run(options);
+
   // Exit with appropriate code
-  process.exit(result.passed ? 0 : 1)
+  process.exit(result.passed ? 0 : 1);
 }
 
 // Only run if called directly
 if (require.main === module) {
   main().catch(error => {
-    console.error('DOM validation failed:', error.message)
-    process.exit(1)
-  })
+    console.error('DOM validation failed:', error.message);
+    process.exit(1);
+  });
 }
 
-module.exports = DOMValidationRunner
+module.exports = DOMValidationRunner;

@@ -74,9 +74,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Session initialization error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to initialize collaboration session',
-      details: error.message 
+      details: error.message
     });
   }
 }
