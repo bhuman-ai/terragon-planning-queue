@@ -287,7 +287,7 @@ export default function TaskOrchestrationView({
     // Find clicked step
     const clickedStep = workflowSteps.find(step => {
       const pos = step._canvasPosition;
-      return pos && x >= pos.x && x <= pos.x + pos.width &&;
+      return pos && x >= pos.x && x <= pos.x + pos.width &&
              y >= pos.y && y <= pos.y + pos.height;
     });
 
