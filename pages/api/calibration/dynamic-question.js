@@ -2,7 +2,7 @@
  * Dynamic Calibration API - Generate next question based on conversation history
  */
 
-const Anthropic = require('@anthropic-ai/sdk');
+import Anthropic from '@anthropic-ai/sdk';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
