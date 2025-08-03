@@ -1,0 +1,443 @@
+name: Terragon Collaboration System Test Suite
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  NODE_VERSION: '18.x'
+  CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY_TEST }}
+  PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY_TEST }}
+  DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN_TEST }}
+  DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID_TEST }}
+  CRON_SECRET: ${{ secrets.CRON_SECRET_TEST }}
+
+jobs:
+  # Security Tests - Critical Path
+  security-tests:
+    name: 🔐 Security & Sacred Document Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: 📚 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 🔧 Install dependencies
+        run: npm ci
+        
+      - name: 🔐 Run Security Tests
+        run: npm run test:security
+        
+      - name: 📊 Upload security coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: security
+          name: security-coverage
+          
+      - name: 💾 Store security test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: security-test-results
+          path: |
+            test-reports/
+            coverage/
+          retention-days: 30
+
+  # Collaboration API Tests
+  collaboration-tests:
+    name: 🤝 Collaboration API Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: security-tests # Security must pass first
+    
+    steps:
+      - name: 📚 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 🔧 Install dependencies
+        run: npm ci
+        
+      - name: 🤝 Run Collaboration Tests
+        run: npm run test:collaboration
+        
+      - name: 📊 Upload collaboration coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: collaboration
+          name: collaboration-coverage
+          
+      - name: 💾 Store collaboration test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: collaboration-test-results
+          path: |
+            test-reports/
+            coverage/
+          retention-days: 30
+
+  # Integration Tests
+  integration-tests:
+    name: 🔄 Integration & E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [security-tests, collaboration-tests]
+    
+    steps:
+      - name: 📚 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 🔧 Install dependencies
+        run: npm ci
+        
+      - name: 🔄 Run Integration Tests
+        run: npm run test:integration
+        
+      - name: 🎭 Run E2E Tests
+        run: npm run test:e2e
+        
+      - name: 📊 Upload integration coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: integration
+          name: integration-coverage
+          
+      - name: 💾 Store integration test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: integration-test-results
+          path: |
+            test-reports/
+            coverage/
+          retention-days: 30
+
+  # Comprehensive Test Suite
+  comprehensive-tests:
+    name: 🧪 Comprehensive Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [security-tests, collaboration-tests, integration-tests]
+    
+    steps:
+      - name: 📚 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 🔧 Install dependencies
+        run: npm ci
+        
+      - name: 🧪 Run Comprehensive Test Suite
+        run: node __tests__/test-runner.js
+        
+      - name: 📊 Upload comprehensive coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: comprehensive
+          name: comprehensive-coverage
+          
+      - name: 💾 Store comprehensive test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: comprehensive-test-results
+          path: |
+            test-reports/
+            coverage/
+          retention-days: 30
+          
+      - name: 📝 Comment PR with test results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            try {
+              const resultsPath = path.join(process.cwd(), 'test-reports', 'test-results.json');
+              if (fs.existsSync(resultsPath)) {
+                const results = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
+                
+                const comment = `
+            ## 🧪 Test Results Summary
+            
+            **Overall Status:** ${results.results.overall.success ? '✅ PASSED' : '❌ FAILED'}
+            **Test Suites:** ${results.results.overall.successfulSuites}/${results.results.overall.totalSuites} passed
+            **Duration:** ${(results.results.overall.totalDuration / 1000).toFixed(1)}s
+            
+            ${results.results.overall.coverage ? `
+            ### 📊 Coverage Report
+            - **Lines:** ${results.results.overall.coverage.lines.percentage}%
+            - **Functions:** ${results.results.overall.coverage.functions.percentage}%
+            - **Branches:** ${results.results.overall.coverage.branches.percentage}%
+            - **Statements:** ${results.results.overall.coverage.statements.percentage}%
+            ` : ''}
+            
+            ### 🔍 Suite Breakdown
+            ${Object.values(results.results).filter(r => r && r.suiteName).map(r => 
+              `- ${r.success ? '✅' : '❌'} **${r.suiteName}**: ${(r.duration / 1000).toFixed(1)}s`
+            ).join('\n')}
+            
+            <details>
+            <summary>📁 View detailed reports</summary>
+            
+            Comprehensive test reports are available in the artifacts for this workflow run.
+            </details>
+                `;
+                
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: comment
+                });
+              }
+            } catch (error) {
+              console.log('Could not post test results comment:', error);
+            }
+
+  # Sacred Document Integrity Check
+  sacred-document-check:
+    name: 📜 Sacred Document Integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: 📚 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for comparison
+        
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 🔧 Install dependencies
+        run: npm ci
+        
+      - name: 📜 Check CLAUDE.md Changes
+        run: |
+          # Check if CLAUDE.md was modified
+          if git diff --name-only origin/master...HEAD | grep -q "CLAUDE.md"; then
+            echo "🚨 CLAUDE.md has been modified in this PR"
+            echo "Running sacred document integrity checks..."
+            
+            # Run sacred document tests
+            npm run test -- --testPathPattern="sacred-document-integrity" --verbose
+            
+            # Check for violations in the diff
+            echo "Checking for sacred principle violations..."
+            git diff origin/master...HEAD CLAUDE.md > claude_diff.txt
+            
+            # Check for forbidden patterns
+            if grep -i "simulation" claude_diff.txt && ! grep -i "no.simulation" claude_diff.txt; then
+              echo "❌ SACRED VIOLATION: Changes mention simulations"
+              exit 1
+            fi
+            
+            if grep -i "fallback" claude_diff.txt && ! grep -i "no.fallback" claude_diff.txt; then
+              echo "❌ SACRED VIOLATION: Changes mention fallbacks"
+              exit 1
+            fi
+            
+            if grep -i "bhumanai" claude_diff.txt && ! grep -i "never.*bhumanai" claude_diff.txt; then
+              echo "❌ SACRED VIOLATION: Deployment target violation"
+              exit 1
+            fi
+            
+            echo "✅ Sacred document changes appear valid"
+          else
+            echo "ℹ️ CLAUDE.md was not modified in this PR"
+          fi
+
+  # Performance & Load Tests
+  performance-tests:
+    name: ⚡ Performance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: comprehensive-tests
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+    
+    steps:
+      - name: 📚 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 🔧 Install dependencies
+        run: npm ci
+        
+      - name: ⚡ Run Performance Tests
+        run: |
+          echo "Running performance benchmarks..."
+          npm run test -- --testPathPattern="performance|load" --verbose
+          
+      - name: 📊 Performance Report
+        run: |
+          echo "Generating performance report..."
+          # Add performance metrics collection here
+          
+  # Security Scan
+  security-scan:
+    name: 🛡️ Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: 📚 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🛡️ Run Security Audit
+        run: npm audit --audit-level=high
+        
+      - name: 🔍 CodeQL Analysis
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript
+          
+      - name: 🔍 Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+  # Deployment Readiness Check
+  deployment-check:
+    name: 🚀 Deployment Readiness
+    runs-on: ubuntu-latest
+    needs: [comprehensive-tests, sacred-document-check, security-scan]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+    
+    steps:
+      - name: 📚 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 🔧 Install dependencies
+        run: npm ci
+        
+      - name: 🏗️ Build application
+        run: npm run build
+        
+      - name: 🚀 Deployment readiness check
+        run: |
+          echo "✅ All tests passed"
+          echo "✅ Security scans completed"
+          echo "✅ Sacred document integrity verified"
+          echo "✅ Application builds successfully"
+          echo "🚀 Ready for deployment to sacred target: https://vercel.com/bhuman/terragon-vercel/"
+
+  # Cleanup and Notification
+  cleanup-and-notify:
+    name: 🧹 Cleanup & Notifications
+    runs-on: ubuntu-latest
+    needs: [comprehensive-tests, performance-tests, deployment-check]
+    if: always()
+    
+    steps:
+      - name: 📊 Collect all test artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: all-test-results/
+          
+      - name: 🧹 Cleanup old artifacts
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+            });
+            
+            // Keep only the 10 most recent artifacts
+            const oldArtifacts = artifacts.data.artifacts
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+              .slice(10);
+              
+            for (const artifact of oldArtifacts) {
+              await github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+              });
+            }
+            
+      - name: 📧 Notify on failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const title = `🚨 Terragon Test Suite Failed - ${context.workflow}`;
+            const body = `
+            The Terragon Collaboration System test suite has failed.
+            
+            **Workflow:** ${context.workflow}
+            **Branch:** ${context.ref}
+            **Commit:** ${context.sha.substring(0, 7)}
+            **Run:** ${context.runId}
+            
+            Please investigate the failure and ensure sacred document integrity is maintained.
+            
+            **Sacred Principles Reminder:**
+            - NO SIMULATIONS
+            - NO FALLBACKS  
+            - ALWAYS REAL
+            
+            View details: ${context.payload.repository.html_url}/actions/runs/${context.runId}
+            `;
+            
+            // Create issue for failed tests on main branch
+            if (context.ref === 'refs/heads/master' || context.ref === 'refs/heads/main') {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['bug', 'testing', 'sacred-violation']
+              });
+            }

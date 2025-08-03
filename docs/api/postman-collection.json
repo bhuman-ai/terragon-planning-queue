@@ -1,0 +1,997 @@
+{
+  "info": {
+    "name": "Claude.md Collaboration System API",
+    "description": "Comprehensive API collection for the Claude.md Collaboration System with AI-powered document development, real-time synchronization, and sacred document integrity protection.",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-Agent-Auth",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{AGENT_AUTH_TOKEN}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://terragon-vercel.vercel.app/api",
+      "type": "string"
+    },
+    {
+      "key": "AGENT_AUTH_TOKEN",
+      "value": "your-agent-token-here",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "draftId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "checkpointId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🚀 Session Management",
+      "item": [
+        {
+          "name": "Initialize Collaboration Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Session initialized successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains sessionId', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('sessionId');",
+                  "    pm.collectionVariables.set('sessionId', jsonData.sessionId);",
+                  "});",
+                  "",
+                  "pm.test('Agent auth token provided', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('agentAuth');",
+                  "});",
+                  "",
+                  "pm.test('Workflow progress initialized', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.workflowProgress.ideation).to.eql('current');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userSettings\": {\n    \"name\": \"API Test User\",\n    \"email\": \"test@example.com\",\n    \"preferences\": {\n      \"aiAssistanceLevel\": \"collaborative\",\n      \"autoSave\": true,\n      \"notificationChannels\": [\"email\"]\n    }\n  },\n  \"githubConfig\": {\n    \"repository\": \"test-org/test-repo\",\n    \"branch\": \"feature/claude-md-test\",\n    \"token\": \"ghp_test_token\",\n    \"commitMessage\": \"Update CLAUDE.md via API test\"\n  },\n  \"initialMode\": \"ideation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/session/initialize",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "session", "initialize"]
+            }
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"userSettings\": {\n    \"name\": \"API Test User\",\n    \"email\": \"test@example.com\",\n    \"preferences\": {\n      \"aiAssistanceLevel\": \"collaborative\",\n      \"autoSave\": true\n    }\n  },\n  \"githubConfig\": {\n    \"repository\": \"test-org/test-repo\",\n    \"token\": \"ghp_test_token\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/collaboration/session/initialize",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["collaboration", "session", "initialize"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"sessionId\": \"collab_1691234567890_abc123def\",\n  \"agentAuth\": \"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9...\",\n  \"sessionData\": {\n    \"ideation\": {\n      \"draftContent\": \"\",\n      \"versionHistory\": [],\n      \"chatHistory\": []\n    },\n    \"orchestration\": {\n      \"taskDocument\": \"\",\n      \"workflowSteps\": []\n    },\n    \"execution\": {\n      \"checkpointDocument\": \"\",\n      \"logs\": []\n    },\n    \"merge\": {\n      \"originalContent\": \"\",\n      \"conflicts\": []\n    }\n  },\n  \"workflowProgress\": {\n    \"ideation\": \"current\",\n    \"orchestration\": \"available\",\n    \"execution\": \"locked\",\n    \"merge\": \"locked\"\n  },\n  \"status\": \"initialized\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "💡 Ideation Phase",
+      "item": [
+        {
+          "name": "AI Ideation Chat",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Chat response successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('AI response provided', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('response');",
+                  "    pm.expect(jsonData.response).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('Suggestions provided', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('suggestions');",
+                  "    pm.expect(jsonData.suggestions).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Agent-Auth",
+                "value": "{{AGENT_AUTH_TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"message\": \"Help me create a comprehensive CLAUDE.md for a Node.js microservices project. Focus on API documentation, security, and deployment strategies.\",\n  \"draftContent\": \"# My Microservices Project\\n\\n## Overview\\nThis project implements a modern microservices architecture...\",\n  \"selectedText\": null,\n  \"aiMode\": \"collaborative\",\n  \"chatHistory\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/ideation/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "ideation", "chat"]
+            }
+          }
+        },
+        {
+          "name": "AI Research Mode Chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Agent-Auth",
+                "value": "{{AGENT_AUTH_TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"message\": \"What are the current best practices for API versioning in 2023?\",\n  \"draftContent\": \"\",\n  \"aiMode\": \"research\",\n  \"chatHistory\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/ideation/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "ideation", "chat"]
+            }
+          }
+        },
+        {
+          "name": "AI Critique Mode Chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Agent-Auth",
+                "value": "{{AGENT_AUTH_TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"message\": \"Please review this section and suggest improvements\",\n  \"draftContent\": \"# API Documentation\\n\\nOur API provides basic endpoints for CRUD operations. Users can call /api/users to get users.\",\n  \"selectedText\": \"Our API provides basic endpoints for CRUD operations. Users can call /api/users to get users.\",\n  \"aiMode\": \"critique\",\n  \"chatHistory\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/ideation/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "ideation", "chat"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📄 Draft Management",
+      "item": [
+        {
+          "name": "Create Draft",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Draft created successfully', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Draft ID provided', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('draftId');",
+                  "    pm.collectionVariables.set('draftId', jsonData.draftId);",
+                  "});",
+                  "",
+                  "pm.test('Validation passed', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.validation.isValid).to.eql(true);",
+                  "});",
+                  "",
+                  "pm.test('Statistics provided', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.stats).to.have.property('wordCount');",
+                  "    pm.expect(jsonData.stats).to.have.property('characterCount');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Agent-Auth",
+                "value": "{{AGENT_AUTH_TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"title\": \"Microservices CLAUDE.md\",\n  \"description\": \"Comprehensive sacred document for microservices architecture project\",\n  \"content\": \"# Microservices Project - Sacred Master Document (CLAUDE.md)\\n\\n## 1. Project Overview\\n- **Vision:** Build scalable microservices platform with AI-driven development\\n- **Current Phase:** Active development\\n- **Key Architecture:** Docker containers, Kubernetes orchestration, API Gateway\\n- **Development Strategy:** Document-driven development, API-first design\\n\\n## 2. Sacred Principles & AI Instructions\\n\\n### ABSOLUTE RULES - NEVER VIOLATE\\n1. **NO SIMULATIONS** - Never simulate, mock, or fake any functionality\\n2. **NO FALLBACKS** - Get to the root of problems, never create workarounds\\n3. **NO TEMPLATES** - Service implementation must be 100% custom and purposeful\\n4. **NO ASSUMPTIONS** - Always validate requirements with stakeholders\\n5. **ALWAYS REAL** - Every service, API call, and integration must be genuine\\n\\n## 3. Microservices Architecture\\n\\n### Core Services\\n- **User Service**: Authentication and user management\\n- **Order Service**: Order processing and fulfillment\\n- **Payment Service**: Payment processing and billing\\n- **Notification Service**: Email, SMS, and push notifications\\n\\n### Communication Patterns\\n- **Synchronous**: REST APIs for real-time operations\\n- **Asynchronous**: Event-driven architecture with message queues\\n- **Data Consistency**: Eventual consistency with saga patterns\\n\\n## 4. API Design Principles\\n- RESTful design with consistent URL patterns\\n- OpenAPI 3.0 specifications for all services\\n- Version APIs from day one (/v1/, /v2/)\\n- Comprehensive error handling with problem details\\n- Rate limiting and throttling for protection\\n\\n## 5. Security First\\n- OAuth 2.0 + JWT for authentication\\n- mTLS for service-to-service communication\\n- Input validation at all boundaries\\n- Secrets management with HashiCorp Vault\\n- Regular security audits and penetration testing\\n\\n## 6. Development Guidelines\\n\\n### Before Starting Any Service\\n1. Read this entire CLAUDE.md document\\n2. Design API specification first\\n3. Implement with real functionality only\\n4. Write comprehensive tests\\n5. Document deployment procedures\\n\\n### Quality Standards\\n- 90%+ test coverage for all services\\n- Zero tolerance for mock implementations\\n- Comprehensive API documentation\\n- Performance benchmarks established\\n- Security review completed\\n\\n---\\n\\n*Generated: $(date)*\\n*Version: 1.0.0*\\n*Status: SACRED - DO NOT MODIFY WITHOUT APPROVAL*\",\n  \"metadata\": {\n    \"tags\": [\"microservices\", \"api\", \"security\"],\n    \"author\": \"API Test User\",\n    \"project\": \"microservices-platform\",\n    \"version\": \"1.0.0\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/drafts/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "drafts", "create"]
+            }
+          }
+        },
+        {
+          "name": "Retrieve Draft",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Draft retrieved successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Draft content present', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('content');",
+                  "    pm.expect(jsonData.content).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('Version history present', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('versionHistory');",
+                  "    pm.expect(jsonData.versionHistory).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/drafts/{{draftId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "drafts", "{{draftId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Draft",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Agent-Auth",
+                "value": "{{AGENT_AUTH_TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"# Microservices Project - Sacred Master Document (CLAUDE.md)\\n\\n## 1. Project Overview\\n- **Vision:** Build scalable microservices platform with AI-driven development\\n- **Current Phase:** Active development - Added monitoring and observability\\n- **Key Architecture:** Docker containers, Kubernetes orchestration, API Gateway, Prometheus monitoring\\n- **Development Strategy:** Document-driven development, API-first design, observability-first\\n\\n## 2. Sacred Principles & AI Instructions\\n\\n### ABSOLUTE RULES - NEVER VIOLATE\\n1. **NO SIMULATIONS** - Never simulate, mock, or fake any functionality\\n2. **NO FALLBACKS** - Get to the root of problems, never create workarounds\\n3. **NO TEMPLATES** - Service implementation must be 100% custom and purposeful\\n4. **NO ASSUMPTIONS** - Always validate requirements with stakeholders\\n5. **ALWAYS REAL** - Every service, API call, and integration must be genuine\\n\\n## 3. Microservices Architecture\\n\\n### Core Services\\n- **User Service**: Authentication and user management\\n- **Order Service**: Order processing and fulfillment\\n- **Payment Service**: Payment processing and billing\\n- **Notification Service**: Email, SMS, and push notifications\\n- **Monitoring Service**: Metrics collection and alerting (NEW)\\n\\n### Communication Patterns\\n- **Synchronous**: REST APIs for real-time operations\\n- **Asynchronous**: Event-driven architecture with message queues\\n- **Data Consistency**: Eventual consistency with saga patterns\\n- **Observability**: Distributed tracing with OpenTelemetry (NEW)\\n\\n## 4. Monitoring and Observability (NEW SECTION)\\n\\n### Metrics Collection\\n- **Application Metrics**: Custom business metrics\\n- **Infrastructure Metrics**: CPU, memory, disk, network\\n- **API Metrics**: Request rate, latency, error rate\\n- **Database Metrics**: Connection pools, query performance\\n\\n### Alerting Strategy\\n- **Critical**: Service down, high error rate (>5%)\\n- **Warning**: High latency (>500ms), resource utilization (>80%)\\n- **Info**: Deployment events, scaling events\\n\\n### Logging Standards\\n- **Structured Logging**: JSON format with correlation IDs\\n- **Log Levels**: ERROR, WARN, INFO, DEBUG\\n- **Sensitive Data**: Never log passwords, tokens, PII\\n- **Retention**: 30 days for application logs, 90 days for audit logs\\n\\n## 5. API Design Principles\\n- RESTful design with consistent URL patterns\\n- OpenAPI 3.0 specifications for all services\\n- Version APIs from day one (/v1/, /v2/)\\n- Comprehensive error handling with problem details\\n- Rate limiting and throttling for protection\\n\\n## 6. Security First\\n- OAuth 2.0 + JWT for authentication\\n- mTLS for service-to-service communication\\n- Input validation at all boundaries\\n- Secrets management with HashiCorp Vault\\n- Regular security audits and penetration testing\\n\\n## 7. Development Guidelines\\n\\n### Before Starting Any Service\\n1. Read this entire CLAUDE.md document\\n2. Design API specification first\\n3. Implement with real functionality only\\n4. Write comprehensive tests\\n5. Document deployment procedures\\n6. Set up monitoring and alerting (NEW)\\n\\n### Quality Standards\\n- 90%+ test coverage for all services\\n- Zero tolerance for mock implementations\\n- Comprehensive API documentation\\n- Performance benchmarks established\\n- Security review completed\\n- Observability implemented (NEW)\\n\\n---\\n\\n*Generated: $(date)*\\n*Version: 1.1.0*\\n*Status: SACRED - DO NOT MODIFY WITHOUT APPROVAL*\",\n  \"title\": \"Microservices CLAUDE.md v1.1\",\n  \"description\": \"Added monitoring and observability section\",\n  \"changeDescription\": \"Added comprehensive monitoring, observability, and alerting strategies. Enhanced development guidelines to include observability requirements.\",\n  \"metadata\": {\n    \"tags\": [\"microservices\", \"api\", \"security\", \"monitoring\"],\n    \"author\": \"API Test User\",\n    \"project\": \"microservices-platform\",\n    \"version\": \"1.1.0\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/drafts/{{draftId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "drafts", "{{draftId}}"]
+            }
+          }
+        },
+        {
+          "name": "List Drafts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/drafts/list?sessionId={{sessionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "drafts", "list"],
+              "query": [
+                {
+                  "key": "sessionId",
+                  "value": "{{sessionId}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎯 Orchestration Phase",
+      "item": [
+        {
+          "name": "Decompose Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Task decomposed successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Steps generated', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('steps');",
+                  "    pm.expect(jsonData.steps).to.be.an('array');",
+                  "    pm.expect(jsonData.steps.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Each step has required properties', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    jsonData.steps.forEach(step => {",
+                  "        pm.expect(step).to.have.property('id');",
+                  "        pm.expect(step).to.have.property('title');",
+                  "        pm.expect(step).to.have.property('description');",
+                  "        pm.expect(step).to.have.property('estimatedDuration');",
+                  "        pm.expect(step).to.have.property('assignedAgent');",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('Metadata provided', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('metadata');",
+                  "    pm.expect(jsonData.metadata).to.have.property('totalSteps');",
+                  "    pm.expect(jsonData.metadata).to.have.property('estimatedTotalTime');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Agent-Auth",
+                "value": "{{AGENT_AUTH_TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"taskDescription\": \"Implement comprehensive user authentication microservice with JWT tokens, password reset functionality, and role-based access control. Include API documentation, security measures, and deployment configuration.\",\n  \"context\": \"Microservices project using Node.js, Express, PostgreSQL, and Docker. Must follow sacred principles: no simulations, no fallbacks, no templates, always real implementations.\",\n  \"requirements\": {\n    \"targetDuration\": \"8 minutes\",\n    \"maxSteps\": 15,\n    \"includeValidation\": true,\n    \"generateDependencies\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/orchestration/decompose",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "orchestration", "decompose"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚡ Execution Phase",
+      "item": [
+        {
+          "name": "Create Checkpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Checkpoint created successfully', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Checkpoint ID provided', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('checkpointId');",
+                  "    pm.collectionVariables.set('checkpointId', jsonData.checkpointId);",
+                  "});",
+                  "",
+                  "pm.test('Integrity hash present', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('integrityHash');",
+                  "});",
+                  "",
+                  "pm.test('Expiration time set', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('expiresAt');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Agent-Auth",
+                "value": "{{AGENT_AUTH_TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"stepId\": \"step_001\",\n  \"metadata\": {\n    \"agent\": \"backend-architect\",\n    \"tools\": [\"file-editor\", \"code-generator\", \"database-migrator\"],\n    \"description\": \"Create JWT authentication middleware\",\n    \"priority\": \"high\"\n  },\n  \"expectedDuration\": 480000,\n  \"dependencies\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/checkpoints/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "checkpoints", "create"]
+            }
+          }
+        },
+        {
+          "name": "Execute Checkpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Execution started successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Execution ID provided', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('executionId');",
+                  "});",
+                  "",
+                  "pm.test('Progress tracking available', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('progress');",
+                  "    pm.expect(jsonData.progress).to.have.property('completionPercentage');",
+                  "});",
+                  "",
+                  "pm.test('Stream URL provided', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('streamUrl');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Agent-Auth",
+                "value": "{{AGENT_AUTH_TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"executionParams\": {\n    \"targetFiles\": [\"src/middleware/auth.js\", \"src/routes/auth.js\"],\n    \"templateData\": {\n      \"jwtSecret\": \"${JWT_SECRET}\",\n      \"tokenExpiry\": \"24h\",\n      \"algorithm\": \"HS256\"\n    },\n    \"validationRules\": {\n      \"minPasswordLength\": 8,\n      \"requireSpecialChars\": true,\n      \"maxLoginAttempts\": 5\n    }\n  },\n  \"monitoringConfig\": {\n    \"realTimeUpdates\": true,\n    \"progressCallback\": \"https://example.com/api/progress\",\n    \"maxExecutionTime\": 600000\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/checkpoints/{{checkpointId}}/execute",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "checkpoints", "{{checkpointId}}", "execute"]
+            }
+          }
+        },
+        {
+          "name": "Monitor Checkpoint Execution",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/checkpoints/{{checkpointId}}/monitor",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "checkpoints", "{{checkpointId}}", "monitor"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔀 Merge Phase",
+      "item": [
+        {
+          "name": "Detect Merge Conflicts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Conflict detection completed', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Conflict status provided', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('hasConflicts');",
+                  "});",
+                  "",
+                  "pm.test('Resolution strategy suggested', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('resolution');",
+                  "    pm.expect(jsonData.resolution).to.have.property('strategy');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/merge/conflicts?sessionId={{sessionId}}&originalHash=sha3:abc123def456&modifiedHash=sha3:def456abc123",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "merge", "conflicts"],
+              "query": [
+                {
+                  "key": "sessionId",
+                  "value": "{{sessionId}}"
+                },
+                {
+                  "key": "originalHash",
+                  "value": "sha3:abc123def456"
+                },
+                {
+                  "key": "modifiedHash",
+                  "value": "sha3:def456abc123"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Resolve Merge Conflicts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Agent-Auth",
+                "value": "{{AGENT_AUTH_TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"conflicts\": [\n    {\n      \"conflictId\": \"conflict_001\",\n      \"resolution\": \"accept_modified\"\n    },\n    {\n      \"conflictId\": \"conflict_002\",\n      \"resolution\": \"manual_merge\",\n      \"customContent\": \"## 4. Enhanced API Design Principles\\n\\n- RESTful design with consistent URL patterns and comprehensive error handling\\n- OpenAPI 3.0 specifications for all services with detailed examples\\n- Version APIs from day one (/v1/, /v2/) with deprecation strategies\\n- Comprehensive error handling with RFC 7807 problem details format\\n- Rate limiting and throttling for protection with graceful degradation\\n- Authentication and authorization at the API gateway level\"\n    }\n  ],\n  \"resolutionStrategy\": \"balanced\",\n  \"validateIntegrity\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/merge/resolve",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "merge", "resolve"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔗 Real-time Sync",
+      "item": [
+        {
+          "name": "Get Sync State",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/sync/state?sessionId={{sessionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "sync", "state"],
+              "query": [
+                {
+                  "key": "sessionId",
+                  "value": "{{sessionId}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔐 Security",
+      "item": [
+        {
+          "name": "Initialize Security System",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Security system initialized', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All security components enabled', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('components');",
+                  "    pm.expect(jsonData.components).to.have.property('agentAuthentication');",
+                  "    pm.expect(jsonData.components).to.have.property('integrityVerification');",
+                  "    pm.expect(jsonData.components).to.have.property('atomicCheckpoints');",
+                  "    pm.expect(jsonData.components).to.have.property('sacredDocumentProtection');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/security/initialize",
+              "host": ["{{baseUrl}}"],
+              "path": ["security", "initialize"]
+            }
+          }
+        },
+        {
+          "name": "Get Security Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/security/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["security", "status"]
+            }
+          }
+        },
+        {
+          "name": "Verify Sacred Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"# Test Project CLAUDE.md\\n\\n## Sacred Principles\\n\\n### ABSOLUTE RULES - NEVER VIOLATE\\n1. **NO SIMULATIONS** - Never simulate, mock, or fake any functionality\\n2. **NO FALLBACKS** - Get to the root of problems, never create workarounds\\n3. **NO TEMPLATES** - Task decomposition must be 100% AI-driven and dynamic\\n4. **NO ASSUMPTIONS** - Always check CLAUDE.md before asking questions\\n5. **ALWAYS REAL** - Every interaction, API call, and execution must be genuine\\n\\n## Development Guidelines\\n- Document-driven development approach\\n- Quality is #1 priority\\n- Real implementations only\\n- Comprehensive testing required\",\n  \"expectedHash\": \"sha3:example123|blake3:example456\",\n  \"strictMode\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/security/verify-sacred",
+              "host": ["{{baseUrl}}"],
+              "path": ["security", "verify-sacred"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 Meta-Agent Integration",
+      "item": [
+        {
+          "name": "Integrate with Meta-Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Agent-Auth",
+                "value": "{{AGENT_AUTH_TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"taskDocument\": \"# Task: Implement User Authentication Microservice\\n\\n## Objective\\nCreate a comprehensive user authentication microservice with JWT tokens, password reset, and RBAC.\\n\\n## Steps\\n\\n### Step 1: Setup Project Structure\\n- Create Node.js Express application\\n- Configure TypeScript and ESLint\\n- Set up directory structure\\n- Initialize package.json with dependencies\\n\\n### Step 2: Database Setup\\n- Configure PostgreSQL connection\\n- Create user schema with migrations\\n- Set up connection pooling\\n- Add database health checks\\n\\n### Step 3: Authentication Middleware\\n- Implement JWT token generation\\n- Create authentication middleware\\n- Add password hashing with bcrypt\\n- Implement refresh token logic\\n\\n### Step 4: API Endpoints\\n- POST /auth/register - User registration\\n- POST /auth/login - User login\\n- POST /auth/refresh - Token refresh\\n- POST /auth/logout - User logout\\n- POST /auth/reset-password - Password reset\\n\\n### Step 5: Role-Based Access Control\\n- Define user roles and permissions\\n- Implement RBAC middleware\\n- Create role assignment endpoints\\n- Add permission checking utilities\\n\\n### Step 6: Security Measures\\n- Rate limiting for auth endpoints\\n- Account lockout after failed attempts\\n- Password strength validation\\n- Input sanitization and validation\\n\\n### Step 7: Documentation\\n- OpenAPI 3.0 specification\\n- Authentication flow diagrams\\n- Deployment instructions\\n- Security considerations\\n\\n### Step 8: Testing\\n- Unit tests for all functions\\n- Integration tests for API endpoints\\n- Security testing for auth flows\\n- Performance testing for load\\n\\n### Step 9: Deployment\\n- Docker containerization\\n- Kubernetes deployment manifests\\n- Environment configuration\\n- Health check endpoints\\n\\n### Step 10: Monitoring\\n- Logging configuration\\n- Metrics collection\\n- Error tracking setup\\n- Performance monitoring\\n\\n## Success Criteria\\n- All tests pass with >90% coverage\\n- Security audit completed\\n- Performance benchmarks met\\n- Documentation complete\\n- Real implementation (no mocks)\",\n  \"executionConfig\": {\n    \"autonomousMode\": true,\n    \"progressNotifications\": true,\n    \"discordIntegration\": true,\n    \"approvalRequired\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/meta-agent/integrate",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "meta-agent", "integrate"]
+            }
+          }
+        },
+        {
+          "name": "Get Meta-Agent Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/meta-agent/status?sessionId={{sessionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "meta-agent", "status"],
+              "query": [
+                {
+                  "key": "sessionId",
+                  "value": "{{sessionId}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧪 Error Testing",
+      "item": [
+        {
+          "name": "Test Invalid Session ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 404 for invalid session', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message provided', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('error');",
+                  "    pm.expect(jsonData.error).to.eql('resource_not_found');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Agent-Auth",
+                "value": "{{AGENT_AUTH_TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"invalid_session_id\",\n  \"message\": \"Test message\",\n  \"aiMode\": \"collaborative\",\n  \"draftContent\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/ideation/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "ideation", "chat"]
+            }
+          }
+        },
+        {
+          "name": "Test Missing Authentication",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 401 for missing auth', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Unauthorized error returned', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('error');",
+                  "    pm.expect(jsonData.error).to.eql('unauthorized');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"title\": \"Test Draft\",\n  \"content\": \"Test content\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/drafts/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "drafts", "create"]
+            }
+          }
+        },
+        {
+          "name": "Test Sacred Principles Violation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 400 for sacred violation', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Sacred principles violation detected', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('error');",
+                  "    pm.expect(jsonData.error).to.eql('sacred_principles_violation');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Agent-Auth",
+                "value": "{{AGENT_AUTH_TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"title\": \"Violating Sacred Principles\",\n  \"content\": \"# Test Document\\n\\n## Implementation\\n\\nFor now, let's just mock the authentication system and simulate the database calls. We can use placeholder data and fake responses to get something working quickly. If the real implementation fails, we'll fallback to a simpler approach using templates.\",\n  \"description\": \"This content violates sacred principles\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collaboration/drafts/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["collaboration", "drafts", "create"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set timestamp for requests",
+          "pm.globals.set('timestamp', new Date().toISOString());",
+          "",
+          "// Validate required variables",
+          "if (!pm.collectionVariables.get('AGENT_AUTH_TOKEN') || pm.collectionVariables.get('AGENT_AUTH_TOKEN') === 'your-agent-token-here') {",
+          "    console.warn('⚠️ Please set your AGENT_AUTH_TOKEN in collection variables');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test for response time",
+          "pm.test('Response time is acceptable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(30000);",
+          "});",
+          "",
+          "// Global test for JSON response",
+          "pm.test('Response is valid JSON', function () {",
+          "    try {",
+          "        pm.response.json();",
+          "    } catch (e) {",
+          "        pm.expect.fail('Response is not valid JSON');",
+          "    }",
+          "});",
+          "",
+          "// Log response for debugging",
+          "if (pm.response.code >= 400) {",
+          "    console.log('❌ Request failed:', pm.request.name);",
+          "    console.log('Status:', pm.response.code, pm.response.status);",
+          "    console.log('Response:', pm.response.text());",
+          "}"
+        ]
+      }
+    }
+  ]
+}

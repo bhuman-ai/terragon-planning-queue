@@ -1,0 +1,1855 @@
+openapi: 3.0.3
+info:
+  title: Claude.md Collaboration System API
+  description: |
+    A comprehensive API for collaborative CLAUDE.md document development with AI-powered assistance, 
+    real-time synchronization, and sacred document integrity protection.
+    
+    ## Features
+    - **Sacred Document Protection**: Enforces CLAUDE.md integrity with cryptographic verification
+    - **AI-Powered Collaboration**: Claude integration for ideation, research, and task decomposition
+    - **Real-time Synchronization**: WebSocket-based collaboration with conflict resolution
+    - **Security-First**: RSA-2048/Ed25519 agent authentication and dual-hash integrity
+    - **Meta-Agent Integration**: Seamless integration with Terragon AI task execution
+    
+    ## Authentication
+    All endpoints require either:
+    - **Agent Authentication**: `X-Agent-Auth` header with cryptographically signed token
+    - **Session Authentication**: Valid session ID for user-initiated requests
+    
+    ## Rate Limits
+    - **Standard endpoints**: 100 requests/minute per session
+    - **AI endpoints**: 20 requests/minute per session
+    - **Real-time sync**: 1000 messages/minute per session
+    
+    ## Error Handling
+    All errors follow RFC 7807 Problem Details format with additional context.
+  version: 1.0.0
+  contact:
+    name: Claude.md Collaboration API Support
+    url: https://github.com/bhuman-ai/terragon-planning-queue
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://terragon-vercel.vercel.app/api
+    description: Production server
+  - url: http://localhost:3000/api
+    description: Development server
+
+security:
+  - AgentAuth: []
+  - SessionAuth: []
+
+paths:
+  # Session Management
+  /collaboration/session/initialize:
+    post:
+      summary: Initialize collaboration session
+      description: |
+        Creates a new collaboration session with authentication tokens and workflow state.
+        Sets up the four-phase workflow: Ideation → Orchestration → Execution → Merge.
+      tags:
+        - Session Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userSettings:
+                  $ref: '#/components/schemas/UserSettings'
+                githubConfig:
+                  $ref: '#/components/schemas/GitHubConfig'
+                initialMode:
+                  type: string
+                  enum: [ideation, orchestration, execution, merge]
+                  default: ideation
+              required:
+                - userSettings
+            example:
+              userSettings:
+                name: "John Developer"
+                email: "john@example.com"
+                preferences:
+                  aiAssistanceLevel: "collaborative"
+                  autoSave: true
+              githubConfig:
+                repository: "my-org/my-project"
+                branch: "feature/claude-md-update"
+                token: "ghp_xxxxxxxxxxxx"
+              initialMode: "ideation"
+      responses:
+        '200':
+          description: Session initialized successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionId:
+                    type: string
+                    description: Unique session identifier
+                  agentAuth:
+                    type: string
+                    description: Agent authentication token
+                  sessionData:
+                    $ref: '#/components/schemas/SessionData'
+                  workflowProgress:
+                    $ref: '#/components/schemas/WorkflowProgress'
+                  status:
+                    type: string
+                    enum: [initialized]
+              example:
+                sessionId: "collab_1691234567890_abc123def"
+                agentAuth: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9..."
+                sessionData:
+                  ideation:
+                    draftContent: ""
+                    versionHistory: []
+                    chatHistory: []
+                  orchestration:
+                    taskDocument: ""
+                    workflowSteps: []
+                  execution:
+                    checkpointDocument: ""
+                    logs: []
+                  merge:
+                    originalContent: ""
+                    conflicts: []
+                workflowProgress:
+                  ideation: "current"
+                  orchestration: "available"
+                  execution: "locked"
+                  merge: "locked"
+                status: "initialized"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Ideation Phase
+  /collaboration/ideation/chat:
+    post:
+      summary: AI-powered ideation chat
+      description: |
+        Engage with Claude AI for collaborative document ideation. Supports multiple AI modes:
+        - **collaborative**: Interactive brainstorming and content development
+        - **research**: Fact-based research and best practices
+        - **critique**: Analytical feedback and improvement suggestions
+      tags:
+        - Ideation
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                message:
+                  type: string
+                  maxLength: 2000
+                draftContent:
+                  type: string
+                  description: Current draft content for context
+                selectedText:
+                  type: string
+                  description: Specific text selection for focused assistance
+                aiMode:
+                  type: string
+                  enum: [collaborative, research, critique]
+                  default: collaborative
+                chatHistory:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ChatMessage'
+                  maxItems: 50
+              required:
+                - sessionId
+                - message
+                - draftContent
+                - aiMode
+            example:
+              sessionId: "collab_1691234567890_abc123def"
+              message: "How should I structure the API documentation section?"
+              draftContent: "# My Project\n\n## Overview\nThis is my project..."
+              selectedText: "## API Documentation"
+              aiMode: "collaborative"
+              chatHistory: []
+      responses:
+        '200':
+          description: AI response generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                    description: Claude's response to the message
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+                    description: Follow-up suggestions
+                  proposedChanges:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProposedChange'
+                  timestamp:
+                    type: string
+                    format: date-time
+              example:
+                response: "For API documentation in CLAUDE.md, I recommend structuring it with clear sections for endpoints, authentication, examples, and error handling..."
+                suggestions:
+                  - "Add authentication examples"
+                  - "Include error response formats"
+                  - "Show curl examples"
+                proposedChanges:
+                  - type: "suggestion"
+                    description: "Add OpenAPI specification"
+                    confidence: 0.8
+                timestamp: "2023-08-15T10:30:00Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /collaboration/drafts/create:
+    post:
+      summary: Create new document draft
+      description: |
+        Creates a new draft with atomic checkpoint creation and sacred document validation.
+        All drafts are validated against CLAUDE.md principles before storage.
+      tags:
+        - Draft Management
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                content:
+                  type: string
+                  maxLength: 100000
+                title:
+                  type: string
+                  maxLength: 200
+                description:
+                  type: string
+                  maxLength: 1000
+                metadata:
+                  type: object
+                  additionalProperties: true
+              required:
+                - sessionId
+                - content
+                - title
+            example:
+              sessionId: "collab_1691234567890_abc123def"
+              content: "# My Project CLAUDE.md\n\n## 1. Project Overview\n..."
+              title: "Initial CLAUDE.md Draft"
+              description: "First version of the sacred document"
+              metadata:
+                tags: ["initial", "draft"]
+                author: "John Developer"
+      responses:
+        '201':
+          description: Draft created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  draftId:
+                    type: string
+                  sessionId:
+                    type: string
+                  title:
+                    type: string
+                  version:
+                    type: integer
+                  checkpointId:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+                  stats:
+                    $ref: '#/components/schemas/DocumentStats'
+                  validation:
+                    $ref: '#/components/schemas/ValidationResult'
+                  status:
+                    type: string
+                    enum: [created]
+              example:
+                draftId: "draft_1691234567890_xyz789"
+                sessionId: "collab_1691234567890_abc123def"
+                title: "Initial CLAUDE.md Draft"
+                version: 1
+                checkpointId: "checkpoint_abc123"
+                timestamp: "2023-08-15T10:30:00Z"
+                stats:
+                  wordCount: 245
+                  characterCount: 1520
+                  lineCount: 42
+                validation:
+                  isValid: true
+                  score: 0.95
+                status: "created"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /collaboration/drafts/{draftId}:
+    get:
+      summary: Retrieve draft by ID
+      description: Retrieves a specific draft with full version history and metadata.
+      tags:
+        - Draft Management
+      parameters:
+        - name: draftId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "draft_1691234567890_xyz789"
+      responses:
+        '200':
+          description: Draft retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Draft'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update existing draft
+      description: |
+        Updates an existing draft with version tracking and atomic checkpoints.
+        Each update creates a new version with change tracking.
+      tags:
+        - Draft Management
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: draftId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                title:
+                  type: string
+                description:
+                  type: string
+                metadata:
+                  type: object
+                changeDescription:
+                  type: string
+                  description: Description of what changed in this version
+              required:
+                - content
+            example:
+              content: "# My Project CLAUDE.md\n\n## 1. Project Overview\nUpdated content..."
+              title: "Updated CLAUDE.md Draft"
+              changeDescription: "Added API documentation section"
+      responses:
+        '200':
+          description: Draft updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  draftId:
+                    type: string
+                  version:
+                    type: integer
+                  checkpointId:
+                    type: string
+                  changes:
+                    $ref: '#/components/schemas/ChangeTracker'
+                  validation:
+                    $ref: '#/components/schemas/ValidationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Orchestration Phase
+  /collaboration/orchestration/decompose:
+    post:
+      summary: AI-powered task decomposition
+      description: |
+        Uses Claude AI to decompose complex tasks into manageable micro-tasks.
+        Each step is designed to be completable in under 10 minutes with clear deliverables.
+      tags:
+        - Orchestration
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                taskDescription:
+                  type: string
+                  maxLength: 2000
+                context:
+                  type: string
+                  description: Context from ideation phase
+                requirements:
+                  type: object
+                  properties:
+                    targetDuration:
+                      type: string
+                      default: "10 minutes"
+                    maxSteps:
+                      type: integer
+                      default: 20
+                    includeValidation:
+                      type: boolean
+                      default: true
+                    generateDependencies:
+                      type: boolean
+                      default: true
+              required:
+                - sessionId
+                - taskDescription
+            example:
+              sessionId: "collab_1691234567890_abc123def"
+              taskDescription: "Implement user authentication system with JWT tokens"
+              context: "Project needs secure login system with role-based access"
+              requirements:
+                targetDuration: "8 minutes"
+                maxSteps: 15
+                includeValidation: true
+                generateDependencies: true
+      responses:
+        '200':
+          description: Task decomposed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  steps:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaskStep'
+                  dependencies:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: string
+                    description: Array of [stepId, [prerequisiteStepIds]]
+                  timeEstimates:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                      description: Time estimate in milliseconds
+                  recommendedAgents:
+                    type: array
+                    items:
+                      type: string
+                  metadata:
+                    $ref: '#/components/schemas/DecompositionMetadata'
+              example:
+                steps:
+                  - id: "step_001"
+                    title: "Set up JWT middleware"
+                    description: "Create JWT authentication middleware for Express.js"
+                    estimatedDuration: "8 minutes"
+                    assignedAgent: "backend-architect"
+                    dependencies: []
+                    deliverables:
+                      - "JWT middleware function"
+                      - "Error handling for invalid tokens"
+                    validationCriteria:
+                      - "Middleware correctly validates JWT tokens"
+                      - "Returns 401 for invalid tokens"
+                    priority: "high"
+                dependencies:
+                  - ["step_002", ["step_001"]]
+                timeEstimates:
+                  "step_001": 480000
+                recommendedAgents:
+                  - "backend-architect"
+                  - "security-auditor"
+                metadata:
+                  totalSteps: 12
+                  estimatedTotalTime: 5760000
+                  generatedAt: "2023-08-15T10:30:00Z"
+                  taskDescription: "Implement user authentication system with JWT tokens"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Execution Phase
+  /collaboration/checkpoints/create:
+    post:
+      summary: Create execution checkpoint
+      description: |
+        Creates an atomic checkpoint for task execution with cryptographic integrity.
+        Checkpoints prevent race conditions and ensure execution state consistency.
+      tags:
+        - Execution
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                stepId:
+                  type: string
+                  description: Task step being executed
+                metadata:
+                  type: object
+                  description: Execution context and parameters
+                expectedDuration:
+                  type: integer
+                  description: Expected execution time in milliseconds
+                dependencies:
+                  type: array
+                  items:
+                    type: string
+                  description: Required checkpoint IDs
+              required:
+                - sessionId
+                - stepId
+            example:
+              sessionId: "collab_1691234567890_abc123def"
+              stepId: "step_001"
+              metadata:
+                agent: "backend-architect"
+                tools: ["file-editor", "code-generator"]
+              expectedDuration: 480000
+              dependencies: []
+      responses:
+        '201':
+          description: Checkpoint created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkpointId:
+                    type: string
+                  sessionId:
+                    type: string
+                  stepId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [created, executing, completed, failed]
+                  integrityHash:
+                    type: string
+                    description: SHA3-256 + BLAKE3 dual hash
+                  timestamp:
+                    type: string
+                    format: date-time
+                  expiresAt:
+                    type: string
+                    format: date-time
+              example:
+                checkpointId: "checkpoint_1691234567890_abc123"
+                sessionId: "collab_1691234567890_abc123def"
+                stepId: "step_001"
+                status: "created"
+                integrityHash: "sha3:abc123...blake3:def456..."
+                timestamp: "2023-08-15T10:30:00Z"
+                expiresAt: "2023-08-15T10:38:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /collaboration/checkpoints/{checkpointId}/execute:
+    post:
+      summary: Execute checkpoint
+      description: |
+        Executes a checkpoint with real-time monitoring and progress updates.
+        Integrates with Meta-Agent system for actual task execution.
+      tags:
+        - Execution
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: checkpointId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                executionParams:
+                  type: object
+                  description: Parameters for task execution
+                monitoringConfig:
+                  type: object
+                  properties:
+                    realTimeUpdates:
+                      type: boolean
+                      default: true
+                    progressCallback:
+                      type: string
+                      description: Webhook URL for progress updates
+                    maxExecutionTime:
+                      type: integer
+                      description: Maximum execution time in milliseconds
+              required:
+                - executionParams
+            example:
+              executionParams:
+                targetFiles: ["src/auth/middleware.js"]
+                templateData: {}
+              monitoringConfig:
+                realTimeUpdates: true
+                progressCallback: "https://api.example.com/progress"
+                maxExecutionTime: 600000
+      responses:
+        '200':
+          description: Execution started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  executionId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [executing]
+                  progress:
+                    type: object
+                    properties:
+                      currentStep:
+                        type: string
+                      completionPercentage:
+                        type: number
+                        minimum: 0
+                        maximum: 100
+                      estimatedTimeRemaining:
+                        type: integer
+                  streamUrl:
+                    type: string
+                    description: WebSocket URL for real-time updates
+              example:
+                executionId: "exec_1691234567890_xyz789"
+                status: "executing"
+                progress:
+                  currentStep: "Initializing JWT middleware"
+                  completionPercentage: 0
+                  estimatedTimeRemaining: 480000
+                streamUrl: "wss://terragon-vercel.vercel.app/api/collaboration/sync/websocket?executionId=exec_1691234567890_xyz789"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Merge Phase
+  /collaboration/merge/conflicts:
+    get:
+      summary: Detect merge conflicts
+      description: |
+        Analyzes potential conflicts between original and modified content.
+        Uses semantic analysis to detect both syntactic and semantic conflicts.
+      tags:
+        - Merge Resolution
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: originalHash
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Hash of original content
+        - name: modifiedHash
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Hash of modified content
+      responses:
+        '200':
+          description: Conflict analysis completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hasConflicts:
+                    type: boolean
+                  conflicts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MergeConflict'
+                  resolution:
+                    type: object
+                    properties:
+                      strategy:
+                        type: string
+                        enum: [automatic, manual, ai_assisted]
+                      confidence:
+                        type: number
+                        minimum: 0
+                        maximum: 1
+                      recommendations:
+                        type: array
+                        items:
+                          type: string
+                  metadata:
+                    type: object
+                    properties:
+                      analysisTimestamp:
+                        type: string
+                        format: date-time
+                      originalLines:
+                        type: integer
+                      modifiedLines:
+                        type: integer
+                      conflictLines:
+                        type: integer
+              example:
+                hasConflicts: true
+                conflicts:
+                  - type: "content"
+                    line: 42
+                    section: "## 3. API Documentation"
+                    originalContent: "Basic API endpoints"
+                    modifiedContent: "Comprehensive API documentation with examples"
+                    severity: "medium"
+                    resolution: "manual"
+                resolution:
+                  strategy: "ai_assisted"
+                  confidence: 0.7
+                  recommendations:
+                    - "Keep comprehensive documentation"
+                    - "Merge basic structure with detailed examples"
+                metadata:
+                  analysisTimestamp: "2023-08-15T10:30:00Z"
+                  originalLines: 120
+                  modifiedLines: 145
+                  conflictLines: 5
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /collaboration/merge/resolve:
+    post:
+      summary: Resolve merge conflicts
+      description: |
+        Resolves detected conflicts using AI assistance or manual resolution.
+        Creates final merged content with integrity verification.
+      tags:
+        - Merge Resolution
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                conflicts:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      conflictId:
+                        type: string
+                      resolution:
+                        type: string
+                        enum: [accept_original, accept_modified, manual_merge, ai_suggestion]
+                      customContent:
+                        type: string
+                        description: For manual_merge resolution
+                resolutionStrategy:
+                  type: string
+                  enum: [conservative, aggressive, balanced]
+                validateIntegrity:
+                  type: boolean
+                  default: true
+              required:
+                - sessionId
+                - conflicts
+            example:
+              sessionId: "collab_1691234567890_abc123def"
+              conflicts:
+                - conflictId: "conflict_001"
+                  resolution: "accept_modified"
+                - conflictId: "conflict_002"
+                  resolution: "manual_merge"
+                  customContent: "## 3. API Documentation\n\nComprehensive API endpoints with examples and authentication details."
+              resolutionStrategy: "balanced"
+              validateIntegrity: true
+      responses:
+        '200':
+          description: Conflicts resolved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mergedContent:
+                    type: string
+                    description: Final merged content
+                  resolutionSummary:
+                    type: object
+                    properties:
+                      totalConflicts:
+                        type: integer
+                      resolved:
+                        type: integer
+                      pending:
+                        type: integer
+                      strategy:
+                        type: string
+                  integrityValidation:
+                    $ref: '#/components/schemas/ValidationResult'
+                  checkpointId:
+                    type: string
+                    description: Final merge checkpoint
+                  timestamp:
+                    type: string
+                    format: date-time
+              example:
+                mergedContent: "# My Project CLAUDE.md\n\n## 1. Project Overview...\n\n## 3. API Documentation\n\nComprehensive API endpoints..."
+                resolutionSummary:
+                  totalConflicts: 2
+                  resolved: 2
+                  pending: 0
+                  strategy: "balanced"
+                integrityValidation:
+                  isValid: true
+                  score: 0.98
+                checkpointId: "checkpoint_merge_final"
+                timestamp: "2023-08-15T10:35:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Real-time Synchronization
+  /collaboration/sync/websocket:
+    get:
+      summary: WebSocket connection for real-time sync
+      description: |
+        Establishes WebSocket connection for real-time collaboration updates.
+        Supports multiple event types: draft_update, execution_progress, conflict_detected, etc.
+      tags:
+        - Real-time Sync
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: agentAuth
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '101':
+          description: WebSocket connection established
+          headers:
+            Upgrade:
+              schema:
+                type: string
+                enum: [websocket]
+            Connection:
+              schema:
+                type: string
+                enum: [Upgrade]
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /collaboration/sync/state:
+    get:
+      summary: Get current synchronization state
+      description: |
+        Retrieves current state of all active sessions and synchronization status.
+        Used for reconnection and state recovery.
+      tags:
+        - Real-time Sync
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current sync state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionId:
+                    type: string
+                  lastSync:
+                    type: string
+                    format: date-time
+                  activeUsers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActiveUser'
+                  currentPhase:
+                    type: string
+                    enum: [ideation, orchestration, execution, merge]
+                  pendingUpdates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PendingUpdate'
+                  locks:
+                    type: object
+                    description: Current resource locks
+              example:
+                sessionId: "collab_1691234567890_abc123def"
+                lastSync: "2023-08-15T10:30:00Z"
+                activeUsers:
+                  - userId: "user_123"
+                    name: "John Developer"
+                    lastActivity: "2023-08-15T10:29:45Z"
+                currentPhase: "ideation"
+                pendingUpdates: []
+                locks: {}
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Security Endpoints
+  /security/initialize:
+    post:
+      summary: Initialize security system
+      description: |
+        Initializes Phase 2A security controls including agent authentication,
+        dual-hash integrity verification, atomic checkpoints, and sacred document protection.
+      tags:
+        - Security
+      responses:
+        '200':
+          description: Security system initialized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  components:
+                    type: object
+                    properties:
+                      agentAuthentication:
+                        type: string
+                      integrityVerification:
+                        type: string
+                      atomicCheckpoints:
+                        type: string
+                      sacredDocumentProtection:
+                        type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+              example:
+                success: true
+                message: "Phase 2A security controls initialized successfully"
+                components:
+                  agentAuthentication: "RSA-2048/Ed25519 certificates"
+                  integrityVerification: "SHA3-256 + BLAKE3 dual hashing"
+                  atomicCheckpoints: "Race condition prevention"
+                  sacredDocumentProtection: "CLAUDE.md protection middleware"
+                timestamp: "2023-08-15T10:30:00Z"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /security/status:
+    get:
+      summary: Get security system status
+      description: Returns current status of all security components and recent events.
+      tags:
+        - Security
+      responses:
+        '200':
+          description: Security status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecurityStatus'
+
+  /security/verify-sacred:
+    post:
+      summary: Verify sacred document integrity
+      description: |
+        Verifies CLAUDE.md integrity using cryptographic hashing and sacred principles validation.
+        Detects tampering, drift, and unauthorized modifications.
+      tags:
+        - Security
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  description: Document content to verify
+                expectedHash:
+                  type: string
+                  description: Expected integrity hash
+                strictMode:
+                  type: boolean
+                  default: true
+                  description: Enable strict sacred principles validation
+              required:
+                - content
+            example:
+              content: "# Project CLAUDE.md\n\n## 1. Project Overview..."
+              expectedHash: "sha3:abc123...blake3:def456..."
+              strictMode: true
+      responses:
+        '200':
+          description: Verification completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isValid:
+                    type: boolean
+                  integrityCheck:
+                    type: object
+                    properties:
+                      hashMatch:
+                        type: boolean
+                      expectedHash:
+                        type: string
+                      actualHash:
+                        type: string
+                  sacredPrinciplesCheck:
+                    type: object
+                    properties:
+                      compliant:
+                        type: boolean
+                      violations:
+                        type: array
+                        items:
+                          type: string
+                      score:
+                        type: number
+                        minimum: 0
+                        maximum: 1
+                  recommendations:
+                    type: array
+                    items:
+                      type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+              example:
+                isValid: true
+                integrityCheck:
+                  hashMatch: true
+                  expectedHash: "sha3:abc123...blake3:def456..."
+                  actualHash: "sha3:abc123...blake3:def456..."
+                sacredPrinciplesCheck:
+                  compliant: true
+                  violations: []
+                  score: 0.98
+                recommendations: []
+                timestamp: "2023-08-15T10:30:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # Meta-Agent Integration
+  /collaboration/meta-agent/integrate:
+    post:
+      summary: Integrate with Meta-Agent system
+      description: |
+        Seamlessly integrates collaboration workflow with Meta-Agent and Terragon AI
+        for actual task execution and autonomous progress monitoring.
+      tags:
+        - Meta-Agent Integration
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                taskDocument:
+                  type: string
+                  description: Generated task document from orchestration
+                executionConfig:
+                  type: object
+                  properties:
+                    autonomousMode:
+                      type: boolean
+                      default: true
+                    progressNotifications:
+                      type: boolean
+                      default: true
+                    discordIntegration:
+                      type: boolean
+                      default: true
+                    approvalRequired:
+                      type: boolean
+                      default: true
+              required:
+                - sessionId
+                - taskDocument
+            example:
+              sessionId: "collab_1691234567890_abc123def"
+              taskDocument: "# Task: Implement JWT Authentication\n\n## Steps:\n1. Create middleware..."
+              executionConfig:
+                autonomousMode: true
+                progressNotifications: true
+                discordIntegration: true
+                approvalRequired: true
+      responses:
+        '200':
+          description: Integration successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  integrationId:
+                    type: string
+                  metaAgentTaskId:
+                    type: string
+                  terragonSessionId:
+                    type: string
+                  monitoringUrl:
+                    type: string
+                  discordChannelId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [integrated, pending_approval, executing]
+              example:
+                integrationId: "integration_1691234567890_abc123"
+                metaAgentTaskId: "meta_task_xyz789"
+                terragonSessionId: "terragon_session_def456"
+                monitoringUrl: "https://terragon-vercel.vercel.app/api/task-monitor/stream/meta_task_xyz789"
+                discordChannelId: "1234567890123456789"
+                status: "pending_approval"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    AgentAuth:
+      type: apiKey
+      in: header
+      name: X-Agent-Auth
+      description: |
+        Agent authentication token using RSA-2048/Ed25519 cryptographic signatures.
+        Format: "Bearer {jwt_token}" where jwt_token contains signed agent credentials.
+    SessionAuth:
+      type: apiKey
+      in: query
+      name: sessionId
+      description: |
+        Session-based authentication using unique session identifiers.
+        Sessions are created via the `/collaboration/session/initialize` endpoint.
+
+  schemas:
+    UserSettings:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        preferences:
+          type: object
+          properties:
+            aiAssistanceLevel:
+              type: string
+              enum: [minimal, collaborative, aggressive]
+              default: collaborative
+            autoSave:
+              type: boolean
+              default: true
+            notificationChannels:
+              type: array
+              items:
+                type: string
+                enum: [email, discord, webhook]
+      required:
+        - name
+        - email
+
+    GitHubConfig:
+      type: object
+      properties:
+        repository:
+          type: string
+          pattern: "^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$"
+        branch:
+          type: string
+          default: "main"
+        token:
+          type: string
+          description: GitHub personal access token (will be encrypted)
+        commitMessage:
+          type: string
+          maxLength: 200
+          default: "Update CLAUDE.md via collaboration system"
+      required:
+        - repository
+        - token
+
+    SessionData:
+      type: object
+      properties:
+        ideation:
+          type: object
+          properties:
+            draftContent:
+              type: string
+            versionHistory:
+              type: array
+              items:
+                $ref: '#/components/schemas/VersionEntry'
+            chatHistory:
+              type: array
+              items:
+                $ref: '#/components/schemas/ChatMessage'
+            drafts:
+              type: array
+              items:
+                $ref: '#/components/schemas/DraftReference'
+        orchestration:
+          type: object
+          properties:
+            taskDocument:
+              type: string
+            workflowSteps:
+              type: array
+              items:
+                $ref: '#/components/schemas/TaskStep'
+            dependencies:
+              type: object
+              description: Task dependency mapping
+            executionStatus:
+              type: object
+              description: Current execution status
+        execution:
+          type: object
+          properties:
+            checkpointDocument:
+              type: string
+            logs:
+              type: array
+              items:
+                $ref: '#/components/schemas/ExecutionLog'
+            activeAgents:
+              type: array
+              items:
+                type: string
+            metrics:
+              type: object
+              description: Execution performance metrics
+        merge:
+          type: object
+          properties:
+            originalContent:
+              type: string
+            modifiedContent:
+              type: string
+            mergedContent:
+              type: string
+            conflicts:
+              type: array
+              items:
+                $ref: '#/components/schemas/MergeConflict'
+            validationStatus:
+              type: object
+              description: Merge validation results
+
+    WorkflowProgress:
+      type: object
+      properties:
+        ideation:
+          type: string
+          enum: [locked, available, current, completed]
+        orchestration:
+          type: string
+          enum: [locked, available, current, completed]
+        execution:
+          type: string
+          enum: [locked, available, current, completed]
+        merge:
+          type: string
+          enum: [locked, available, current, completed]
+
+    ChatMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+          maxLength: 2000
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          description: Additional message metadata
+
+    ProposedChange:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [suggestion, correction, enhancement, addition]
+        description:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        targetLocation:
+          type: object
+          properties:
+            line:
+              type: integer
+            section:
+              type: string
+        suggestedContent:
+          type: string
+
+    DocumentStats:
+      type: object
+      properties:
+        wordCount:
+          type: integer
+          minimum: 0
+        characterCount:
+          type: integer
+          minimum: 0
+        lineCount:
+          type: integer
+          minimum: 0
+        contentHash:
+          type: string
+          description: SHA-256 hash of content
+
+    ValidationResult:
+      type: object
+      properties:
+        isValid:
+          type: boolean
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+        errors:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+
+    Draft:
+      type: object
+      properties:
+        id:
+          type: string
+        sessionId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        content:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        version:
+          type: integer
+          minimum: 1
+        versionHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/VersionEntry'
+        status:
+          type: string
+          enum: [draft, published, archived]
+        createdAt:
+          type: string
+          format: date-time
+        lastModified:
+          type: string
+          format: date-time
+        checkpointId:
+          type: string
+
+    VersionEntry:
+      type: object
+      properties:
+        version:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        content:
+          type: string
+        changes:
+          $ref: '#/components/schemas/ChangeTracker'
+        checkpointId:
+          type: string
+
+    ChangeTracker:
+      type: object
+      properties:
+        added:
+          type: integer
+          description: Lines added
+        removed:
+          type: integer
+          description: Lines removed
+        modified:
+          type: integer
+          description: Lines modified
+        total:
+          type: integer
+          description: Total lines changed
+
+    DraftReference:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [draft, published, archived]
+
+    TaskStep:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        estimatedDuration:
+          type: string
+          pattern: "^\\d+ (minutes?|hours?)$"
+        assignedAgent:
+          type: string
+        dependencies:
+          type: array
+          items:
+            type: string
+        deliverables:
+          type: array
+          items:
+            type: string
+        validationCriteria:
+          type: array
+          items:
+            type: string
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        status:
+          type: string
+          enum: [pending, executing, completed, failed]
+
+    DecompositionMetadata:
+      type: object
+      properties:
+        totalSteps:
+          type: integer
+          minimum: 1
+        estimatedTotalTime:
+          type: integer
+          description: Total time in milliseconds
+        generatedAt:
+          type: string
+          format: date-time
+        taskDescription:
+          type: string
+        complexity:
+          type: string
+          enum: [low, medium, high]
+
+    ExecutionLog:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum: [debug, info, warn, error]
+        message:
+          type: string
+        stepId:
+          type: string
+        agentId:
+          type: string
+        metadata:
+          type: object
+
+    MergeConflict:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [content, structure, metadata]
+        line:
+          type: integer
+          minimum: 1
+        section:
+          type: string
+        originalContent:
+          type: string
+        modifiedContent:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        resolution:
+          type: string
+          enum: [automatic, manual, ai_assisted]
+        suggestions:
+          type: array
+          items:
+            type: string
+
+    ActiveUser:
+      type: object
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        lastActivity:
+          type: string
+          format: date-time
+        currentPhase:
+          type: string
+          enum: [ideation, orchestration, execution, merge]
+        permissions:
+          type: array
+          items:
+            type: string
+
+    PendingUpdate:
+      type: object
+      properties:
+        updateId:
+          type: string
+        type:
+          type: string
+          enum: [content_change, phase_transition, conflict_detected]
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+        priority:
+          type: string
+          enum: [low, medium, high]
+
+    SecurityStatus:
+      type: object
+      properties:
+        agentAuthentication:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            activeTokens:
+              type: integer
+            lastRotation:
+              type: string
+              format: date-time
+        integrityVerification:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            algorithm:
+              type: string
+            lastVerification:
+              type: string
+              format: date-time
+        atomicCheckpoints:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            activeCheckpoints:
+              type: integer
+            lastCleanup:
+              type: string
+              format: date-time
+        sacredDocumentProtection:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            lastIntegrityCheck:
+              type: string
+              format: date-time
+            violationCount:
+              type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type identifier
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: string
+          description: Detailed error information
+        timestamp:
+          type: string
+          format: date-time
+        traceId:
+          type: string
+          description: Request trace identifier for debugging
+      required:
+        - error
+        - message
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid parameters or missing required fields
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "validation_failed"
+            message: "Required field 'sessionId' is missing"
+            details: "The sessionId parameter is required for all collaboration endpoints"
+            timestamp: "2023-08-15T10:30:00Z"
+            traceId: "req_1691234567890_abc123"
+
+    Unauthorized:
+      description: Unauthorized - invalid or missing authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "unauthorized"
+            message: "Invalid agent authentication token"
+            details: "The provided X-Agent-Auth token is invalid or expired"
+            timestamp: "2023-08-15T10:30:00Z"
+            traceId: "req_1691234567890_abc123"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "resource_not_found"
+            message: "Session not found"
+            details: "No active session found with ID: collab_1691234567890_abc123def"
+            timestamp: "2023-08-15T10:30:00Z"
+            traceId: "req_1691234567890_abc123"
+
+    Conflict:
+      description: Conflict - resource state conflict or race condition
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "resource_conflict"
+            message: "Checkpoint already exists for this step"
+            details: "Another execution is already in progress for step: step_001"
+            timestamp: "2023-08-15T10:30:00Z"
+            traceId: "req_1691234567890_abc123"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "internal_server_error"
+            message: "An unexpected error occurred"
+            details: "Please contact support if this persists"
+            timestamp: "2023-08-15T10:30:00Z"
+            traceId: "req_1691234567890_abc123"
+
+  examples:
+    FullCollaborationFlow:
+      summary: Complete collaboration workflow
+      description: |
+        Example of a complete collaboration session from initialization to merge completion.
+      value:
+        sessionInitialization:
+          request:
+            userSettings:
+              name: "Jane Developer"
+              email: "jane@example.com"
+              preferences:
+                aiAssistanceLevel: "collaborative"
+                autoSave: true
+            githubConfig:
+              repository: "my-org/awesome-project"
+              branch: "feature/claude-md-improvement"
+              token: "ghp_xxxxxxxxxxxx"
+          response:
+            sessionId: "collab_1691234567890_example"
+            agentAuth: "eyJhbGciOiJFZERTQSI..."
+        
+        ideationPhase:
+          chatRequest:
+            sessionId: "collab_1691234567890_example"
+            message: "Help me improve the API documentation section"
+            aiMode: "collaborative"
+          chatResponse:
+            response: "I can help you enhance the API documentation. Let's focus on clear endpoint descriptions, authentication examples, and error handling..."
+        
+        orchestrationPhase:
+          decomposeRequest:
+            sessionId: "collab_1691234567890_example"
+            taskDescription: "Improve API documentation with examples and better structure"
+          decomposeResponse:
+            steps:
+              - id: "step_001"
+                title: "Analyze current API documentation"
+                estimatedDuration: "5 minutes"
+              - id: "step_002" 
+                title: "Add authentication examples"
+                estimatedDuration: "8 minutes"
+        
+        executionPhase:
+          checkpointRequest:
+            sessionId: "collab_1691234567890_example"
+            stepId: "step_001"
+          checkpointResponse:
+            checkpointId: "checkpoint_example_001"
+            status: "created"
+        
+        mergePhase:
+          conflictResolution:
+            hasConflicts: false
+            mergedContent: "# Project CLAUDE.md\n\n## Enhanced API Documentation..."
+
+tags:
+  - name: Session Management
+    description: Collaboration session lifecycle management
+  - name: Ideation
+    description: AI-powered document ideation and brainstorming
+  - name: Draft Management
+    description: Version-controlled draft creation and management
+  - name: Orchestration
+    description: AI-driven task decomposition and workflow planning
+  - name: Execution
+    description: Checkpoint-based task execution with monitoring
+  - name: Merge Resolution
+    description: Intelligent conflict detection and resolution
+  - name: Real-time Sync
+    description: WebSocket-based real-time collaboration
+  - name: Security
+    description: Cryptographic integrity and authentication
+  - name: Meta-Agent Integration
+    description: Integration with Meta-Agent and Terragon AI systems

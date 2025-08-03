@@ -1,0 +1,250 @@
+# Pre-commit hooks for Terragon Collaboration System
+# Ensures code quality and sacred document integrity before commits
+
+repos:
+  # JavaScript/Node.js linting and formatting
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.57.0
+    hooks:
+      - id: eslint
+        files: \.(js|jsx|ts|tsx)$
+        args: [--fix]
+        additional_dependencies:
+          - eslint@8.57.0
+          - eslint-config-next@14.0.4
+
+  # General code quality
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.md$
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: debug-statements
+      - id: check-executables-have-shebangs
+
+  # Sacred Document Protection
+  - repo: local
+    hooks:
+      - id: sacred-document-protection
+        name: 🔒 Sacred Document Protection
+        entry: bash
+        language: system
+        files: 'CLAUDE\.md$'
+        args:
+          - -c
+          - |
+            echo "🔍 Checking CLAUDE.md for sacred principle violations..."
+            
+            # Check for forbidden patterns
+            if grep -i "simulation.*ok\|simulation.*allowed\|use.*simulation" CLAUDE.md; then
+              echo "❌ SACRED VIOLATION: CLAUDE.md contains simulation allowances"
+              echo "   Sacred Principle: NO SIMULATIONS - Never simulate, mock, or fake any functionality"
+              exit 1
+            fi
+            
+            if grep -i "fallback.*ok\|fallback.*allowed\|use.*fallback\|create.*fallback" CLAUDE.md; then
+              echo "❌ SACRED VIOLATION: CLAUDE.md contains fallback allowances"
+              echo "   Sacred Principle: NO FALLBACKS - Get to the root of problems, never create workarounds"
+              exit 1
+            fi
+            
+            if grep -i "template.*ok\|template.*allowed\|use.*template" CLAUDE.md; then
+              echo "❌ SACRED VIOLATION: CLAUDE.md contains template allowances"
+              echo "   Sacred Principle: NO TEMPLATES - Task decomposition must be 100% AI-driven and dynamic"
+              exit 1
+            fi
+            
+            if grep -i "mock.*ok\|mock.*allowed\|fake.*ok\|fake.*allowed" CLAUDE.md; then
+              echo "❌ SACRED VIOLATION: CLAUDE.md contains mocking/faking allowances"
+              echo "   Sacred Principle: ALWAYS REAL - Every interaction, API call, and execution must be genuine"
+              exit 1
+            fi
+            
+            # Check deployment target
+            if grep -i "bhumanai.*ok\|hobby.*account.*ok\|deploy.*bhumanai" CLAUDE.md; then
+              echo "❌ SACRED VIOLATION: CLAUDE.md allows wrong deployment target"
+              echo "   Sacred Target: ONLY DEPLOY TO https://vercel.com/bhuman/terragon-vercel/"
+              echo "   Sacred Account: bhuman (NEVER use bhumanai hobby account)"
+              exit 1
+            fi
+            
+            # Check for sacred section modifications
+            if ! grep -q "ABSOLUTE RULES - NEVER VIOLATE" CLAUDE.md; then
+              echo "❌ SACRED VIOLATION: Sacred rules section missing or modified"
+              exit 1
+            fi
+            
+            # Check sacred principles are intact
+            if ! grep -q "NO SIMULATIONS" CLAUDE.md; then
+              echo "❌ SACRED VIOLATION: NO SIMULATIONS principle missing"
+              exit 1
+            fi
+            
+            if ! grep -q "NO FALLBACKS" CLAUDE.md; then
+              echo "❌ SACRED VIOLATION: NO FALLBACKS principle missing"
+              exit 1
+            fi
+            
+            if ! grep -q "ALWAYS REAL" CLAUDE.md; then
+              echo "❌ SACRED VIOLATION: ALWAYS REAL principle missing"
+              exit 1
+            fi
+            
+            echo "✅ Sacred document integrity verified"
+
+  # Test Sacred Document Integrity
+  - repo: local
+    hooks:
+      - id: sacred-document-tests
+        name: 🧪 Sacred Document Tests
+        entry: bash
+        language: system
+        files: 'CLAUDE\.md$'
+        args:
+          - -c
+          - |
+            echo "🧪 Running sacred document integrity tests..."
+            if command -v npm >/dev/null 2>&1; then
+              npm run test -- --testPathPattern="sacred-document-integrity" --passWithNoTests
+              if [ $? -ne 0 ]; then
+                echo "❌ Sacred document integrity tests failed"
+                exit 1
+              fi
+              echo "✅ Sacred document integrity tests passed"
+            else
+              echo "⚠️ npm not available, skipping sacred document tests"
+            fi
+
+  # Security Tests for Critical Files
+  - repo: local
+    hooks:
+      - id: security-tests
+        name: 🔐 Security Tests
+        entry: bash
+        language: system
+        files: '^(lib/security/|pages/api/security/|pages/api/collaboration/)'
+        args:
+          - -c
+          - |
+            echo "🔐 Running security tests for modified files..."
+            if command -v npm >/dev/null 2>&1; then
+              npm run test:security --passWithNoTests
+              if [ $? -ne 0 ]; then
+                echo "❌ Security tests failed"
+                exit 1
+              fi
+              echo "✅ Security tests passed"
+            else
+              echo "⚠️ npm not available, skipping security tests"
+            fi
+
+  # Code Quality for Test Files
+  - repo: local
+    hooks:
+      - id: test-quality-check
+        name: 🧪 Test Quality Check
+        entry: bash
+        language: system
+        files: '__tests__/.*\.(js|ts)$'
+        args:
+          - -c
+          - |
+            echo "🧪 Checking test file quality..."
+            
+            # Check for mocks in test files (ensuring no real API calls in tests)
+            if ! grep -q "jest\.mock\|mock" $1; then
+              echo "⚠️ Test file $1 should include mocks to prevent real API calls"
+            fi
+            
+            # Check for proper test structure
+            if ! grep -q "describe\|test\|it" $1; then
+              echo "❌ Test file $1 missing proper test structure (describe/test/it)"
+              exit 1
+            fi
+            
+            # Check for sacred principle compliance in tests
+            if grep -i "\.skip\|\.only" $1; then
+              echo "❌ Test file $1 contains .skip or .only - remove before commit"
+              exit 1
+            fi
+            
+            echo "✅ Test file quality check passed"
+
+  # Collaboration API Validation
+  - repo: local
+    hooks:
+      - id: collaboration-api-validation
+        name: 🤝 Collaboration API Validation
+        entry: bash
+        language: system
+        files: 'pages/api/collaboration/.*\.js$'
+        args:
+          - -c
+          - |
+            echo "🤝 Validating collaboration API files..."
+            
+            # Check for proper authentication
+            if ! grep -q "verifyAgentAuth\|x-agent-auth" $1; then
+              echo "❌ API file $1 missing agent authentication check"
+              exit 1
+            fi
+            
+            # Check for error handling
+            if ! grep -q "try.*catch\|\.catch" $1; then
+              echo "❌ API file $1 missing proper error handling"
+              exit 1
+            fi
+            
+            # Check for sacred document validation
+            if [[ $1 =~ (drafts|merge) ]] && ! grep -q "validateClaudemdContent\|sacred" $1; then
+              echo "⚠️ API file $1 should include sacred document validation"
+            fi
+            
+            echo "✅ Collaboration API validation passed"
+
+  # Package.json security check
+  - repo: local
+    hooks:
+      - id: package-security
+        name: 📦 Package Security Check
+        entry: bash
+        language: system
+        files: 'package\.json$'
+        args:
+          - -c
+          - |
+            echo "📦 Checking package.json security..."
+            if command -v npm >/dev/null 2>&1; then
+              npm audit --audit-level=high
+              if [ $? -ne 0 ]; then
+                echo "❌ npm audit found high/critical vulnerabilities"
+                echo "   Run 'npm audit fix' to resolve issues"
+                exit 1
+              fi
+              echo "✅ Package security check passed"
+            else
+              echo "⚠️ npm not available, skipping package security check"
+            fi
+
+# Configuration
+default_stages: [commit]
+fail_fast: true
+
+# CI-specific configuration
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+
+    For more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false
