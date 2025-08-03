@@ -259,7 +259,7 @@ class RealtimeLLMLinter {
       if (!filename) return;
 
       // Check if file should be processed
-      const ext = path.extname(filename);
+      let ext = path.extname(filename);
       if (!extensions.includes(ext)) return;
 
       const fullPath = path.join(directory, filename);
@@ -360,7 +360,7 @@ Examples:
     // Watch mode
     const watchDir = args[watchDirIndex + 1] || '.';
     const outputFormat = outputIndex !== -1 ? args[outputIndex + 1] : 'compact';
-    const extensions = extensionsIndex !== -1
+    let extensions = extensionsIndex !== -1
       ? args[extensionsIndex + 1].split(',')
       : ['.js', '.jsx'];
 

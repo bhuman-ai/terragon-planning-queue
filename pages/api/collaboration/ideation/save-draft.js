@@ -92,9 +92,9 @@ function calculateChanges(oldContent, newContent) {
   const oldLines = oldContent.split('\n');
   const newLines = newContent.split('\n');
 
-  const added = 0;
-  const removed = 0;
-  const modified = 0;
+  let added = 0;
+  let removed = 0;
+  let modified = 0;
 
   const maxLines = Math.max(oldLines.length, newLines.length);
 

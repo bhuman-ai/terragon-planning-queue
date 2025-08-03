@@ -216,7 +216,7 @@ export default async function handler(req, res) {
  * Format decomposition into Terragon-friendly prompt
  */
 function formatDecompositionForTerragon(decomposition, title, description) {
-  const prompt = `# Task: ${title}\n\n${description}\n\n`;
+  let prompt = `# Task: ${title}\n\n${description}\n\n`;
   prompt += '## Implementation Plan\n\n';
 
   const microTasks = decomposition?.microTasks || decomposition || [];

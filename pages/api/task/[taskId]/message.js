@@ -45,7 +45,7 @@ export default async function handler(req, res) {
       body: JSON.stringify(payload)
     });
 
-    const result = await response.text();
+    let result = await response.text();
     console.log('Message sent to task:', taskId);
 
     res.status(200).json({
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
 
 function generateActionId() {
   const chars = '0123456789abcdef';
-  const result = '';
+  let result = '';
   for (let i = 0; i < 40; i++) {
     result += chars[Math.floor(Math.random() * chars.length)];
   }

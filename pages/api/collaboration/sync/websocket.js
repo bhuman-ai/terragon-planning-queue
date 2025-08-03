@@ -279,8 +279,8 @@ async function updateSessionState(sessionId, eventType, data) {
 async function broadcastToSession(sessionId, eventType, data, options = {}) {
   const { targetConnectionId, excludeConnectionId } = options;
 
-  const successCount = 0;
-  const errorCount = 0;
+  let successCount = 0;
+  let errorCount = 0;
   const errors = [];
 
   for (const [connectionId, clientInfo] of activeConnections.entries()) {

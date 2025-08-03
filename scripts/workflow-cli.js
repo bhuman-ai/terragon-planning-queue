@@ -62,7 +62,7 @@ program
   .option('-o, --objective <obj>', 'Task objective')
   .action(async (title, options) => {
     try {
-      const description = options.description || title;
+      let description = options.description || title;
 
       // If no section provided, suggest sections
       if (!options.section) {

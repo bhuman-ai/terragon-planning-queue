@@ -100,7 +100,7 @@ export default async function handler(req, res) {
 
           // Generate the actual merge diff
           const diffPath = path.join(taskPath, `merge-diff-${proposalId}.md`);
-          const diff = await generateMergeDiff(proposal, metadata);
+          let diff = await generateMergeDiff(proposal, metadata);
           await fs.writeFile(diffPath, diff);
 
           res.status(200).json({
@@ -150,7 +150,7 @@ export default async function handler(req, res) {
 async function generateMergeDiff(proposal, metadata) {
   const timestamp = new Date().toISOString();
 
-  const diff = `# Merge Diff for ${metadata.taskId}
+  let diff = `# Merge Diff for ${metadata.taskId}
 
 Generated: ${timestamp}
 Task: ${metadata.title || 'Untitled'}

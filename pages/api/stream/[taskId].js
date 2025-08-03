@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   let lastMessageCount = 0;
-  const pollCount = 0;
+  let pollCount = 0;
 
   // Function to fetch task updates
   async function fetchTaskUpdates() {
@@ -59,14 +59,14 @@ export default async function handler(req, res) {
         return false;
       }
 
-      const result = await response.text();
+      let result = await response.text();
 
       // Parse React Server Component response
       const messages = [];
       const lines = result.split('\n').filter(line => line.trim());
 
       let taskData = null;
-      const streamContent = '';
+      let streamContent = '';
 
       // Process each line
       for (const line of lines) {

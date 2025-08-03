@@ -175,7 +175,7 @@ class EnhancedTestRunner {
 
       console.log(`  Running ${testPatterns.length} test pattern(s)...`);
 
-      const output = execSync(cmd, {
+      let output = execSync(cmd, {
         encoding: 'utf8',
         maxBuffer: 1024 * 1024 * 10
       });

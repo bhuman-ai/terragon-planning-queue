@@ -105,7 +105,7 @@ export default async function handler(req, res) {
  * Calculate overall security level
  */
 function calculateSecurityLevel(status, integrityReport, checkpointStatus) {
-  const score = 100;
+  let score = 100;
 
   // Deduct points for integrity issues
   if (integrityReport.files?.invalid > 0) {

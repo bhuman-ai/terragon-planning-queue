@@ -364,7 +364,7 @@ class LLMCodeValidator {
    * Generate output in specified format
    */
   generateOutput(format) {
-    const output = {
+    let output = {
       passed: this.results.passed,
       timestamp: new Date().toISOString(),
       executionTime: this.results.metrics.executionTime,

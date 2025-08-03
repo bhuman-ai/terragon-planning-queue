@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     { type: 'complete', message: 'Task creation complete!', progress: 100 }
   ];
 
-  const currentStep = 0;
+  let currentStep = 0;
 
   const interval = setInterval(() => {
     if (currentStep < steps.length) {

@@ -175,7 +175,7 @@ export default function Home() {
         body: JSON.stringify({ session_token: token })
       });
 
-      const result = await response.json();
+      let result = await response.json();
 
       if (result.valid) {
         // Save token first
@@ -573,7 +573,7 @@ Format the response as a structured implementation plan with clear subtasks and 
       });
 
       if (proposalResponse.ok) {
-        const result = await proposalResponse.json();
+        let result = await proposalResponse.json();
         if (result.success) {
           setCurrentProposal({
             ...result.proposal,
@@ -675,7 +675,7 @@ Format the response as a structured implementation plan with clear subtasks and 
         throw new Error(`Failed to approve proposal: ${approveResponse.status}`);
       }
 
-      const result = await approveResponse.json();
+      let result = await approveResponse.json();
 
       if (result.success) {
         // Close proposal modal
@@ -718,7 +718,7 @@ Format the response as a structured implementation plan with clear subtasks and 
         })
       });
 
-      const result = await rejectResponse.json();
+      let result = await rejectResponse.json();
 
       // Close proposal modal
       setShowProposal(false);
@@ -752,7 +752,7 @@ Format the response as a structured implementation plan with clear subtasks and 
         throw new Error(`Failed to modify proposal: ${modifyResponse.status}`);
       }
 
-      const result = await modifyResponse.json();
+      let result = await modifyResponse.json();
 
       if (result.success) {
         // Update current proposal with modified version
@@ -865,7 +865,7 @@ Format the response as a structured implementation plan with clear subtasks and 
 
   // Fallback function for direct Terragon submission
   async function sendToTerragonDirect(task, answers) {
-    const enhancedPrompt = `Task: ${task.title}\nDescription: ${task.description}\n\n[Requirements:`;
+    let enhancedPrompt = `Task: ${task.title}\nDescription: ${task.description}\n\n[Requirements:`;
 
     Object.entries(answers).forEach(([questionId, answer]) => {
       enhancedPrompt += `\n- ${questionId}: ${Array.isArray(answer) ? answer.join(', ') : answer}`;
@@ -887,7 +887,7 @@ Format the response as a structured implementation plan with clear subtasks and 
       });
 
       if (response.ok) {
-        const result = await response.json();
+        let result = await response.json();
         if (result.success && result.taskId) {
           task.terragonTaskId = result.taskId;
           task.terragonUrl = result.terragonUrl;

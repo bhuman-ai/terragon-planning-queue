@@ -75,7 +75,7 @@ class DOMValidationRunner {
       try {
         const configPath = path.resolve(configFile);
         const configContent = await fs.readFile(configPath, 'utf8');
-        const config = JSON.parse(configContent);
+        let config = JSON.parse(configContent);
 
         if (Array.isArray(config)) {
           configs.push(...config);
@@ -258,7 +258,7 @@ class DOMValidationRunner {
    * Generate output in specified format
    */
   generateOutput(format) {
-    const output = {
+    let output = {
       passed: this.results.failedFiles === 0,
       timestamp: new Date().toISOString(),
       executionTime: this.results.executionTime,

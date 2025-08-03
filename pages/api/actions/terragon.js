@@ -126,7 +126,7 @@ export default async function handler(req, res) {
       body: JSON.stringify(terragonPayload)
     });
 
-    const result = await response.text();
+    let result = await response.text();
     console.log('Terragon response status:', response.status);
     console.log('Raw response:', result);
 
