@@ -1,28 +1,56 @@
 import fs from 'fs/promises';
 import path from 'path';
 
+const Anthropic = require('@anthropic-ai/sdk');
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { interviewData, includeDevPrinciples, calibrationData, scanResults, timestamp } = req.body;
+    const { 
+      interviewData, 
+      includeDevPrinciples, 
+      calibrationData, 
+      scanResults, 
+      timestamp,
+      // New dynamic format
+      repo,
+      conversationHistory = []
+    } = req.body;
 
-    // Support both the new format (interviewData) and legacy format (calibrationData)
-    const data = interviewData || calibrationData;
+    // Determine which format we're using
+    const isDynamicFormat = conversationHistory.length > 0;
     const currentTimestamp = timestamp || new Date().toISOString();
 
-    // Generate the sacred CLAUDE.md content
-    const claudeMdContent = await generateClaudeMd(data, scanResults, currentTimestamp, includeDevPrinciples);
+    let claudeMdContent;
+    
+    if (isDynamicFormat) {
+      // Use new AI-powered generation for dynamic conversations
+      claudeMdContent = await generateClaudeMdFromConversation(repo, conversationHistory, scanResults, currentTimestamp);
+    } else {
+      // Support legacy interview format
+      const data = interviewData || calibrationData;
+      claudeMdContent = await generateClaudeMd(data, scanResults, currentTimestamp, includeDevPrinciples);
+    }
 
     // Analyze for cleanup suggestions
-    const cleanupSuggestions = await analyzeForCleanup(data, scanResults);
+    const cleanupSuggestions = await analyzeForCleanup(
+      isDynamicFormat ? { conversationHistory } : (interviewData || calibrationData), 
+      scanResults
+    );
 
     res.status(200).json({
       claudeMarkdown: claudeMdContent, // New expected format
       content: claudeMdContent, // Legacy support
-      suggestedCleanup: cleanupSuggestions
+      suggestedCleanup: cleanupSuggestions,
+      success: true,
+      metadata: {
+        generatedAt: currentTimestamp,
+        format: isDynamicFormat ? 'dynamic-conversation' : 'interview',
+        questionCount: isDynamicFormat ? conversationHistory.length : 0
+      }
     });
 
   } catch (error) {
@@ -260,19 +288,204 @@ ${data.scaling_expectations || '- Users: 10K MAU\n- Data: <1TB\n- Requests: 100K
 **🔒 PROTECTION**: This file is protected. Manual edits will trigger alerts.`;
 }
 
+// New AI-powered CLAUDE.md generation from dynamic conversations
+async function generateClaudeMdFromConversation(repo, conversationHistory, scanResults, timestamp) {
+  if (!process.env.CLAUDE_API_KEY) {
+    throw new Error('Claude API key not configured');
+  }
+
+  const claude = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY });
+
+  // Build context from conversation
+  const context = buildConversationContext(scanResults, conversationHistory);
+  
+  // Generate CLAUDE.md content using AI
+  const prompt = buildClaudeMdPrompt(repo, context, conversationHistory);
+
+  const response = await claude.messages.create({
+    model: 'claude-3-5-sonnet-20241022',
+    max_tokens: 4000,
+    temperature: 0.3, // Lower temperature for consistent structure
+    messages: [{
+      role: 'user',
+      content: prompt
+    }]
+  });
+
+  const claudeMdContent = response.content[0].text;
+  
+  // Clean up the content
+  return claudeMdContent
+    .replace(/^```markdown\n?/, '')
+    .replace(/\n?```$/, '')
+    .trim();
+}
+
+function buildConversationContext(scanResults, conversationHistory) {
+  const context = {
+    projectName: scanResults.projectName || 'Unknown Project',
+    techStack: scanResults.detectedTechStack || [],
+    fileCount: scanResults.fileCount || 0,
+    phase: scanResults.suggestedPhase || 'development',
+    hasExistingClaudeMd: scanResults.hasExistingClaudeMd || false,
+    packageInfo: scanResults.packageInfo || {}
+  };
+
+  // Extract insights from conversation
+  context.businessGoals = [];
+  context.architecturePreferences = [];
+  context.workflowPreferences = [];
+  context.teamInfo = {};
+  context.visionStatements = [];
+  context.technicalRequirements = [];
+
+  conversationHistory.forEach(exchange => {
+    if (exchange.question && exchange.answer) {
+      const category = exchange.question.category;
+      const answer = exchange.answer;
+
+      switch (category) {
+        case 'business':
+          context.businessGoals.push({
+            topic: exchange.question.topic,
+            answer: answer
+          });
+          break;
+        case 'architecture':
+          context.architecturePreferences.push({
+            topic: exchange.question.topic,
+            answer: answer
+          });
+          break;
+        case 'workflow':
+          context.workflowPreferences.push({
+            topic: exchange.question.topic,
+            answer: answer
+          });
+          break;
+        case 'team':
+          context.teamInfo[exchange.question.topic] = answer;
+          break;
+        case 'vision':
+          context.visionStatements.push({
+            topic: exchange.question.topic,
+            answer: answer
+          });
+          break;
+        case 'preferences':
+          context.technicalRequirements.push({
+            topic: exchange.question.topic,
+            answer: answer
+          });
+          break;
+      }
+    }
+  });
+
+  return context;
+}
+
+function buildClaudeMdPrompt(repo, context, conversationHistory) {
+  const conversationSummary = conversationHistory.map((exchange, idx) => 
+    `${idx + 1}. ${exchange.question?.category?.toUpperCase() || 'GENERAL'} - ${exchange.question?.topic || 'Unknown'}
+Q: ${exchange.question?.text || 'Unknown question'}
+A: ${exchange.answer || 'No answer'}`
+  ).join('\n\n');
+
+  return `You are a professional documentation specialist creating a comprehensive CLAUDE.md file for repository: ${repo}
+
+CONTEXT ANALYSIS:
+- Project: ${context.projectName}
+- Tech Stack: ${context.techStack.join(', ') || 'Not detected'}
+- Files Scanned: ${context.fileCount}
+- Project Phase: ${context.phase}
+- Questions Answered: ${conversationHistory.length}
+
+CONVERSATION INSIGHTS:
+${conversationSummary}
+
+BUSINESS GOALS IDENTIFIED:
+${context.businessGoals.map(goal => `- ${goal.topic}: ${goal.answer}`).join('\n') || 'None specified'}
+
+ARCHITECTURE PREFERENCES:
+${context.architecturePreferences.map(pref => `- ${pref.topic}: ${pref.answer}`).join('\n') || 'None specified'}
+
+WORKFLOW PREFERENCES:
+${context.workflowPreferences.map(pref => `- ${pref.topic}: ${pref.answer}`).join('\n') || 'None specified'}
+
+TEAM INFORMATION:
+${Object.entries(context.teamInfo).map(([key, value]) => `- ${key}: ${value}`).join('\n') || 'None specified'}
+
+VISION STATEMENTS:
+${context.visionStatements.map(vision => `- ${vision.topic}: ${vision.answer}`).join('\n') || 'None specified'}
+
+TECHNICAL REQUIREMENTS:
+${context.technicalRequirements.map(req => `- ${req.topic}: ${req.answer}`).join('\n') || 'None specified'}
+
+INSTRUCTIONS:
+Create a comprehensive CLAUDE.md file that serves as the sacred master document for this project. This document must:
+
+1. **Reflect User's Vision**: Incorporate their business goals, architecture preferences, and vision statements
+2. **Technical Accuracy**: Based on detected tech stack and project structure
+3. **Actionable Guidelines**: Provide clear, specific instructions for AI agents
+4. **Sacred Principles**: Establish inviolable rules based on user preferences
+5. **Comprehensive Coverage**: Include all standard CLAUDE.md sections
+
+REQUIRED SECTIONS:
+1. Project Overview (vision, phase, architecture, strategy)
+2. Project Structure (tech stack, architecture pattern)
+3. Sacred Principles & AI Instructions (based on user preferences)
+4. Development Guidelines (based on workflow preferences)
+5. Security & Error Handling (industry standards + user requirements)
+6. Architecture patterns (based on user preferences)
+7. Task Management & Workflows
+8. Environment & Deployment (based on tech stack)
+9. Success Metrics (based on business goals)
+
+WRITING STYLE:
+- Professional and authoritative
+- Clear, actionable instructions
+- Sacred/inviolable tone for principles
+- Include emojis for visual organization
+- Use markdown formatting effectively
+- Make it feel like a living, breathing project bible
+
+CRITICAL REQUIREMENTS:
+- Base ALL content on the actual conversation insights
+- Don't make assumptions beyond what the user shared
+- Reflect their technical level and preferences
+- Include specific technologies they mentioned
+- Honor their workflow and team preferences
+- Create principles that align with their vision
+
+Generate a complete, professional CLAUDE.md file that will serve as the definitive guide for this project.`;
+}
+
 async function analyzeForCleanup(calibrationData, scanResults) {
   const suggestions = [...(scanResults?.cleanupSuggestions || [])];
 
-  // Add intelligent suggestions based on calibration
-  if (calibrationData.currentPhase === 'production') {
-    suggestions.push(
-      '*.test.js', // Test files in root
-      'TODO.md',
-      'NOTES.md',
-      'old/**',
-      'backup/**',
-      'temp/**'
-    );
+  // Handle conversation-based data
+  if (calibrationData.conversationHistory) {
+    // Analyze conversation for cleanup suggestions
+    const workflowAnswers = calibrationData.conversationHistory
+      .filter(exchange => exchange.question?.category === 'workflow')
+      .map(exchange => exchange.answer);
+    
+    if (workflowAnswers.some(answer => answer.includes('production'))) {
+      suggestions.push('*.test.js', 'TODO.md', 'NOTES.md', 'old/**', 'backup/**', 'temp/**');
+    }
+  } else {
+    // Legacy format
+    if (calibrationData.currentPhase === 'production') {
+      suggestions.push(
+        '*.test.js', // Test files in root
+        'TODO.md',
+        'NOTES.md',
+        'old/**',
+        'backup/**',
+        'temp/**'
+      );
+    }
   }
 
   // Remove duplicates

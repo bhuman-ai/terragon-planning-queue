@@ -6,6 +6,7 @@ import ProposalReviewModal from '../components/ProposalReviewModal';
 import TaskCreationProgress from '../components/TaskCreationProgress';
 import TaskMonitorDashboard from '../components/TaskMonitorDashboard';
 import CalibrationWizard from '../components/CalibrationWizard';
+import DynamicCalibrationWizard from '../components/DynamicCalibrationWizard';
 import UserSettingsModal from '../components/UserSettingsModal';
 import ClaudeAutoUpdaterPanel from '../components/ClaudeAutoUpdaterPanel';
 import WorkflowHierarchy from '../components/WorkflowHierarchy';
@@ -42,6 +43,7 @@ export default function Home() {
   const [currentTaskId, setCurrentTaskId] = useState(null);
   const [showTaskMonitor, setShowTaskMonitor] = useState(false);
   const [showCalibration, setShowCalibration] = useState(false);
+  const [showDynamicCalibration, setShowDynamicCalibration] = useState(false);
   const [hasClaudeMd, setHasClaudeMd] = useState(null);
   const [showUserSettings, setShowUserSettings] = useState(false);
   const [userSettings, setUserSettings] = useState(null);
@@ -806,6 +808,39 @@ Format the response as a structured implementation plan with clear subtasks and 
     }
   }
 
+  // Handle dynamic calibration completion
+  async function handleDynamicCalibrationComplete(result) {
+    const { claudeMarkdown, suggestedCleanup, metadata } = result;
+
+    // Mark calibration as complete
+    setHasClaudeMd(true);
+    setShowDynamicCalibration(false);
+
+    // Show success message with conversation stats
+    showStatus(
+      `🎤 Dynamic calibration complete! Generated from ${metadata?.questionCount || 0} conversations. CLAUDE.md is your source of truth.`, 
+      'success'
+    );
+
+    // If cleanup was suggested, execute it
+    if (suggestedCleanup && suggestedCleanup.length > 0) {
+      showStatus(`Cleaning up ${suggestedCleanup.length} suggested files...`, 'info');
+
+      try {
+        await fetch('/api/calibration/cleanup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ files: suggestedCleanup })
+        });
+
+        showStatus('✨ Dynamic cleanup complete! Repository aligned with your conversations.', 'success');
+      } catch (error) {
+        console.error('Cleanup failed:', error);
+        showStatus('Cleanup failed, but dynamic calibration is complete', 'warning');
+      }
+    }
+  }
+
   // Handle user settings save
   const handleUserSettingsSave = (newSettings) => {
     setUserSettings(newSettings);
@@ -1015,21 +1050,38 @@ Format the response as a structured implementation plan with clear subtasks and 
                       📖 View Document
                     </button>
                   )}
-                  <button
-                    onClick={() => setShowCalibration(true)}
-                    style={{
-                      background: hasClaudeMd ? '#333' : '#ff6b6b',
-                      color: '#fff',
-                      padding: '8px 16px',
-                      fontSize: '13px',
-                      fontWeight: hasClaudeMd ? 'normal' : 'bold',
-                      border: 'none',
-                      borderRadius: '5px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {hasClaudeMd ? 'Update Calibration' : '🔥 Start Calibration'}
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => setShowDynamicCalibration(true)}
+                      style={{
+                        background: hasClaudeMd ? '#00aa88' : '#00ff88',
+                        color: '#000',
+                        padding: '8px 16px',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🎤 Dynamic Calibration
+                    </button>
+                    <button
+                      onClick={() => setShowCalibration(true)}
+                      style={{
+                        background: hasClaudeMd ? '#333' : '#666',
+                        color: '#fff',
+                        padding: '8px 16px',
+                        fontSize: '13px',
+                        fontWeight: 'normal',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {hasClaudeMd ? 'Interview Update' : '📝 Interview Mode'}
+                    </button>
+                  </div>
                 </div>
               </div>
           </div>
@@ -1456,6 +1508,14 @@ Format the response as a structured implementation plan with clear subtasks and 
         show={showCalibration}
         onClose={() => setShowCalibration(false)}
         onComplete={handleCalibrationComplete}
+        githubRepo={`${state.githubConfig.owner}/${state.githubConfig.repo}`}
+      />
+
+      {/* Dynamic Calibration Wizard */}
+      <DynamicCalibrationWizard
+        show={showDynamicCalibration}
+        onClose={() => setShowDynamicCalibration(false)}
+        onComplete={handleDynamicCalibrationComplete}
         githubRepo={`${state.githubConfig.owner}/${state.githubConfig.repo}`}
       />
 

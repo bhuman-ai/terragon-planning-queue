@@ -74,6 +74,8 @@ export default function TaskMonitorDashboard({ show, onClose }) {
     }
   };
 
+  if (!show) return null;
+
   return (
     <div style={{
       position: 'fixed',
@@ -161,31 +163,41 @@ export default function TaskMonitorDashboard({ show, onClose }) {
           padding: '20px',
           overflowY: 'auto'
         }}>
-          {loading && activeTasks.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#888', padding: '40px' }}>
-              Loading tasks...
-            </div>
-          ) : activeTasks.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#888', padding: '40px' }}>
-              <div style={{ fontSize: '48px', marginBottom: '10px' }}>🏖️</div>
-              <div>No active autonomous tasks</div>
-              <div style={{ fontSize: '14px', marginTop: '5px' }}>
-                Tasks will appear here when they start executing autonomously
+          {(() => {
+            if (loading && activeTasks.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', color: '#888', padding: '40px' }}>
+                  Loading tasks...
+                </div>
+              );
+            }
+            
+            if (activeTasks.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', color: '#888', padding: '40px' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '10px' }}>🏖️</div>
+                  <div>No active autonomous tasks</div>
+                  <div style={{ fontSize: '14px', marginTop: '5px' }}>
+                    Tasks will appear here when they start executing autonomously
+                  </div>
+                </div>
+              );
+            }
+            
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                {activeTasks.map(task => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onResume={handleResumeTask}
+                    getStatusColor={getStatusColor}
+                    getStatusIcon={getStatusIcon}
+                  />
+                ))}
               </div>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              {activeTasks.map(task => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onResume={handleResumeTask}
-                  getStatusColor={getStatusColor}
-                  getStatusIcon={getStatusIcon}
-                />
-              ))}
-            </div>
-          )}
+            );
+          })()}
         </div>
 
         {/* Footer */}
