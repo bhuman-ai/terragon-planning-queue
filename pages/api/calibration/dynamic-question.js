@@ -76,12 +76,23 @@ function buildCalibrationContext(scanResults, conversationHistory, questionCount
 
   // Extract insights from conversation history
   context.answeredTopics = [];
+  context.answeredQuestions = [];
   context.userPreferences = {};
   context.projectInsights = {};
+  context.allAnswers = {};
 
   conversationHistory.forEach(exchange => {
     if (exchange.question && exchange.answer) {
+      // Track both category and specific question
       context.answeredTopics.push(exchange.question.category || 'general');
+      context.answeredQuestions.push({
+        text: exchange.question.text,
+        topic: exchange.question.topic,
+        answer: exchange.answer
+      });
+      
+      // Store all answers by topic for easy reference
+      context.allAnswers[exchange.question.topic || exchange.question.category] = exchange.answer;
       
       // Extract user preferences
       if (exchange.question.category === 'preferences') {
@@ -115,15 +126,21 @@ CURRENT CONTEXT:
 CONVERSATION HISTORY:
 ${conversationSummary || 'No previous questions'}
 
-ANSWERED TOPICS: ${context.answeredTopics.join(', ') || 'None'}
+ALREADY ASKED QUESTIONS:
+${context.answeredQuestions.map(q => `- "${q.text}" → "${q.answer}"`).join('\n') || 'None yet'}
+
+COVERED TOPICS: ${[...new Set(context.answeredTopics)].join(', ') || 'None'}
+
+PROJECT KNOWLEDGE SO FAR:
+${Object.entries(context.allAnswers).map(([topic, answer]) => `- ${topic}: ${answer}`).join('\n') || 'No knowledge yet'}
 
 INSTRUCTIONS:
 Generate the NEXT intelligent question that builds on previous answers. Follow these principles:
 
-1. **CONTEXTUAL**: Base the question on what you've learned so far
-2. **PROGRESSIVE**: Each question should deepen understanding
-3. **ADAPTIVE**: Adjust based on user's technical level and responses
-4. **COMPREHENSIVE**: Cover different aspects: business, technical, workflow, team, goals
+1. **NEVER REPEAT**: Check conversation history - NEVER ask about topics already answered
+2. **BUILD CONTEXT**: Each question must reference or build upon previous answers
+3. **GO DEEPER**: Move from general to specific based on what you've learned
+4. **TRACK COVERAGE**: Keep track of what's been asked and explore new territory
 
 QUESTION CATEGORIES TO ROTATE THROUGH:
 - business: Project goals, target users, success metrics
@@ -133,13 +150,22 @@ QUESTION CATEGORIES TO ROTATE THROUGH:
 - preferences: Coding standards, tools, methodologies
 - vision: Long-term goals, growth plans, priorities
 
-SMART QUESTIONING RULES:
-- Don't repeat topics already covered well
-- Ask follow-up questions that dig deeper based on previous answers
-- If user mentioned specific technologies, ask about implementation details
-- If user described business goals, ask about technical requirements to achieve them
-- Adapt question complexity to user's demonstrated technical level
-- Ask about pain points and challenges they're facing
+STRICT ANTI-REPETITION RULES:
+- BEFORE generating a question, list ALL topics already covered in conversation
+- NEVER ask about the project's "main purpose" or "primary goal" if already answered
+- NEVER ask generic questions that ignore previous context
+- Each question must explicitly reference something from a previous answer
+- If user mentioned specific tech/features, dive into implementation details
+- If all basic categories are covered, ask about specific challenges or edge cases
+
+EXAMPLE PROGRESSION:
+Q1: What's the main purpose? → A: E-commerce platform
+Q2: What's your target market and scale? → A: SMB, expecting 10k users
+Q3: Given your SMB focus, how will you handle multi-tenant isolation? → A: Separate DBs
+Q4: With separate DBs for tenants, how will you manage migrations at scale?
+
+TOPIC TRACKING:
+Already asked about: ${context.answeredTopics.join(', ') || 'Nothing yet'}
 
 RESPONSE FORMAT:
 {
@@ -158,6 +184,12 @@ RESPONSE FORMAT:
     "recommendedContinue": true|false
   }
 }
+
+IMPORTANT FINAL CHECKS:
+1. Is this question already answered in the conversation? If yes, generate a different one
+2. Does this question reference something specific from previous answers?
+3. Is this question moving the conversation forward, not backward?
+4. Would a human feel like you're listening to their previous answers?
 
 Generate a question that makes the user feel like they're having an intelligent conversation with someone who understands their project and wants to help them succeed.`;
 }
