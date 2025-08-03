@@ -1,7 +1,6 @@
-import React from 'react'
-import PropTypes from 'prop-types'
-import styles from './SubmitButton.module.css'
-;
+import React from 'react';
+import PropTypes from 'prop-types';
+import styles from './SubmitButton.module.css';
 const SubmitButton = ({
   onClick,
   type = 'button',
@@ -14,9 +13,9 @@ const SubmitButton = ({
 }) => {
   const handleClick = (e) => {
     if (!disabled && !loading && onClick) {
-      onClick(e)
+      onClick(e);
     }
-  }
+  };
 
   return (
     <button
@@ -31,8 +30,8 @@ const SubmitButton = ({
       {loading && <span className={styles.spinner} aria-hidden='true' />}
       <span className={styles.content}>{children}</span>
     </button>
-  )
-}
+  );
+};
 
 SubmitButton.propTypes = {
   onClick: PropTypes.func,
@@ -42,7 +41,6 @@ SubmitButton.propTypes = {
   variant: PropTypes.oneOf(['primary', 'secondary', 'danger']),
   children: PropTypes.node.isRequired,
   className: PropTypes.string
-}
+};
 
-export default SubmitButton
-;
+export default SubmitButton;

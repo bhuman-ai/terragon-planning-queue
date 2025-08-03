@@ -195,7 +195,7 @@ Linked to: CLAUDE.md → ${metadata.claudeMdLink.sectionPath}
 `;
     });
   } else {
-    diff += `*No specific changes defined. Review task implementation to determine project.md updates.*\n\n`;
+    diff += '*No specific changes defined. Review task implementation to determine project.md updates.*\n\n';
   }
 
   diff += `## Application Instructions

@@ -99,8 +99,8 @@ export default function Home() {
     if (savedState) {
       try {
         const appState = JSON.parse(savedState);
-        setEnrichContext(appState.enrichContext ?? true);
-        setUseMetaAgent(appState.useMetaAgent ?? true);
+        setEnrichContext(appState.enrichContext !== undefined ? appState.enrichContext : true);
+        setUseMetaAgent(appState.useMetaAgent !== undefined ? appState.useMetaAgent : true);
       } catch (error) {
         console.error('Error loading saved app state:', error);
       }
