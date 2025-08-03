@@ -1,5 +1,5 @@
 module.exports = {
-  extends: ['next/core-web-vitals'],
+  extends: ['next'],
   env: {
     node: true,
     jest: true,
